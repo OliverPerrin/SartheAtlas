@@ -18,7 +18,7 @@ npm run build
 npm run preview
 ```
 
-The production output is `dist/`. It is a static site suitable for Vercel, Netlify or any static host. Navigation uses query parameters, so deep links need no server rewrites. No API keys or backend are required. Google Fonts and optional Sketchfab viewers use third-party requests; local engineering and circuit views do not depend on Sketchfab.
+The production output is `dist/`. It is a static site suitable for Vercel, Netlify or any static host. Navigation uses query parameters, so deep links need no server rewrites. No API keys or backend are required. Google Fonts and optional Sketchfab viewers / Viewer API SDK use third-party requests; local engineering and circuit views do not depend on Sketchfab.
 
 ## Included
 

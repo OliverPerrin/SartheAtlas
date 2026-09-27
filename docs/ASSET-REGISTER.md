@@ -5,7 +5,7 @@ Reviewed 2026-09-27. The site is not yet an exact-2026 replica collection.
 ## Current implementation
 
 - Original procedural 3D prototype / GT educational assemblies. No claim of exact manufacturer bodywork, part dimensions, homologation or complete bills of materials.
-- Eleven creator-hosted Sketchfab exterior references, linked and attributed in `src/data.ts`. These are embeds only. No mesh extraction, game ripping or local redistribution.
+- Eleven creator-hosted Sketchfab exterior references, linked and attributed in `src/data.ts`. These are embeds only. The Ferrari reference is Project 212’s freely viewable public preview; its paid source files have not been acquired. An earlier Ferrari community upload was rejected after visual inspection showed broken duplicate cars. No mesh extraction, game ripping or local redistribution.
 - Reference years / variant caveats accompany every embed. Earlier GT3 bodywork cannot establish a 2026 LMGT3 Evo or its race livery.
 - Original team-inspired colour studies. No exact sponsor decals are claimed.
 - Circuit source geometry: OpenStreetMap via tobi/track-atlas, ODbL. See TRACK-ATTRIBUTION.md. Elevation and lap speed are not measured.

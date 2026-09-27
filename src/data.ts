@@ -27,8 +27,8 @@ export const cars: Car[] = [
     "50",
     "A purpose-built prototype with a combustion engine at the rear and an electric motor at the front. Its low nose, sculpted wheel arches and elevated rear wing are part of a complete aerodynamic system.",
     "https://www.ferrari.com/en-US/magazine/articles/ferrari-499p-the-comeback",
-    "3886c10416fe40dea730da0a31bddebc",
-    "MattDoesBlender",
+    "e5957ead88aa4f2996bc66073734d3d7",
+    "Project 212",
   ],
   [
     "toyota",
@@ -393,9 +393,9 @@ export const exteriorReferences: Record<
   { id: string; author: string; note: string }
 > = {
   ferrari: {
-    id: "3886c10416fe40dea730da0a31bddebc",
-    author: "MattDoesBlender",
-    note: "Community 499P; bodywork and livery year unverified.",
+    id: "e5957ead88aa4f2996bc66073734d3d7",
+    author: "Project 212",
+    note: "Creator-hosted 499P preview; not verified for 2026. Viewer is free; source files are not included.",
   },
   "296": {
     id: "a463226115184535928ec75660c6571f",

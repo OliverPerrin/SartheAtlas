@@ -27,6 +27,7 @@ import {
 import type { Car, ClassName, SystemId } from "./data";
 import type { Corner } from "./Scene";
 import "./App.css";
+import ExteriorViewer from "./ExteriorViewer";
 const CarScene = lazy(() =>
   import("./Scene").then((m) => ({ default: m.CarScene })),
 );
@@ -308,11 +309,11 @@ export default function App() {
               <div className="canvas-wrap">
                 {exterior && car.model ? (
                   <div className="embed-wrap">
-                    <iframe
+                    <ExteriorViewer
+                      key={car.model}
+                      id={car.model}
                       title={`${car.make} ${car.name} community exterior model`}
-                      src={`https://sketchfab.com/models/${car.model}/embed?autostart=1&ui_theme=dark`}
-                      allow="autoplay; fullscreen; xr-spatial-tracking"
-                      allowFullScreen
+                      onFallback={() => setExterior(false)}
                     />
                     <div className="embed-credit">
                       Model by{" "}
