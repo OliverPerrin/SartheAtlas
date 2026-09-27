@@ -58,7 +58,7 @@ export default function App() {
   const [labels, setLabels] = useState(true);
   const [paintMode, setPaintMode] = useState("team");
   const [number, setNumber] = useState(car.number);
-  const [exterior, setExterior] = useState(false);
+  const [exterior, setExterior] = useState(Boolean(initial().car.model));
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All classes");
   const [night, setNight] = useState(false);
@@ -92,7 +92,7 @@ export default function App() {
     setNumber(c.number);
     setPaintMode("team");
     setSystem("body");
-    setExterior(false);
+    setExterior(Boolean(c.model));
     setHidden(false);
     setExploded(0);
     setXray(false);
@@ -371,7 +371,11 @@ export default function App() {
                     </button>
                   )}
                 </div>
-                <p>Illustrative geometry · not manufacturer CAD</p>
+                <p>
+                  {exterior
+                    ? "Creator exterior reference · 2026 specification unverified"
+                    : "Illustrative geometry · not manufacturer CAD"}
+                </p>
               </div>
               {!exterior && (
                 <div className="camera-bar">

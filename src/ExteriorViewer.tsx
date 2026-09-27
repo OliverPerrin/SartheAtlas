@@ -60,6 +60,8 @@ export default function ExteriorViewer({
         if (cancelled || !iframe.current || !window.Sketchfab) return;
         new window.Sketchfab(iframe.current).init(id, {
           autostart: 1,
+          camera: 0,
+          dnt: 1,
           ui_theme: "dark",
           preload: 1,
           success: (viewer: ViewerAPI) => {
@@ -68,17 +70,7 @@ export default function ExteriorViewer({
             viewer.addEventListener("viewerready", () => {
               if (cancelled) return;
               viewer.setBackground({ color: [0.89, 0.9, 0.95] });
-              if (id === "e5957ead88aa4f2996bc66073734d3d7")
-                viewer.getCameraLookAt((err, c) => {
-                  if (!err && !cancelled)
-                    viewer.setCameraLookAt(
-                      c.position.map(
-                        (p, i) => c.target[i] + (p - c.target[i]) * 0.2,
-                      ),
-                      c.target,
-                      0,
-                    );
-                });
+              viewer.focusOnVisibleGeometries();
               setStatus("ready");
               window.clearTimeout(timer);
             });
