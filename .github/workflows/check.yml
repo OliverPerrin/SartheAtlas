@@ -13,3 +13,20 @@ jobs:
       - run: npm test
       - run: npm run lint
       - run: npm run build
+  circuit_mesh:
+    name: Reproduce Rust circuit assets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: dtolnay/rust-toolchain@7e38f4b43b4db5c8dd498af069a4f6196df1d067
+        with:
+          toolchain: 1.99.0
+          components: rustfmt
+      - run: npm ci
+      - run: cargo fmt --manifest-path tools/circuit-mesh/Cargo.toml -- --check
+      - run: npm run mesh:test
+      - run: npm run mesh:check

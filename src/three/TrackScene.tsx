@@ -2,20 +2,23 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Line, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
-import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import type { OrbitControls as OrbitImpl } from "three-stdlib";
 import type { ClassName } from "../data/cars.ts";
 import { classOrder } from "../data/cars.ts";
 import { lapTargets, sections } from "../data/track.ts";
 import type { TrackGeo } from "../data/trackGeo.ts";
-import { createTrackProximityTester } from "../data/trackProximity.ts";
+import { loadPreparedBuildings } from "../data/preparedBuildings.ts";
+import type {
+  PreparedBuildings,
+  PreparedMeshSection,
+  PreparedMeshMetadata,
+} from "../data/preparedBuildings.ts";
 import {
   fractionAtTime,
   pointAt,
   speedModel,
   projectLngLat,
   terrainElevationAt,
-  loadTrackContextLayers,
 } from "../data/trackGeo.ts";
 import type { SpeedModel } from "../data/trackGeo.ts";
 import { SceneBoundary } from "./CarScene.tsx";
@@ -250,89 +253,47 @@ function Terrain({ track, night }: { track: TrackGeo; night: boolean }) {
 }
 
 function MappedBuildings({
-  track,
+  data,
   night,
 }: {
-  track: TrackGeo;
+  data?: PreparedBuildings;
   night: boolean;
 }) {
   const batches = useMemo(() => {
-    const solids: THREE.BufferGeometry[] = [],
-      footprints: THREE.BufferGeometry[] = [];
-    // The map view contains the full dataset; the lap study keeps a sourced 600 m corridor.
-    const nearTrack = createTrackProximityTester(track, 600);
-    let featureCount = 0;
-    for (const feature of track.context?.buildings?.features ?? []) {
-      const polygons =
-        feature.geometry.type === "Polygon"
-          ? [feature.geometry.coordinates]
-          : feature.geometry.coordinates;
-      const height = feature.properties.height;
-      const heightKnown =
-        typeof height === "number" &&
-        Number.isFinite(height) &&
-        height > 0 &&
-        !!feature.properties.heightSource;
-      let included = false;
-      for (const rings of polygons) {
-        if (!rings[0] || rings[0].length < 4) continue;
-        const centre = rings[0].reduce(
-          ([lng, lat], p) => [
-            lng + p[0] / rings[0].length,
-            lat + p[1] / rings[0].length,
-          ],
-          [0, 0],
+    const geometry = (
+      section: PreparedMeshSection | undefined,
+      metadata?: PreparedMeshMetadata,
+    ) => {
+      if (!section?.indices.length) return null;
+      const mesh = new THREE.BufferGeometry();
+      mesh.setAttribute(
+        "position",
+        new THREE.BufferAttribute(section.positions, 3),
+      );
+      mesh.setAttribute(
+        "normal",
+        new THREE.BufferAttribute(section.normals, 3),
+      );
+      mesh.setIndex(new THREE.BufferAttribute(section.indices, 1));
+      if (metadata?.bounds) {
+        mesh.boundingBox = new THREE.Box3(
+          new THREE.Vector3(...metadata.bounds.min),
+          new THREE.Vector3(...metadata.bounds.max),
         );
-        const [cx, cz] = projectLngLat(track, centre[0], centre[1]);
-        if (!nearTrack(cx, cz)) continue;
-        const projected = rings.map((ring) =>
-          ring.map((p) => projectLngLat(track, p[0], p[1])),
+        mesh.boundingSphere = mesh.boundingBox.getBoundingSphere(
+          new THREE.Sphere(),
         );
-        const ground =
-          feature.properties.groundElevation ??
-          feature.properties.altitude_minimale_sol;
-        const base =
-          typeof ground === "number" &&
-          Number.isFinite(ground) &&
-          ground > -1000 &&
-          ground < 10000
-            ? ground
-            : terrainElevationAt(track, cx, cz);
-        const shape = new THREE.Shape(
-          projected[0].map(([x, z]) => new THREE.Vector2(x * S, -z * S)),
-        );
-        for (const hole of projected.slice(1))
-          shape.holes.push(
-            new THREE.Path(
-              hole.map(([x, z]) => new THREE.Vector2(x * S, -z * S)),
-            ),
-          );
-        const solid = heightKnown && base !== null;
-        const geometry = solid
-          ? new THREE.ExtrudeGeometry(shape, {
-              depth: height * S,
-              bevelEnabled: false,
-              steps: 1,
-            })
-          : new THREE.ShapeGeometry(shape);
-        geometry.rotateX(-Math.PI / 2);
-        geometry.translate(
-          0,
-          (base === null ? 0 : (base - track.elevationBase) * S) + 0.006,
-          0,
-        );
-        const nonIndexed = geometry.index ? geometry.toNonIndexed() : geometry;
-        if (nonIndexed !== geometry) geometry.dispose();
-        (solid ? solids : footprints).push(nonIndexed);
-        included = true;
+      } else {
+        mesh.computeBoundingBox();
+        mesh.computeBoundingSphere();
       }
-      if (included) featureCount++;
-    }
-    const solid = solids.length ? mergeGeometries(solids) : null,
-      footprint = footprints.length ? mergeGeometries(footprints) : null;
-    [...solids, ...footprints].forEach((geometry) => geometry.dispose());
-    return { solid, footprint, featureCount };
-  }, [track]);
+      return mesh;
+    };
+    return {
+      solid: geometry(data?.solid, data?.manifest.meshes?.solid),
+      footprint: geometry(data?.footprint, data?.manifest.meshes?.footprint),
+    };
+  }, [data]);
   useEffect(
     () => () => {
       batches.solid?.dispose();
@@ -645,7 +606,7 @@ function CameraDirector({
   return null;
 }
 
-function World(p: Props) {
+function World(p: Props & { buildings?: PreparedBuildings }) {
   const models = useMemo(
     () =>
       Object.fromEntries(
@@ -698,7 +659,7 @@ function World(p: Props) {
           toneMapped={false}
         />
       ))}
-      <MappedBuildings track={p.track} night={p.night} />
+      <MappedBuildings data={p.buildings} night={p.night} />
       {markers.map((c) => (
         <Label
           key={c.number}
@@ -767,29 +728,28 @@ export function TrackScene(p: Props) {
       document.removeEventListener("visibilitychange", update);
     };
   }, []);
-  const [enriched, setEnriched] = useState<{
+  const [prepared, setPrepared] = useState<{
     base: TrackGeo;
-    track: TrackGeo;
+    data?: PreparedBuildings;
     failed?: boolean;
   } | null>(null);
-  const studyTrack = enriched?.base === p.track ? enriched.track : p.track;
-  const buildingState = studyTrack.context?.buildings
+  const buildings = prepared?.base === p.track ? prepared.data : undefined;
+  const buildingState = buildings
     ? "ready"
-    : enriched?.base === p.track && enriched.failed
+    : prepared?.base === p.track && prepared.failed
       ? "unavailable"
       : p.track.context?.layers?.buildings
         ? "loading"
         : "unavailable";
   useEffect(() => {
-    if (!p.track.context?.layers?.buildings || p.track.context.buildings)
-      return;
+    if (!p.track.context?.layers?.buildings) return;
     let live = true;
-    loadTrackContextLayers(p.track)
-      .then((track) => {
-        if (live) setEnriched({ base: p.track, track });
+    loadPreparedBuildings(p.track)
+      .then((data) => {
+        if (live) setPrepared({ base: p.track, data });
       })
       .catch(() => {
-        if (live) setEnriched({ base: p.track, track: p.track, failed: true });
+        if (live) setPrepared({ base: p.track, failed: true });
       });
     return () => {
       live = false;
@@ -800,7 +760,7 @@ export function TrackScene(p: Props) {
       <div
         style={{ width: "100%", height: "100%", position: "relative" }}
         ref={host}
-        data-context-status={studyTrack.contextStatus}
+        data-context-status={p.track.contextStatus}
         data-buildings-status={buildingState}
       >
         <Canvas
@@ -810,7 +770,7 @@ export function TrackScene(p: Props) {
           camera={{ position: [0, 700, 600], fov: 38, near: 0.5, far: 5000 }}
           gl={{ antialias: true }}
         >
-          <World {...p} playing={active && p.playing} track={studyTrack} />
+          <World {...p} playing={active && p.playing} buildings={buildings} />
         </Canvas>
         <div
           role="status"
@@ -829,9 +789,9 @@ export function TrackScene(p: Props) {
             pointerEvents: "none",
           }}
         >
-          {studyTrack.contextStatus === "unavailable"
+          {p.track.contextStatus === "unavailable"
             ? "Elevation/context unavailable. Flat circuit fallback."
-            : !studyTrack.context?.terrainGrid
+            : !p.track.context?.terrainGrid
               ? "Sourced road elevations; terrain surface unavailable."
               : buildingState === "loading"
                 ? "IGN terrain. Loading mapped building footprints…"

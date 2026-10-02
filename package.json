@@ -8,7 +8,10 @@
     "build": "tsc -b && vite build && node scripts/check-startup.mjs",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test": "node --test tests/*.test.mjs"
+    "test": "node --test tests/*.test.mjs",
+    "mesh:build": "node scripts/build-circuit-mesh.mjs",
+    "mesh:check": "node scripts/build-circuit-mesh.mjs --check",
+    "mesh:test": "cargo test --locked --manifest-path tools/circuit-mesh/Cargo.toml"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",

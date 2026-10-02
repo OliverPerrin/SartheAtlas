@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { BodyProfile } from "../data/bodyProfile.ts";
+import { projectedPatchGeometry } from "./projectedPatch.ts";
 export { V } from "../data/bodyProfile.ts";
 export type { BodySpec, Keys } from "../data/bodyProfile.ts";
 
@@ -32,46 +33,7 @@ export class Body extends BodyProfile {
   // Triangulate in UV space, then subdivide before projecting onto the skin.
   // This preserves a curved windscreen rather than placing a flat polygon over it.
   patch(points: [number, number][], side: number, lift = 0.003, detail = 3) {
-    const contour = points.map(([t, v]) => new THREE.Vector2(t, v));
-    const faces = THREE.ShapeUtils.triangulateShape(contour, []);
-    const pos: number[] = [];
-    const normals: number[] = [];
-    const project = (
-      a: THREE.Vector2,
-      b: THREE.Vector2,
-      c: THREE.Vector2,
-      depth: number,
-    ) => {
-      if (depth) {
-        const ab = a.clone().add(b).multiplyScalar(0.5);
-        const bc = b.clone().add(c).multiplyScalar(0.5);
-        const ca = c.clone().add(a).multiplyScalar(0.5);
-        project(a, ab, ca, depth - 1);
-        project(ab, b, bc, depth - 1);
-        project(ca, bc, c, depth - 1);
-        project(ab, bc, ca, depth - 1);
-        return;
-      }
-      const vertices = side > 0 ? [a, c, b] : [a, b, c];
-      for (const vertex of vertices) {
-        const base = this.pointAt(vertex.x, vertex.y, side);
-        const n = this.surfaceAt(vertex.x, vertex.y, side, 1)
-          .sub(base)
-          .normalize();
-        normals.push(...n.toArray());
-        pos.push(...base.addScaledVector(n, lift).toArray());
-      }
-    };
-    for (const [a, b, c] of faces)
-      project(contour[a], contour[b], contour[c], detail);
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
-    // Analytic normals keep reflections smooth across the projected triangles.
-    geometry.setAttribute(
-      "normal",
-      new THREE.Float32BufferAttribute(normals, 3),
-    );
-    return geometry;
+    return projectedPatchGeometry(this, points, side, lift, detail);
   }
   geometry() {
     const ts = this.samples();
