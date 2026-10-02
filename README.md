@@ -56,6 +56,8 @@ The circuit now uses IGN orthorectified aerial imagery, RGE ALTI ground elevatio
 
 The performance pass reduced initial JavaScript from 757 kB to 315 kB decoded (222 kB to 98 kB gzip). Models and circuit data no longer start downloading on the initial homepage. Responsive posters reduce phone/card image downloads while retaining the original desktop hero. See [performance measurements and verification limits](docs/PERFORMANCE.md).
 
+The driving study now loads a 785 kB Rust-prepared building mesh instead of parsing 14 MB of building GeoJSON and extruding it in the browser. Build-local car projection caching also reduces glazing construction costs while preserving exact geometry. See [the Rust preparation pipeline and benchmarks](docs/RUST-PERFORMANCE.md). Normal `npm` development/build commands require no Rust toolchain; regenerating the prepared assets uses `npm run mesh:build` after installing Rust.
+
 `npm test` covers catalogue/entry integrity, complete exterior metadata, reference provenance, model-bound material recipes, hybrid-system visibility and finite indexed study geometry across all 18 car families, plus coordinate round-trips, measured elevation, missing-data handling, building sources and terrain manifest checks.
 
 To refresh the public exterior metadata snapshot without downloading any mesh files:
@@ -74,7 +76,7 @@ To reproduce the local public IGN geography snapshot and terrain tiles:
 node scripts/fetch-circuit-context.mjs
 ```
 
-This fetches the public sources recorded in the context and manifest. It requires network access and can take time; cached source responses are reused. The full building layer is loaded by the map worker when Buildings is enabled, while the driving study loads buildings only when opened. The MapLibre worker is bundled explicitly for both development and production.
+This fetches the public sources recorded in the context and manifest. It requires network access and can take time; cached source responses are reused. After refreshing sources, regenerate the prepared driving-study geometry with `npm run mesh:build`. The full building layer is loaded by the map worker when Buildings is enabled; the driving study loads its prepared mesh only when opened. The MapLibre worker is bundled explicitly for both development and production.
 
 ## Sources and licensing
 

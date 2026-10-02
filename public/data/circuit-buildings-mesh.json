@@ -1,0 +1,103 @@
+{
+  "binary": "/data/circuit-study-buildings.mesh",
+  "binaryBytes": 3355400,
+  "binarySha256": "6e44e61a570db1b1967fdff13a9a5525b308215a73c3739bccfa658bd448b48a",
+  "bounds": {
+    "max": [
+      224.32452392578125,
+      5.367000102996826,
+      365.0131530761719
+    ],
+    "min": [
+      -156.7872772216797,
+      -0.2029999941587448,
+      -294.3753356933594
+    ]
+  },
+  "compiler": {
+    "earcutr": "0.5.0",
+    "language": "Rust",
+    "name": "sarthe-circuit-mesh",
+    "version": "0.1.0"
+  },
+  "compressedBytes": 784724,
+  "compressedSha256": "393ad0d65875302b2145058201eabc25176ec19129c92b296bb5c3f8e065cb2b",
+  "corridorMetres": 600.0,
+  "elevationBase": 44.89,
+  "featureCount": 2898,
+  "footprintFeatureCount": 141,
+  "footprintPolygonCount": 141,
+  "meshes": {
+    "footprint": {
+      "bounds": {
+        "max": [
+          218.1586456298828,
+          3.9267022609710693,
+          357.1153869628906
+        ],
+        "min": [
+          -127.66654968261719,
+          -0.0036627030931413174,
+          -290.6649475097656
+        ]
+      },
+      "indexCount": 1554,
+      "triangleCount": 518,
+      "vertexCount": 800
+    },
+    "solid": {
+      "bounds": {
+        "max": [
+          224.32452392578125,
+          5.367000102996826,
+          365.0131530761719
+        ],
+        "min": [
+          -156.7872772216797,
+          -0.2029999941587448,
+          -294.3753356933594
+        ]
+      },
+      "indexCount": 185772,
+      "triangleCount": 61924,
+      "vertexCount": 107786
+    }
+  },
+  "origin": [
+    0.22189162947543706,
+    47.94081872023309
+  ],
+  "preparedInputSha256": "f44329eea36f696a6144585925d1ce9ad12ba1ebe2ff30e8b8c98e1a7307eccc",
+  "provenance": {
+    "attribution": "© IGN — RGE ALTI, BD TOPO; Licence Ouverte / Open Licence 2.0",
+    "coordinateEncoding": {
+      "decimals": 7,
+      "maximumRoundingDisplacementMetresPerAxis": 0.0056,
+      "note": "Storage quantization below source accuracy; all mapped features and topology retained."
+    },
+    "elevationDocumentation": "https://cartes.gouv.fr/aide/fr/guides-utilisateur/utiliser-les-services-de-la-geoplateforme/calcul-altimetrique/",
+    "elevationResource": "https://data.geopf.fr/altimetrie/resources/ign_rge_alti_wld",
+    "license": "https://www.etalab.gouv.fr/licence-ouverte-open-licence/",
+    "organization": "Institut national de l'information géographique et forestière (IGN)",
+    "productDocumentation": "https://geoservices.ign.fr/rgealti",
+    "trackGeometry": {
+      "file": "/data/sarthe.geojson",
+      "license": "ODbL-1.0",
+      "sha256": "e4255e65b684daae109b95670d5c1f54983d30aa1d9cad7aa57497edfb75587c",
+      "source": "OpenStreetMap via tobi/track-atlas"
+    },
+    "verticalDatumDocumentation": "https://geoservices.ign.fr/sites/default/files/2021-07/DC_RGEALTI_2-0.pdf",
+    "wfsCapabilities": "https://data.geopf.fr/wfs?SERVICE=WFS&REQUEST=GetCapabilities&VERSION=2.0.0",
+    "wmtsCapabilities": "https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetCapabilities&VERSION=1.0.0"
+  },
+  "sceneScale": 0.1,
+  "schemaVersion": 1,
+  "solidFeatureCount": 2757,
+  "solidPolygonCount": 2757,
+  "sourceFeatureCount": 15950,
+  "sourceHashes": {
+    "buildings": "88c187e88c0bf9ec009abb1611699cf420efa5f01612a0d5bd11b3c4f6a4ca78",
+    "circuit": "e4255e65b684daae109b95670d5c1f54983d30aa1d9cad7aa57497edfb75587c",
+    "context": "e237ec8eb2850c6c17c1bc4c40cc8ac2865fce29dd2de4a7d1cb7a1e0b1cc941"
+  }
+}

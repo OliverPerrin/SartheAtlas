@@ -70,3 +70,5 @@ npm run preview
 ```
 
 Inspect a fresh homepage in browser Network/Performance panels before starting 3D. Scroll to the circuit guide, then activate an exterior, change cars and navigate away. In the engineering study compare assembled/revealed/reset resource counts. On the atlas enable Buildings, toggle it off/on, pause the lap and inspect the pit route. Use a real phone and throttled network for device-specific profiling; local preview measurements do not establish all-device performance.
+
+The subsequent 2 October pass replaces driving-study JSON parsing/extrusion with Rust-prepared indexed meshes and caches repeated car projection calculations. See [updated measurements and reproduction steps](RUST-PERFORMANCE.md).
