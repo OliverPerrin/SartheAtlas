@@ -1,14 +1,26 @@
 # Asset register
 
-Reviewed 2026-09-27. The site is not yet an exact-2026 replica collection.
+Reviewed 2026-09-30. The site is not yet an exact-2026 replica collection.
 
 ## Current implementation
 
 - Original procedural 3D prototype / GT educational assemblies. No claim of exact manufacturer bodywork, part dimensions, homologation or complete bills of materials.
-- Eleven creator-hosted Sketchfab exterior references, linked and attributed in `src/data.ts`. These are embeds only. The Ferrari reference is Project 212’s freely viewable public preview; its paid source files have not been acquired. An earlier Ferrari community upload was rejected after visual inspection showed broken duplicate cars. No mesh extraction, game ripping or local redistribution.
+- Eighteen creator-hosted Sketchfab exterior references, linked and attributed in `src/data/references.ts`, with a public metadata snapshot in `src/data/modelMetadata.ts`. These are embeds only. The Ferrari reference is Project 212’s freely viewable public preview; its paid source files have not been acquired. An earlier Ferrari community upload was rejected after visual inspection showed broken duplicate cars. No mesh extraction, game ripping or local redistribution.
 - Reference years / variant caveats accompany every embed. Earlier GT3 bodywork cannot establish a 2026 LMGT3 Evo or its race livery.
 - Original team-inspired colour studies. No exact sponsor decals are claimed.
 - Circuit source geometry: OpenStreetMap via tobi/track-atlas, ODbL. See TRACK-ATTRIBUTION.md. Elevation and lap speed are not measured.
+
+## Default detailed view
+
+The homepage, catalog previews and initial car explorer use detailed creator-hosted exteriors. The local procedural chassis remains a separate engineering cutaway. A reference retains its own finish, race number and livery, rather than pretending to reproduce the selected 2026 entry.
+
+Model-bound repairs use only documented public Viewer API controls: physical material factors, exposure/filter adjustments, stable camera framing and visibility/orientation fixes. The M4 source contains mirrored and detached assemblies; the viewer hides a verified list of those nodes and corrects the imported up axis. No source mesh or texture archive is extracted.
+
+Corvette’s initial flat/untextured candidate and a second candidate with shared red front/rear light material were rejected in favour of Patricars’ clean GT3 reference. Ford’s untextured candidate was replaced with a restored textured host reference. The actual SDK scene identities and visual checks are documented in [GT research](assets-gt-research.md).
+
+The strongest freely viewable textured Aston reference is the related customer Valkyrie LM, explicitly labelled as a variant. OpticalDreamSoft’s exact 2026 LMH is represented by an optional official studio film; its paid source asset has not been acquired. See [Hypercar research](assets-hypercar-research.md).
+
+Public embedding and a platform license label do not independently verify upstream ownership. Some community uploads have unresolved provenance, so they remain hosted references rather than cleared source assets for redistribution. Factory accuracy and exact 2026 race liveries are not certified.
 
 ## Cross-series search
 
@@ -32,3 +44,13 @@ Marketplace labels are not proof of correct geometry or permission to serve down
 5. Map named meshes to the system taxonomy with real exploded offsets, hidden layers and picking IDs.
 6. Verify known internal components independently; unknown internals remain labeled unavailable.
 7. Check mobile memory, texture budget, compressed GLB loading and attribution before promotion.
+
+## Circuit geography
+
+The default circuit view uses public IGN orthorectified aerial photography with
+locally generated RGE ALTI terrain tiles and BD TOPO building footprints. The
+driving study uses the same geographic alignment and a coarser ground grid.
+Invented villages, scattered trees, pit buildings and bridge geometry have been
+removed. Buildings with unknown heights remain flat footprints. Source licences,
+precision, tile manifest and ground-versus-road limits are documented in
+[CIRCUIT-DATA.md](CIRCUIT-DATA.md) and [the driving study](circuit-driving-study.md).

@@ -1,0 +1,489 @@
+/* Field, circuit and reference pages share the site's typography and palette. */
+.field-page .field-overview {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin: 0 0 32px;
+}
+.field-overview button {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  padding: 20px 22px;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-top: 2px solid var(--cls);
+  background: linear-gradient(
+    120deg,
+    color-mix(in srgb, var(--cls) 8%, var(--panel)),
+    var(--panel)
+  );
+  border-radius: 8px;
+  transition:
+    border-color 0.2s,
+    background 0.2s;
+}
+.field-overview button:hover,
+.field-overview button.on {
+  border-color: var(--cls);
+}
+.field-overview button > span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: 700 17px var(--display);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.field-overview strong {
+  grid-row: span 2;
+  align-self: center;
+  color: var(--text);
+  font: 700 42px/0.9 var(--display);
+}
+.field-overview small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.field-page .toolbar {
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 18px;
+}
+.field-page .toolbar .search {
+  flex: 1 1 260px;
+  margin-left: auto;
+}
+.field-page .search input::-webkit-search-cancel-button {
+  display: none;
+}
+.field-results {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 22px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.field-results strong {
+  color: var(--text);
+}
+.field-results label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.field-results select {
+  max-width: 180px;
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font: inherit;
+}
+.field-page .entry-card {
+  border-radius: 10px;
+  transition:
+    transform 0.2s,
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+.field-page .entry-card:hover {
+  border-color: color-mix(in srgb, var(--cls) 55%, var(--line));
+  box-shadow: 0 12px 32px #0002;
+}
+.field-page .entry-visual {
+  padding: 22px 15px 12px;
+  background:
+    radial-gradient(
+      ellipse at 50% 100%,
+      color-mix(in srgb, var(--base) 16%, transparent),
+      transparent 70%
+    ),
+    linear-gradient(180deg, #171b23, #0e131b);
+}
+.field-page .entry-visual svg {
+  height: 100px;
+  transition: transform 0.3s;
+}
+.field-page .entry-card:hover .entry-visual svg {
+  transform: translateY(-2px);
+}
+.field-page .entry-body {
+  padding-top: 16px;
+}
+.field-page .entry-team {
+  margin-bottom: 5px;
+  line-height: 1.35;
+}
+.field-page .entry-body strong {
+  display: block;
+  line-height: 1.2;
+}
+.entry-class {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--cls);
+}
+.field-page .entry-crew {
+  min-height: 39px;
+  padding-top: 10px;
+  color: var(--muted);
+}
+.field-page .model-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr));
+}
+.field-page .model-card {
+  border-radius: 10px;
+  transition:
+    transform 0.2s,
+    border-color 0.2s;
+}
+.field-page .model-card:hover {
+  transform: translateY(-3px);
+}
+.field-page .model-card > svg {
+  height: 125px;
+  padding: 5px 0 12px;
+  border-bottom: 1px solid var(--line);
+}
+.field-page .empty p {
+  margin: 12px 0 20px;
+  color: var(--muted);
+}
+.circuit .hud-caption {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 1.3px;
+  text-transform: uppercase;
+}
+.circuit .hud-class {
+  gap: 6px;
+}
+.circuit .hud-class-control {
+  display: grid;
+  grid-template-columns: 1fr;
+  position: relative;
+}
+.circuit .hud-class-control button {
+  padding: 9px 6px;
+  justify-content: center;
+}
+.circuit .hud-class-control label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px;
+  cursor: pointer;
+}
+.circuit .hud-class-control input {
+  margin: 0;
+  width: 14px;
+  height: 14px;
+}
+.circuit .hud-speed span {
+  line-height: 1.2;
+}
+.circuit .hud-speed small {
+  display: block;
+  font: 400 10px var(--body, sans-serif);
+  margin-top: 4px;
+}
+.circuit .hud-section {
+  min-height: 22px;
+}
+.circuit .hud-bar i {
+  transition: width 0.12s linear;
+}
+.circuit-hint {
+  position: absolute;
+  left: 28px;
+  top: 160px;
+  padding: 8px 12px;
+  color: #e1e7ed;
+  background: #0a101ba6;
+  backdrop-filter: blur(8px);
+  border-radius: 5px;
+  font-size: 11px;
+  pointer-events: none;
+}
+.circuit .circuit-title h1 {
+  max-width: min(600px, calc(100vw - 365px));
+}
+.circuit .scene-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+}
+.circuit .speed-legend {
+  bottom: 98px;
+}
+.circuit .guide-intro {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--muted);
+  max-width: 430px;
+  margin-bottom: 22px;
+}
+.circuit .guide-map > svg {
+  max-height: 650px;
+}
+.map-corner:focus {
+  outline: none;
+}
+.map-corner:focus-visible > circle:not([fill="transparent"]) {
+  stroke: var(--gold, #efba6b);
+  stroke-width: 30;
+}
+.about .accuracy-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-block: 1px solid var(--line);
+  margin-bottom: 28px;
+  padding-block: 26px;
+  gap: 40px;
+}
+.accuracy-summary strong {
+  display: block;
+  margin: 10px 0 8px;
+  font: 600 24px var(--display);
+}
+.accuracy-summary p {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.about .about-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+.about .about-grid article {
+  border-radius: 10px;
+  padding: 28px;
+}
+.about .about-grid article > p {
+  color: var(--muted);
+}
+.about .about-grid a {
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.about .about-next {
+  margin-top: 38px;
+  padding: 28px 0;
+  border-block: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 22px;
+}
+.about-next h2 {
+  margin-top: 8px;
+  font: 700 30px var(--display);
+}
+@media (max-width: 1050px) {
+  .field-page .field-overview {
+    gap: 9px;
+  }
+  .field-overview button {
+    padding: 17px;
+  }
+  .circuit .circuit-title h1 {
+    font-size: 42px;
+    max-width: 350px;
+  }
+  .circuit .circuit-tools {
+    max-width: calc(100% - 30px);
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  .circuit .circuit-hint {
+    top: 143px;
+  }
+}
+@media (max-width: 720px) {
+  .field-overview button {
+    padding: 14px 11px;
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .field-overview button > span {
+    font-size: 14px;
+    letter-spacing: 0.4px;
+    gap: 5px;
+  }
+  .field-overview strong {
+    grid-row: auto;
+    font-size: 34px;
+  }
+  .field-overview small {
+    font-size: 10px;
+    line-height: 1.4;
+  }
+  .field-page .field-overview {
+    margin-bottom: 22px;
+  }
+  .field-page .entry-grid {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 275px), 1fr));
+  }
+  .field-results {
+    align-items: flex-start;
+    font-size: 12px;
+  }
+  .field-page .toolbar {
+    gap: 10px;
+  }
+  .circuit .circuit-title h1 {
+    max-width: 100%;
+    font-size: clamp(32px, 8vw, 48px);
+  }
+  .circuit .circuit-title {
+    right: 16px;
+  }
+  .circuit .circuit-stage {
+    height: 850px;
+    height: max(780px, calc(100svh - 64px));
+    min-height: 780px;
+  }
+  .circuit .circuit-hint {
+    left: 16px;
+    top: 132px;
+    right: 16px;
+    font-size: 10px;
+    width: fit-content;
+  }
+  .circuit .hud {
+    top: auto;
+    left: 12px;
+    right: 12px;
+    bottom: 86px;
+    width: auto;
+    gap: 8px;
+    padding: 12px;
+  }
+  .circuit .hud-class-control {
+    grid-template-columns: 1fr 27px;
+  }
+  .circuit .hud-class-control button {
+    justify-content: flex-start;
+    padding: 8px;
+  }
+  .circuit .hud-speed strong {
+    font-size: 42px;
+  }
+  .circuit .hud-row {
+    font-size: 11px;
+  }
+  .circuit .hud-section {
+    font-size: 16px;
+    min-height: 19px;
+  }
+  .circuit .circuit-tools {
+    left: 12px;
+    right: 12px;
+    bottom: 16px;
+    max-width: none;
+    transform: none;
+    padding: 8px;
+    border-radius: 10px;
+    gap: 8px;
+  }
+  .circuit .circuit-tools .tool {
+    flex-shrink: 0;
+  }
+  .circuit .corner-card {
+    top: 174px;
+    bottom: auto;
+    left: 12px;
+    width: calc(100% - 24px);
+    max-height: 220px;
+    overflow-y: auto;
+    padding: 16px;
+  }
+  .circuit .corner-card h2 {
+    font-size: 27px;
+  }
+  .circuit .corner-card p {
+    font-size: 12px;
+  }
+  .circuit .circuit-guide {
+    padding: 38px 18px;
+    gap: 28px;
+    grid-template-columns: 1fr;
+  }
+  .circuit .guide-map h2 {
+    font-size: 36px;
+  }
+  .about .about-grid,
+  .about .accuracy-summary {
+    grid-template-columns: 1fr;
+  }
+  .about .accuracy-summary {
+    gap: 24px;
+  }
+  .about .about-grid article {
+    padding: 22px;
+  }
+  .about .about-next {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .field-page .entry-card,
+  .field-page .entry-visual svg,
+  .field-page .model-card,
+  .circuit .hud-bar i {
+    transition: none;
+  }
+}
+.circuit .guide-map a svg {
+  width: 12px;
+  height: 12px;
+  max-height: none;
+  flex-shrink: 0;
+}
+@media (max-width: 720px) {
+  .field-page .page-head {
+    margin-bottom: 24px;
+  }
+  .field-page .page-head .lead {
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .field-page .overview-entry-label {
+    display: none;
+  }
+  .field-page .class-banner {
+    flex-direction: column;
+    gap: 5px;
+    padding: 12px 14px;
+  }
+  .field-page .class-banner strong {
+    font-size: 18px;
+  }
+  .field-page .class-banner p {
+    font-size: 12px;
+  }
+}
+
+.field-page .entry-visual {
+  padding: 0;
+}
+.field-page .entry-visual .car-preview {
+  height: 180px;
+}
+.field-page .model-card .car-preview {
+  height: 180px;
+}
+.field-page .entry-visual .car-preview-label {
+  padding: 14px 4px 0;
+  background: linear-gradient(transparent, #070b12b0);
+}
