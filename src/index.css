@@ -1,62 +1,53 @@
-@import url("https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,500;0,600;0,700;1,600;1,700&family=DM+Sans:wght@400;450;500;550;600;650;700&family=Manrope:wght@400;500;600;650;700;750;800&display=swap");
 :root {
-  font-family: "DM Sans", sans-serif;
-  color: #11134f;
-  background: #f0f1f8;
+  --bg: #070b12;
+  --bg2: #0c121c;
+  --panel: #101824;
+  --panel2: #162130;
+  --line: rgba(173, 192, 217, 0.12);
+  --line2: rgba(173, 192, 217, 0.24);
+  --text: #f0f3f7;
+  --muted: #94a1b5;
+  --dim: #738197;
+  --blue: #3d7bff;
+  --hyper: #e4002b;
+  --lmp2: #1d6bff;
+  --gt3: #ff7a00;
+  --display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --radius: 8px;
+  font-family: "DM Sans", system-ui, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  color-scheme: dark;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  font-weight: 400;
 }
 * {
   box-sizing: border-box;
 }
 body {
   margin: 0;
-  min-width: 360px;
+  min-width: 280px;
+  overflow-x: clip;
+  background: var(--bg);
 }
 button,
 input,
 select {
   font: inherit;
-}
-button,
-a,
-input,
-select {
-  -webkit-tap-highlight-color: transparent;
+  color: inherit;
 }
 button {
   cursor: pointer;
-}
-button {
-  color: inherit;
+  border: 0;
+  background: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 a {
   color: inherit;
-}
-button:focus-visible,
-a:focus-visible,
-input:focus-visible,
-select:focus-visible {
-  outline: 2px solid #d17930;
-  outline-offset: 4px;
-}
-button {
-  border: 0;
-  background: none;
-}
-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-button svg,
-a svg {
-  flex-shrink: 0;
-}
-::selection {
-  background: #c8c8e2;
+  text-underline-offset: 4px;
 }
 h1,
 h2,
@@ -64,9 +55,33 @@ h3,
 p {
   margin: 0;
 }
-button {
-  touch-action: manipulation;
+:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 3px;
+  border-radius: 4px;
 }
-a {
-  text-underline-offset: 4px;
+::selection {
+  background: rgba(61, 123, 255, 0.45);
+}
+button svg,
+a svg {
+  flex-shrink: 0;
+}
+kbd {
+  font:
+    600 11px/1 "DM Sans",
+    sans-serif;
+  padding: 3px 6px;
+  border: 1px solid var(--line2);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  background: var(--panel2);
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+  }
 }

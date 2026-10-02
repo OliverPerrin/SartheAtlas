@@ -1,0 +1,654 @@
+/* The home page is an editorial entrance to the interactive studio. */
+.home .atelier-hero {
+  height: 700px;
+  min-height: 0;
+  max-height: none;
+  display: grid;
+  grid-template-columns: minmax(0, 40%) minmax(0, 60%);
+  grid-template-rows: minmax(0, 1fr) 100px;
+  background: #080c13;
+}
+.home .atelier-hero::before {
+  display: none;
+}
+.home .atelier-hero .hero-copy {
+  grid-column: 1;
+  grid-row: 1;
+  padding: 92px 0 30px clamp(24px, 4.5vw, 80px);
+  max-width: none;
+  align-self: center;
+  pointer-events: none;
+}
+.home .atelier-hero .hero-copy a {
+  pointer-events: auto;
+}
+.home .atelier-hero .kicker {
+  font:
+    500 10px/1.5 "DM Sans",
+    sans-serif;
+  letter-spacing: 1.9px;
+  color: #a2adbc;
+  white-space: nowrap;
+}
+.edition-mark {
+  width: 18px;
+  height: 3px;
+  background: #ed3449;
+}
+.home .atelier-hero h1 {
+  font-size: clamp(64px, 7.3vw, 112px);
+  line-height: 0.92;
+  letter-spacing: -0.4px;
+  margin: 28px 0;
+  white-space: nowrap;
+}
+.home .atelier-hero h1 em {
+  color: #f2f4f7;
+  -webkit-text-stroke: 0;
+}
+.home .atelier-hero .hero-copy p {
+  max-width: 370px;
+  font-size: 15px;
+  line-height: 1.85;
+  color: #a4adbc;
+  padding-right: 20px;
+}
+.home .atelier-hero .hero-cta {
+  align-items: center;
+  gap: 22px;
+  margin-top: 32px;
+}
+.hero-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  text-decoration: none;
+  color: #c6ccd4;
+  font-size: 12px;
+}
+.hero-secondary:hover {
+  color: #fff;
+}
+.hero-chapters {
+  display: flex;
+  gap: 18px;
+  margin-top: 50px;
+  color: #626e80;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.65px;
+}
+.home .atelier-hero .hero-canvas {
+  min-width: 0;
+  min-height: 0;
+  position: relative;
+  inset: auto;
+  grid-column: 2;
+  grid-row: 1;
+  overflow: hidden;
+}
+.hero-poster {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+}
+.hero-load-model {
+  position: absolute;
+  z-index: 4;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 14px 18px;
+  background: #101925e8;
+  border: 1px solid #ffffff40;
+  border-radius: 5px;
+  font-size: 12px;
+  color: #eee5d3;
+  box-shadow: 0 8px 30px #0005;
+}
+.hero-load-model:hover {
+  background: #1b2734;
+  border-color: #e6d9bb88;
+}
+.home .atelier-hero .hero-canvas::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, #080c13, transparent 15%, transparent 90%);
+  pointer-events: none;
+}
+.hero-race-number {
+  position: absolute;
+  top: 44px;
+  right: 40px;
+  z-index: 1;
+  font: 800 150px/1 var(--display);
+  font-style: italic;
+  color: #fff;
+  opacity: 0.045;
+  pointer-events: none;
+}
+.hero-view-label {
+  position: absolute;
+  left: 8%;
+  bottom: 32px;
+  z-index: 2;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #a7b0bd;
+  pointer-events: none;
+}
+.hero-view-label > span:last-child {
+  color: #606d7f;
+  margin-left: 10px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.studio-dot {
+  width: 5px;
+  height: 5px;
+  background: #9eb8d2;
+  border-radius: 50%;
+}
+.hero-turntable {
+  position: absolute;
+  bottom: 23px;
+  right: 36px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #bec7d5;
+  border: 1px solid #ffffff18;
+  border-radius: 5px;
+  padding: 10px 13px;
+  font-size: 10px;
+  background: #0b111bc4;
+}
+.hero-turntable:hover {
+  color: white;
+  border-color: #ffffff50;
+}
+.hero-model-loading {
+  height: 100%;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 14px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.home .atelier-hero .hero-caption {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  position: relative;
+  inset: auto;
+  background: #0b1019;
+  backdrop-filter: none;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  padding: 0 clamp(24px, 4.5vw, 80px);
+  gap: 40px;
+}
+.hero-car-identity {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex: 1;
+}
+.home .atelier-hero .hero-caption strong {
+  font-size: 23px;
+  letter-spacing: 0.5px;
+  margin: 4px 0;
+}
+.home .atelier-hero .hero-caption .hero-car-category {
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: 1.8px;
+  color: #737f91;
+}
+.home .atelier-hero .hero-caption .plate {
+  color: #fff;
+  font-size: 19px;
+  border: 0;
+  border-radius: 3px;
+  width: 48px;
+  height: 42px;
+}
+.home .atelier-hero .hero-caption span {
+  font-size: 10px;
+}
+.hero-car-spec {
+  display: grid;
+  gap: 8px;
+}
+.hero-car-spec > span {
+  color: #69758a !important;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 9px !important;
+}
+.hero-car-spec strong {
+  font:
+    500 12px "DM Sans",
+    sans-serif !important;
+  text-transform: none !important;
+  margin: 0 !important;
+}
+.hero-car-spec a {
+  font-size: 10px;
+  color: #a1acba;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.hero-selector {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 14px;
+}
+.hero-selector > span {
+  margin-right: 14px;
+  font-size: 12px !important;
+  color: white !important;
+  font-variant-numeric: tabular-nums;
+}
+.hero-selector i {
+  color: #69758a;
+  font-style: normal;
+}
+.hero-selector button {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line2);
+  border-radius: 50%;
+  color: #c4cbd5;
+}
+.hero-selector button:hover {
+  background: #ffffff0b;
+  border-color: #fff;
+}
+.home .stat-strip {
+  padding: 0 clamp(24px, 4.5vw, 80px);
+  background: #070b12;
+}
+.home .stat-strip div {
+  padding: 26px 0 28px 26px;
+}
+.home .stat-strip div:first-child {
+  padding-left: 0;
+}
+.home .stat-strip strong {
+  font-size: 39px;
+}
+.home .stat-strip span {
+  font:
+    500 9px "DM Sans",
+    sans-serif;
+  letter-spacing: 1.1px;
+}
+.home .section {
+  padding: 90px clamp(24px, 4.5vw, 80px);
+}
+.home .section-head h2 {
+  font-size: clamp(42px, 4.5vw, 66px);
+  line-height: 1;
+  letter-spacing: 0.2px;
+}
+.home .section-head h2 em {
+  color: #8c98aa;
+  -webkit-text-stroke: 0;
+}
+.home .section-head > p {
+  font-size: 14px;
+  line-height: 1.8;
+  max-width: 560px;
+}
+.home .section-head .kicker {
+  font:
+    500 10px "DM Sans",
+    sans-serif;
+  letter-spacing: 1.7px;
+}
+.home .class-cards {
+  gap: 20px;
+}
+.home .class-card {
+  background: linear-gradient(155deg, #111824, #090e17);
+  border-radius: 6px;
+  border-top-width: 2px;
+  gap: 18px;
+  padding: 25px;
+}
+.class-profile {
+  position: relative;
+  margin: 15px -6px 4px;
+}
+.class-profile > span {
+  position: absolute;
+  top: 0;
+  font: 800 82px var(--display);
+  opacity: 0.035;
+}
+.home .class-card h3 {
+  font-size: 24px;
+  min-height: 50px;
+}
+.home .class-card p {
+  font-size: 12px;
+  line-height: 1.8;
+}
+.home .class-card dl {
+  border-top: 1px solid var(--line);
+  padding-top: 18px;
+  gap: 18px 10px;
+}
+.home .class-card dt {
+  font-size: 9px;
+}
+.home .class-card dd {
+  font-size: 11px;
+}
+.home .class-card .card-link {
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid var(--line);
+  padding-top: 18px;
+  margin-top: 8px;
+  font-size: 14px;
+}
+.engineering-section {
+  border-top: 1px solid var(--line);
+}
+.engineering-features {
+  display: grid;
+  gap: 18px;
+  margin: 28px 0 32px;
+}
+.engineering-features > div {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  color: #6f85a2;
+}
+.engineering-features span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.65;
+}
+.engineering-features strong {
+  display: block;
+  font-size: 13px;
+  color: var(--text);
+  font-weight: 500;
+  margin-bottom: 3px;
+}
+.home .mini-car {
+  border-radius: 5px;
+  background: #0c121d;
+}
+.home .mini-car > span {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+}
+.home .mini-car > span svg {
+  width: 13px;
+  height: 13px;
+  margin-left: auto;
+  color: #66748a;
+}
+.home .track-teaser {
+  border-top: 1px solid var(--line);
+}
+.home .teaser-map {
+  position: relative;
+  background: radial-gradient(ellipse, #122139, #080e17 75%);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.home .teaser-map svg {
+  height: 400px;
+}
+.map-coordinate {
+  position: absolute;
+  bottom: 20px;
+  left: 22px;
+  color: #64758e;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+}
+.home .track-teaser .section-head {
+  margin: 0;
+}
+.home .track-teaser .btn {
+  margin-top: 26px;
+}
+.home-accuracy {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  color: #748399;
+  margin-top: 20px;
+  text-decoration: none;
+}
+@media (min-width: 821px) and (max-width: 1180px) {
+  .home .class-cards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .home .class-card {
+    padding: 18px;
+  }
+  .home .class-card h3 {
+    min-height: 75px;
+  }
+  .hero-car-spec:nth-of-type(3) {
+    display: none;
+  }
+  .home .atelier-hero .hero-caption {
+    gap: 24px;
+  }
+}
+@media (max-width: 1000px) {
+  .home .atelier-hero {
+    grid-template-columns: minmax(0, 43%) minmax(0, 57%);
+    height: 660px;
+  }
+  .home .atelier-hero h1 {
+    font-size: 78px;
+  }
+  .hero-chapters {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .hero-turntable {
+    right: 20px;
+  }
+  .hero-view-label > span:last-child {
+    display: none;
+  }
+  .home .atelier-hero .hero-cta {
+    gap: 16px;
+  }
+}
+@media (max-width: 820px) {
+  .home .atelier-hero {
+    height: auto;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 370px 94px;
+  }
+  .home .atelier-hero .hero-copy {
+    grid-row: 1;
+    padding: 48px 24px 0;
+  }
+  .home .atelier-hero h1 {
+    font-size: clamp(64px, 12vw, 90px);
+  }
+  .home .atelier-hero .hero-copy p {
+    max-width: 460px;
+    padding: 0;
+    font-size: 14px;
+  }
+  .home .atelier-hero .hero-cta {
+    margin-top: 25px;
+  }
+  .hero-chapters {
+    display: none;
+  }
+  .home .atelier-hero .hero-canvas {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .home .atelier-hero .hero-canvas::after {
+    background: linear-gradient(#080c13, transparent 15%);
+  }
+  .hero-race-number {
+    font-size: 110px;
+    top: 10px;
+    right: 24px;
+  }
+  .hero-view-label {
+    left: 24px;
+    bottom: 21px;
+    font-size: 8px;
+  }
+  .hero-turntable {
+    bottom: 12px;
+    right: 24px;
+  }
+  .home .atelier-hero .hero-caption {
+    grid-row: 3;
+    padding: 0 24px;
+    gap: 12px;
+  }
+  .hero-car-spec {
+    display: none;
+  }
+  .home .atelier-hero .hero-caption strong {
+    font-size: 20px;
+  }
+  .hero-selector {
+    margin-left: 0;
+  }
+  .hero-selector > span {
+    display: none;
+  }
+  .home .stat-strip {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    padding: 0 16px;
+  }
+  .home .stat-strip div {
+    padding: 20px 8px;
+    border-bottom: 0;
+    text-align: center;
+  }
+  .home .stat-strip div:first-child {
+    padding-left: 8px;
+  }
+  .home .stat-strip strong {
+    font-size: 30px;
+  }
+  .home .stat-strip span {
+    font-size: 7px;
+    letter-spacing: 0.3px;
+  }
+  .home .section {
+    padding: 60px 24px;
+  }
+  .home .class-cards {
+    grid-template-columns: 1fr;
+  }
+  .home .class-card h3 {
+    min-height: 0;
+  }
+  .home .class-sil {
+    height: 125px;
+  }
+  .home .grid-cars {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .home .mini-car {
+    padding: 14px 10px;
+  }
+  .home .mini-car > span {
+    flex-wrap: wrap;
+  }
+  .home .mini-car > span svg {
+    display: none;
+  }
+}
+@media (max-width: 400px) {
+  .home .atelier-hero .kicker {
+    font-size: 9px;
+    letter-spacing: 1.3px;
+  }
+  .hero-car-identity {
+    gap: 10px;
+  }
+  .home .atelier-hero .hero-caption {
+    padding: 0 16px;
+  }
+  .hero-selector button {
+    width: 31px;
+    height: 31px;
+  }
+  .home .atelier-hero .hero-caption strong {
+    font-size: 18px;
+  }
+  .home .atelier-hero .hero-cta {
+    gap: 12px;
+  }
+  .hero-secondary {
+    font-size: 11px;
+  }
+}
+
+.home .hero-canvas .realistic-viewer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.home .hero-turntable {
+  text-decoration: none;
+}
+.home .class-card .class-sil {
+  height: 155px;
+}
+.home .mini-car > .car-preview {
+  height: 110px;
+  margin-bottom: 12px;
+  border-radius: 3px;
+}
+.home .hero-canvas::after {
+  z-index: 1;
+}
+@media (max-width: 820px) {
+  .home .mini-car > .car-preview {
+    height: 90px;
+  }
+}
+.home .atelier-hero .hero-canvas::after {
+  display: none;
+}
+.home .hero-canvas > .exterior-film {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}

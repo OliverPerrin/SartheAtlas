@@ -1,0 +1,35 @@
+.car-preview {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  background: #0b0f15;
+}
+.car-preview > picture {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.car-preview > img,
+.car-preview > picture > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.car-preview > svg {
+  width: 100%;
+  height: 100%;
+}
+.car-preview-label {
+  position: absolute;
+  bottom: 8px;
+  left: 12px;
+  right: 12px;
+  font:
+    500 8px/1.5 "DM Sans",
+    sans-serif;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  color: #d1d7de;
+  text-shadow: 0 1px 6px black;
+}

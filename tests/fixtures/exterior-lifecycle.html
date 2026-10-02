@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Exterior lifecycle verification</title>
+  </head>
+  <body style="margin: 0; background: #111; color: #fff; font: 16px system-ui">
+    <div id="fixture"></div>
+    <script type="module">
+      import React, { useState } from "react";
+      import { createRoot } from "react-dom/client";
+      import ExteriorViewer from "/src/ExteriorViewer.tsx";
+      import { exteriorReferences } from "/src/data/references.ts";
+      import {
+        exteriorTuning,
+        materialRecipeFor,
+      } from "/src/data/exteriorTuning.ts";
+      function Fixture() {
+        const [active, setActive] = useState(false);
+        const [car, setCar] = useState("aston");
+        const reference = exteriorReferences[car];
+        return React.createElement(
+          React.Fragment,
+          null,
+          React.createElement(
+            "div",
+            { style: { padding: 16 } },
+            React.createElement(
+              "button",
+              { onClick: () => setActive((value) => !value) },
+              active ? "Unload model" : "Activate model",
+            ),
+            React.createElement(
+              "button",
+              {
+                onClick: () =>
+                  setCar((value) => (value === "aston" ? "bmw" : "aston")),
+              },
+              "Switch reference",
+            ),
+          ),
+          React.createElement(
+            "div",
+            { style: { width: "100%", height: 520 } },
+            React.createElement(ExteriorViewer, {
+              id: reference.id,
+              title: "Lifecycle test exterior",
+              poster: reference.poster,
+              autoLoad: false,
+              active,
+              ...exteriorTuning[reference.id],
+              materialOverrides: materialRecipeFor(reference.id),
+            }),
+          ),
+          React.createElement(
+            "div",
+            { style: { height: 1800, padding: 16 } },
+            "Scroll away to verify renderer pause",
+          ),
+        );
+      }
+      createRoot(document.getElementById("fixture")).render(
+        React.createElement(Fixture),
+      );
+    </script>
+  </body>
+</html>
