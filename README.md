@@ -2,7 +2,7 @@
 
 An independent, open-source Le Mans car and circuit explorer. Built with React, TypeScript, Three.js and React Three Fiber, with a midnight-navy, electric-blue, red and white identity inspired by modern Le Mans / WEC.
 
-[Contribute](CONTRIBUTING.md) · [Report a bug](https://github.com/OliverPerrin/SartheAtlas/issues/new/choose) · [License](LICENSE) · [Third-party notices](THIRD_PARTY_NOTICES.md)
+[Live site](https://sartheatlas.vercel.app) · [Contribute](CONTRIBUTING.md) · [Report a bug](https://github.com/OliverPerrin/SartheAtlas/issues/new/choose) · [License](LICENSE) · [Third-party notices](THIRD_PARTY_NOTICES.md)
 
 ## Run locally
 
