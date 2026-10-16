@@ -1,12 +1,16 @@
 # Sarthe Atlas
 
-An independent Le Mans car and circuit explorer. Built with React, TypeScript, Three.js and React Three Fiber, with a midnight-navy, electric-blue, red and white identity inspired by modern Le Mans / WEC.
+An independent, open-source Le Mans car and circuit explorer. Built with React, TypeScript, Three.js and React Three Fiber, with a midnight-navy, electric-blue, red and white identity inspired by modern Le Mans / WEC.
 
-## Run
+[Contribute](CONTRIBUTING.md) · [Report a bug](https://github.com/OliverPerrin/SartheAtlas/issues/new/choose) · [License](LICENSE) · [Third-party notices](THIRD_PARTY_NOTICES.md)
+
+## Run locally
 
 Requires Node.js 24 or newer.
 
 ```sh
+git clone https://github.com/OliverPerrin/SartheAtlas.git
+cd SartheAtlas
 npm ci
 npm run dev
 ```
@@ -19,6 +23,12 @@ npm run preview
 ```
 
 The production output is `dist/`. It is a static site suitable for Vercel, Netlify or any static host. Navigation uses query parameters, so deep links need no server rewrites. No API keys or backend are required. Google Fonts, the detailed Sketchfab exterior viewers and IGN aerial/cartographic tiles use third-party requests. Elevation tiles, building data, the lap outline and the engineering cutaway are served locally.
+
+## Contributing
+
+Source corrections, accessibility improvements, rendering fixes and documentation are welcome. Start with [the contribution guide](CONTRIBUTING.md) for setup, project structure, checks and evidence requirements. Please discuss large changes in an issue first.
+
+The catalogue is a dated provisional snapshot, not a live entry list. Keep source dates and uncertainty visible when contributing corrections. Original code contributions use the MIT license; third-party assets and geographic data retain their own terms.
 
 ## Included
 
@@ -86,6 +96,6 @@ This fetches the public sources recorded in the context and manifest. It require
 - [Oreca 07 media kit](https://www.oreca.com/wp-content/uploads/2017/04/ORECA07_MediaKit_EN.pdf)
 - [ACO circuit guide](https://www.24h-lemans.com/fr/actualites/virage-apres-virage-on-vous-decrypte-le-circuit-des-24-heures-du-mans-60667)
 - [track-atlas](https://github.com/tobi/track-atlas) and © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), ODbL.
-- © [IGN Géoplateforme](https://geoservices.ign.fr): BD ORTHO, RGE ALTI, BD TOPO and Plan IGN, [Open Licence 2.0](https://www.etalab.gouv.fr/licence-ouverte-open-licence/).
+- © [IGN Géoplateforme](https://geoservices.ign.fr): BD ORTHO, RGE ALTI, BD TOPO and Plan IGN, [Open Licence 2.0](https://github.com/etalab/licence-ouverte/blob/master/LO.md).
 
 Original code is MIT. The OSM track outline and IGN geography retain their separate data licences: [attribution](docs/TRACK-ATTRIBUTION.md). Creator-hosted models retain their own rights and are embedded, not redistributed. Brand and vehicle names identify the subjects; this project is not affiliated with the ACO, FIA WEC, manufacturers or teams.

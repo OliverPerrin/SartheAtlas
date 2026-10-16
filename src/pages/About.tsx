@@ -74,8 +74,8 @@ export default function About() {
           <p>
             Engine configuration (cylinder count, V angle, turbocharging,
             position), hybrid axle, gearbox and chassis supplier come from
-            public sources for each car. Internal parts are placed where they
-            sit in the real car, but their shapes are simplified.
+            public sources for each car. Internal positions and shapes are representative engineering
+            studies, not verified manufacturer assemblies.
           </p>
           <div className="legend-list">
             {(Object.keys(ruleInfo) as Rule[]).map((r) => (
@@ -138,7 +138,7 @@ export default function About() {
             © IGN · RGE ALTI, BD TOPO, BD ORTHO <ArrowUpRight size={14} />
           </a>
           <a
-            href="https://www.etalab.gouv.fr/licence-ouverte-open-licence/"
+            href="https://github.com/etalab/licence-ouverte/blob/master/LO.md"
             target="_blank"
             rel="noreferrer"
           >
@@ -175,6 +175,32 @@ export default function About() {
               </a>
             );
           })}
+        </article>
+        <article>
+          <span className="kicker">07 · Open source</span>
+          <h2>Help improve the atlas</h2>
+          <p>
+            Explore the code, report a problem or contribute a source-backed
+            correction. Documentation, accessibility and rendering improvements
+            are welcome too.
+          </p>
+          <p>
+            Original code is MIT-licensed. Geographic data and creator-hosted
+            models retain their separate terms; the code license does not grant
+            rights to third-party assets or trademarks.
+          </p>
+          <a href="https://github.com/OliverPerrin/SartheAtlas">
+            View the source <ArrowUpRight size={14} />
+          </a>
+          <a href="https://github.com/OliverPerrin/SartheAtlas/blob/main/CONTRIBUTING.md">
+            Contribution guide <ArrowUpRight size={14} />
+          </a>
+          <a href="https://github.com/OliverPerrin/SartheAtlas/issues/new/choose">
+            Report a bug or source correction <ArrowUpRight size={14} />
+          </a>
+          <a href="https://github.com/OliverPerrin/SartheAtlas/blob/main/THIRD_PARTY_NOTICES.md">
+            Licenses & third-party notices <ArrowUpRight size={14} />
+          </a>
         </article>
       </div>
       <div className="about-next">

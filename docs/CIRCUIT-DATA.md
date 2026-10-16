@@ -24,7 +24,7 @@ The local terrain manifest lists 171 PNG Terrain-RGB tiles at zooms 9–15, tota
 
 The Three.js fallback uses a separate 112 × 165 ground grid resampled at roughly 50 m intervals. It must not be described as having the raster tile's effective resolution. Coarse output tiles include coverage beyond the circuit, so their overall height range is not the lap’s elevation range. Thirteen independent altitude API/raster comparisons found a maximum difference of 0.126 m; this checks conversion and interpolation consistency only, not absolute accuracy against surveyed ground.
 
-IGN data attribution is **© IGN — RGE ALTI, BD TOPO; Licence Ouverte / Open Licence 2.0**. The [Open Licence 2.0](https://www.etalab.gouv.fr/licence-ouverte-open-licence/) applies to the sourced IGN data; the circuit outline separately retains OpenStreetMap contributor credit and ODbL. Acquisition method and source accuracy fields are retained on building records, with unknown precision kept unknown.
+IGN data attribution is **© IGN — RGE ALTI, BD TOPO; Licence Ouverte / Open Licence 2.0**. The [Open Licence 2.0](https://github.com/etalab/licence-ouverte/blob/master/LO.md) applies to the sourced IGN data; the circuit outline separately retains OpenStreetMap contributor credit and ODbL. Acquisition method and source accuracy fields are retained on building records, with unknown precision kept unknown.
 
 ## Elevation and vertical datum
 

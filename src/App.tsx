@@ -101,7 +101,7 @@ export default function App() {
           <div>
             <strong>SARTHE ATLAS</strong>
             <p>
-              An independent guide to the cars and circuit of the 24 Hours of Le
+              An independent, open-source guide to the cars and circuit of the 24 Hours of Le
               Mans. Not affiliated with the ACO, FIA WEC, manufacturers or
               teams.
             </p>
@@ -112,6 +112,12 @@ export default function App() {
             <a {...linkProps("circuit")}>The circuit</a>
             <a {...linkProps("about")}>
               Sources & accuracy <ArrowUpRight size={13} />
+            </a>
+            <a href="https://github.com/OliverPerrin/SartheAtlas">
+              Source on GitHub <ArrowUpRight size={13} />
+            </a>
+            <a href="https://github.com/OliverPerrin/SartheAtlas/blob/main/CONTRIBUTING.md">
+              Contribute <ArrowUpRight size={13} />
             </a>
           </div>
         </footer>

@@ -35,5 +35,14 @@
   },
   "engines": {
     "node": ">=24"
+  },
+  "license": "MIT",
+  "description": "An independent, open-source Le Mans car and circuit explorer.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OliverPerrin/SartheAtlas.git"
+  },
+  "bugs": {
+    "url": "https://github.com/OliverPerrin/SartheAtlas/issues"
   }
 }
