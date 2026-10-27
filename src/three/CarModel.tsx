@@ -22,6 +22,7 @@ import { glazingPanels } from "./glazing.ts";
 import type { SkinPoint } from "./glazing.ts";
 import { slickTyreGeometry } from "./tyre.ts";
 import { CabinOverview, BrakeOverview } from "./DetailPreview.tsx";
+import { Callouts } from "./Callouts.tsx";
 import { studyDetailPolicy } from "./detailPolicy.ts";
 import { rimGeometry, spokeMatrices } from "./wheelGeometry.ts";
 
@@ -1408,6 +1409,9 @@ function WheelAssemblies({
                 width={width}
               />
             </group>
+            {x === body.frontX && side === 1 && (
+              <Callouts system="wheels" body={body} shape={shape} />
+            )}
           </Part>
         )),
       )}
@@ -1561,20 +1565,28 @@ export function CarModel({
           <SkinDetails body={body} shape={shape} car={car} />
           <Mirrors body={body} shape={shape} color={exterior} />
           <Grille body={body} shape={shape} />
+          <Callouts system="body" body={body} shape={shape} />
         </Part>
       )}
       <Part id="wing" offset={[-0.7, 1.25, 0]} {...common}>
         <Wing body={body} shape={shape} entry={entry} paint={paint} />
+        <Callouts system="wing" body={body} shape={shape} />
       </Part>
-      <Part id="lights" offset={[-0.6, 0.6, 0]} {...common}>
-        <HeadLights body={body} shape={shape} />
-        <TailLights body={body} shape={shape} />
-      </Part>
+      {/* Lamp units live in the body panels, so they leave with the bodywork. */}
+      {(!view.bodyRemoved || view.selected === "lights") && (
+        <Part id="lights" offset={[-0.6, 0.6, 0]} {...common}>
+          <HeadLights body={body} shape={shape} />
+          <TailLights body={body} shape={shape} />
+          <Callouts system="lights" body={body} shape={shape} />
+        </Part>
+      )}
       <Part id="floor" offset={[0, -0.5, 0]} {...common}>
         <Floor body={body} />
+        <Callouts system="floor" body={body} shape={shape} />
       </Part>
       {detail.internals && (
         <Part id="chassis" offset={[0, 0.2, 0]} {...common}>
+          <Callouts system="chassis" body={body} shape={shape} />
           {proto ? (
             <>
               <Loft
@@ -1684,6 +1696,7 @@ export function CarModel({
         </Part>
       )}
       <Part id="cockpit" offset={[0, 0.9, 0]} {...common}>
+        <Callouts system="cockpit" body={body} shape={shape} />
         {detail.internals ? (
           <Suspense
             fallback={<CabinOverview car={car} body={body} shape={shape} />}
@@ -1702,12 +1715,15 @@ export function CarModel({
         <Suspense fallback={null}>
           <Part id="fuel" offset={[0, 0.55, 0]} {...common}>
             <FuelAssembly car={car} body={body} shape={shape} />
+            <Callouts system="fuel" body={body} shape={shape} />
           </Part>
           <Part id="engine" offset={[0, 0.75, 0]} {...common}>
             <EngineAssembly car={car} body={body} shape={shape} />
+            <Callouts system="engine" body={body} shape={shape} />
           </Part>
           <Part id="gearbox" offset={[-0.7, 0.3, 0]} {...common}>
             <GearboxAssembly car={car} body={body} shape={shape} />
+            <Callouts system="gearbox" body={body} shape={shape} />
           </Part>
           {car.hybrid && (
             <Part
@@ -1716,6 +1732,7 @@ export function CarModel({
               {...common}
             >
               <HybridAssembly car={car} body={body} shape={shape} />
+              <Callouts system="hybrid" body={body} shape={shape} />
             </Part>
           )}
           {([-1, 1] as const).map((side) => (
@@ -1731,6 +1748,9 @@ export function CarModel({
                 shape={shape}
                 side={side}
               />
+              {side === 1 && (
+                <Callouts system="cooling" body={body} shape={shape} />
+              )}
             </Part>
           ))}
           <DetailReady
@@ -1763,6 +1783,9 @@ export function CarModel({
                   z={c.z}
                   front={c.front}
                 />
+                {c.front && c.s === 1 && (
+                  <Callouts system="suspension" body={body} shape={shape} />
+                )}
               </Part>
               <Part id="brakes" offset={[0, 0.1, c.s * 0.65]} {...common}>
                 <BrakeAssembly
@@ -1772,6 +1795,9 @@ export function CarModel({
                   z={c.z}
                   front={c.front}
                 />
+                {c.front && c.s === 1 && (
+                  <Callouts system="brakes" body={body} shape={shape} />
+                )}
               </Part>
             </Suspense>
           ) : (

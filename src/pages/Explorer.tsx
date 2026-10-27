@@ -9,6 +9,7 @@ import {
 import {
   ArrowUpRight,
   Box,
+  Disc3,
   Eye,
   Layers,
   Moon,
@@ -25,6 +26,7 @@ import {
   Minimize,
   X,
   MousePointer2,
+  PackageOpen,
 } from "lucide-react";
 import { carById, cars, classInfo, classOrder } from "../data/cars.ts";
 import type { Car, ClassName } from "../data/cars.ts";
@@ -580,13 +582,13 @@ export default function Explorer({ params }: { params: URLSearchParams }) {
                 on={wheelsRemoved}
                 onClick={() => setWheelsRemoved(!wheelsRemoved)}
                 label="Remove wheels"
-                icon={<Box size={16} />}
+                icon={<Disc3 size={16} />}
               />
               <Toggle
                 on={sectioned}
                 onClick={() => setSectioned(!sectioned)}
                 label="Open housings"
-                icon={<Box size={16} />}
+                icon={<PackageOpen size={16} />}
               />
               <Toggle
                 on={xray}

@@ -31,10 +31,15 @@ export default function EngineeringDetailPanel({
         </div>
       )}
       <div className="engineering-components">
-        {detail.components.map((part) => (
+        {detail.components.map((part, i) => (
           <details key={part.name}>
             <summary>
-              <span>{part.name}</span>
+              <span>
+                <b className="part-index" aria-hidden="true">
+                  {i + 1}
+                </b>
+                {part.name}
+              </span>
               <small>
                 {part.evidence === "documented"
                   ? "Source documented"

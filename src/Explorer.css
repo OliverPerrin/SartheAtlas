@@ -652,6 +652,20 @@
   color: #e6d9bb;
   line-height: 1.7;
 }
+/* Matches the numbered callouts on the 3D parts. */
+.engineering-components .part-index {
+  display: inline-grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  margin-right: 7px;
+  border-radius: 50%;
+  background: var(--blue);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  vertical-align: 1px;
+}
 .engineering-components summary small {
   display: block;
   font-size: 8px;

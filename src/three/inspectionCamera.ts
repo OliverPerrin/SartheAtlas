@@ -38,11 +38,19 @@ export function inspectionFrame(
       fov: 68,
     };
   if (preset === "pedals")
-    return {
-      position: [roof + 0.12, 0.39 + raised, driver + 0.5] as V3,
-      target: [roof + 0.82, 0.2 + raised, driver] as V3,
-      fov: 55,
-    };
+    // Prototype footwells are enclosed by the tub, so look from inside it,
+    // below the steering wheel; open GT cabins allow a side view.
+    return proto
+      ? {
+          position: [roof + 0.3, 0.34 + raised, driver + 0.1] as V3,
+          target: [roof + 0.82, 0.15 + raised, driver] as V3,
+          fov: 60,
+        }
+      : {
+          position: [roof + 0.12, 0.39 + raised, driver + 0.5] as V3,
+          target: [roof + 0.82, 0.2 + raised, driver] as V3,
+          fov: 55,
+        };
   if (preset === "running")
     return {
       position: [
