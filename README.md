@@ -1,8 +1,18 @@
 # Sarthe Atlas
 
-An independent, open-source Le Mans car and circuit explorer. Built with React, TypeScript, Three.js and React Three Fiber, with a midnight-navy, electric-blue, red and white identity inspired by modern Le Mans / WEC.
+[![Check](https://github.com/OliverPerrin/SartheAtlas/actions/workflows/check.yml/badge.svg)](https://github.com/OliverPerrin/SartheAtlas/actions/workflows/check.yml)
 
-[Live site](https://sartheatlas.vercel.app) · [Contribute](CONTRIBUTING.md) · [Report a bug](https://github.com/OliverPerrin/SartheAtlas/issues/new/choose) · [License](LICENSE) · [Third-party notices](THIRD_PARTY_NOTICES.md)
+An independent, open-source Le Mans car and circuit explorer. Take apart 18 car families from the 2026 24 Hours of Le Mans in interactive 3D, with the parts of each system labelled, then explore the Circuit de la Sarthe over real aerial imagery and terrain. Built with React, TypeScript, Three.js, React Three Fiber and MapLibre.
+
+**[Open the live site →](https://sartheatlas.vercel.app)**
+
+| Engineering studies | Circuit atlas |
+| --- | --- |
+| [![Ferrari 499P powertrain study with numbered callouts matching the component list](docs/media/engineering-study.jpg)](https://sartheatlas.vercel.app/?page=car&car=ferrari&view=study) | [![Circuit de la Sarthe over aerial imagery with the lap simulation](docs/media/circuit-atlas.jpg)](https://sartheatlas.vercel.app/?page=circuit) |
+
+<sub>Engineering studies are original procedural illustrations, not manufacturer CAD. Aerial imagery © IGN BD ORTHO, terrain © IGN RGE ALTI, buildings © IGN BD TOPO, track © OpenStreetMap contributors.</sub>
+
+[Contribute](CONTRIBUTING.md) · [Report a bug](https://github.com/OliverPerrin/SartheAtlas/issues/new/choose) · [License](LICENSE) · [Third-party notices](THIRD_PARTY_NOTICES.md)
 
 ## Run locally
 
@@ -36,6 +46,7 @@ The catalogue is a dated provisional snapshot, not a live entry list. Keep sourc
 - Detailed exterior view by default; separate original prototype and GT engineering studies: component selection, animated exploded view, removable / transparent bodywork, turntable and camera presets.
 - 14 engineering assemblies with component-level roles, interfaces and evidence from 28 primary sources. The hybrid system is excluded for non-hybrid cars.
 - Detailed cockpit, pedal box, powertrain and running-gear close views; removable bodywork and wheels expose the mechanical assemblies.
+- Numbered on-model callouts name the parts of the selected system and match the numbered component list beside the viewer.
 - Open housings reveals sectioned engine and transmission studies that expose pistons, rods, crank/cam hardware, shaft bearings, gear pairs and selectors. Internal dimensions, ratios, valve layout and timing remain illustrative.
 - Team-inspired colour studies and Ferrari number / palette options.
 - 18 attributed creator-hosted detailed exterior references, with explicit year and variant caveats.
