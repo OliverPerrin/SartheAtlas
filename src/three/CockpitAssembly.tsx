@@ -11,7 +11,7 @@ import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.j
 import type { Car } from "../data/cars.ts";
 import type { Body } from "./body.ts";
 import type { Shape } from "./shapes.ts";
-import { Block, Mat, Rod, usePartLook } from "./primitives.tsx";
+import { Block, Mat, Rod, usePartLook, useView } from "./primitives.tsx";
 import type { V3 } from "./primitives.tsx";
 import { cockpitLayout } from "./cockpitLayout.ts";
 import { seatShellGeometry, harnessRibbonGeometry } from "./cockpitGeometry.ts";
@@ -1114,6 +1114,8 @@ export function CockpitAssembly({
 }) {
   const layout = cockpitLayout(car, body, shape),
     { prototype, floor, z, wheel, dash, pedals, seatX } = layout;
+  const view = useView();
+  const lifted = (view.exploded ?? 0) > 0.2;
   const texture = useMemo(() => carbonTexture(), []);
   const fabric = useMemo(() => fabricTexture(), []);
   useEffect(() => () => texture.dispose(), [texture]);
@@ -1121,6 +1123,15 @@ export function CockpitAssembly({
   return (
     <CarbonContext.Provider value={texture}>
       <FabricContext.Provider value={fabric}>
+        {lifted && (
+          <pointLight
+            position={[seatX + 0.05, floor + 1.15, z]}
+            color="#ffe8d0"
+            intensity={16}
+            distance={3.2}
+            decay={2}
+          />
+        )}
         <CockpitTub
           prototype={prototype}
           floor={floor}

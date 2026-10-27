@@ -109,6 +109,9 @@ type PartProps = {
   pickable?: boolean;
   /** Which staged lift carries this part. Defaults to the driveline layer. */
   layer?: LayerId;
+  /** Extra travel once another layer has been removed, e.g. setting a shell aside. */
+  rise?: V3;
+  riseLayer?: LayerId;
 };
 
 function Part({
@@ -120,16 +123,20 @@ function Part({
   children,
   pickable = true,
   layer = "cabin",
+  rise,
+  riseLayer,
 }: PartProps) {
   const ref = useRef<THREE.Group>(null);
   const invalidate = useThree((s) => s.invalidate);
   const gl = useThree((state) => state.gl);
   const target = useMemo(() => new THREE.Vector3(), []);
+  const extra = useMemo(() => new THREE.Vector3(), []);
   useFrame((_, dt) => {
     if (!ref.current) return;
-    target
-      .set(...offset)
-      .multiplyScalar(layerWeights(exploded)[layer]);
+    const layers = layerWeights(exploded);
+    target.set(...offset).multiplyScalar(layers[layer]);
+    if (rise && riseLayer)
+      target.add(extra.set(...rise).multiplyScalar(layers[riseLayer]));
     if (ref.current.position.distanceTo(target) > 0.0005) {
       ref.current.position.lerp(target, 1 - Math.exp(-Math.min(dt, 0.08) * 6));
       refreshShadows(gl);
@@ -1561,8 +1568,10 @@ export function CarModel({
       {!view.bodyRemoved && (
         <Part
           id="body"
-          offset={[0, 0.95, 0]}
+          offset={[0, 1.8, 0]}
           layer="bodywork"
+          rise={[0, 2.8, 0]}
+          riseLayer="cooling"
           {...common}
           pickable={!view.xray}
         >
@@ -1582,21 +1591,29 @@ export function CarModel({
           <Callouts system="body" body={body} shape={shape} />
         </Part>
       )}
-      <Part
-        id="wing"
-        offset={[-0.45, 0.8, 0]}
-        layer="bodywork"
-        {...common}
-      >
-        <Wing body={body} shape={shape} entry={entry} paint={paint} />
-        <Callouts system="wing" body={body} shape={shape} />
-      </Part>
+      {/* The wing is bodywork too, so it leaves with the shell unless the
+          viewer has asked to inspect it. */}
+      {(!view.bodyRemoved || view.selected === "wing") && (
+        <Part
+          id="wing"
+          offset={[-0.55, 1.45, 0]}
+          layer="bodywork"
+          rise={[-0.2, 2.4, 0]}
+          riseLayer="cooling"
+          {...common}
+        >
+          <Wing body={body} shape={shape} entry={entry} paint={paint} />
+          <Callouts system="wing" body={body} shape={shape} />
+        </Part>
+      )}
       {/* Lamp units live in the body panels, so they leave with the bodywork. */}
       {(!view.bodyRemoved || view.selected === "lights") && (
         <Part
           id="lights"
-          offset={[-0.35, 0.35, 0]}
+          offset={[-0.45, 0.8, 0]}
           layer="bodywork"
+          rise={[-0.2, 2.4, 0]}
+          riseLayer="cooling"
           {...common}
         >
           <HeadLights body={body} shape={shape} />
@@ -1606,7 +1623,7 @@ export function CarModel({
       )}
       <Part
         id="floor"
-        offset={[0, 0.1, 0]}
+        offset={[0, -0.18, 0]}
         layer="structure"
         {...common}
       >
@@ -1616,7 +1633,7 @@ export function CarModel({
       {detail.internals && (
         <Part
           id="chassis"
-          offset={[0, 0.28, 0]}
+          offset={[0, 0.32, 0]}
           layer="structure"
           {...common}
         >

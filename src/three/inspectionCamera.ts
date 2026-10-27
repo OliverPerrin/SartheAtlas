@@ -76,6 +76,35 @@ export function inspectionFrame(
     };
   const engine = mechanicalLayout(car, body, shape).engineX;
   const engineRise = 0.5 * layers.cabin;
+  if (preset === "powertrain") {
+    // Front-mid cars are best seen from the front quarter. Mid- and rear-engine
+    // GT cars have the tub, fuel cell, roll hoop and transaxle packed around
+    // the engine, so look in from the rear quarter, low enough to keep the
+    // cylinder banks and headers readable instead of foreshortened.
+    if (car.engine.position === "front-mid")
+      return {
+        position: [
+          engine + 1.15 - 0.08 * layers.cabin,
+          1.48 + engineRise,
+          1.15,
+        ] as V3,
+        target: [engine - 0.08 * layers.cabin, 0.47 + engineRise, 0] as V3,
+        fov: 42,
+      };
+    const rear = car.engine.position === "rear";
+    // Leave headroom for the engine teardown envelope: cam covers travel
+    // 0.13 m along the bank normal and the plenum 0.09 m upwards, so frame
+    // the assembled engine a little wider than its closed silhouette.
+    return {
+      position: [
+        engine - (rear ? 0.9 : 0.44),
+        (rear ? 1.12 : 1.68) + engineRise,
+        rear ? 0.98 : 1.04,
+      ] as V3,
+      target: [engine + (rear ? 0.04 : 0), (rear ? 0.45 : 0.4) + engineRise, 0] as V3,
+      fov: 46,
+    };
+  }
   return {
     position: [
       engine + 1.15 - 0.08 * layers.cabin,

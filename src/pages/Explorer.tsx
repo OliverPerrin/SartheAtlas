@@ -228,7 +228,7 @@ export default function Explorer({ params }: { params: URLSearchParams }) {
       setExploded(0);
       setBodyRemoved(true);
       setSectioned(false);
-      setWheelsRemoved(view === "running");
+      setWheelsRemoved(view === "running" || view === "powertrain");
       setXray(false);
       setRules(false);
       setFocus(false);

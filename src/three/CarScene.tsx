@@ -145,24 +145,27 @@ function Rig({
     const need = extent / Math.tan(half) + (preset === "three" ? 1.2 : 1);
     if (v.length() < need) v.setLength(Math.min(need, 24));
     const layers = layerWeights(lift);
+    // The shell is set aside once cooling starts moving, so it should not keep
+    // the camera pulled back for the inner layers.
+    const outer = Math.max(0, layers.bodywork - layers.cooling);
     if (lift > 0) {
       // Follow the same staged lift as the parts, keeping the separated
       // bodywork and the remaining structure inside the frame.
       v.multiplyScalar(
         1 +
-          layers.bodywork * 0.22 +
+          outer * 0.38 +
           layers.cooling * 0.06 +
           layers.cabin * 0.05,
       );
       if (preset !== "top" && preset !== "under")
-        v.y += layers.bodywork * 0.3 + layers.cabin * 0.08;
+        v.y += outer * 0.78 + layers.cabin * 0.08;
     }
     goal.current = v;
     targetGoal.current.set(
       0,
       preset === "under"
         ? 0.2
-        : 0.45 + layers.bodywork * 0.48 + layers.cabin * 0.12,
+        : 0.45 + outer * 0.85 + layers.cabin * 0.12,
       0,
     );
     invalidate();
