@@ -256,6 +256,7 @@ function Collar({
 }
 
 function Turbocharger({ p, side }: { p: V3; side: number }) {
+  const sectioned = useView().sectioned ?? false;
   // Illustrative cartridge: hot turbine volute, bearing housing, compressor.
   // Wheel blade count and diameters are not a manufacturer drawing.
   const blades = Array.from({ length: 10 }, (_, i) => {
@@ -284,16 +285,55 @@ function Turbocharger({ p, side }: { p: V3; side: number }) {
         rough={0.4}
       />
       <mesh position={[0.086, 0, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
-        <cylinderGeometry args={[0.046, 0.052, 0.042, 28]} />
-        <Mat color="#d7dde0" metal={0.88} rough={0.28} />
+        <cylinderGeometry
+          args={[
+            0.046,
+            0.052,
+            0.042,
+            28,
+            1,
+            sectioned,
+            0,
+            sectioned ? Math.PI : Math.PI * 2,
+          ]}
+        />
+        <Mat
+          color="#d7dde0"
+          metal={0.88}
+          rough={0.28}
+          side={sectioned ? THREE.DoubleSide : undefined}
+        />
       </mesh>
       <mesh position={[0.122, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[0.022, 0.04, 0.034, 24]} />
-        <Mat color="#c5ccd0" metal={0.84} rough={0.26} />
+        <cylinderGeometry
+          args={[
+            0.022,
+            0.04,
+            0.034,
+            24,
+            1,
+            sectioned,
+            0,
+            sectioned ? Math.PI : Math.PI * 2,
+          ]}
+        />
+        <Mat
+          color="#c5ccd0"
+          metal={0.84}
+          rough={0.26}
+          side={sectioned ? THREE.DoubleSide : undefined}
+        />
       </mesh>
       <mesh position={[0.141, 0, 0]} rotation={[0, Math.PI / 2, 0]}>
-        <ringGeometry args={[0.01, 0.023, 24]} />
-        <Mat color="#1b252b" metal={0.45} rough={0.48} side={THREE.DoubleSide} />
+        <ringGeometry
+          args={sectioned ? [0.04, 0.046, 24] : [0.01, 0.023, 24]}
+        />
+        <Mat
+          color="#1b252b"
+          metal={0.45}
+          rough={0.48}
+          side={THREE.DoubleSide}
+        />
       </mesh>
       <Cylinder
         p={[0.066, 0, 0]}
@@ -399,16 +439,29 @@ export function EngineAssembly({ car, body, shape }: AssemblyProps) {
       scale={layout.engineScale}
     >
       <group name="engine-crankcase">
-        <Rounded
-          p={[0, flat ? -0.02 : -0.01, sectioned ? -0.035 : 0]}
-          s={[
-            L * 0.98,
-            flat ? 0.1 : 0.125,
-            sectioned ? 0.18 : flat ? 0.22 : vee ? 0.22 : 0.26,
-          ]}
-          color={CAST}
-          radius={0.014}
-        />
+        {sectioned ? (
+          <>
+            <Rounded
+              p={[0, -0.06, -0.115]}
+              s={[L * 0.98, 0.105, 0.025]}
+              color={CAST}
+              radius={0.006}
+            />
+            <Rounded
+              p={[0, -0.101, 0.112]}
+              s={[L * 0.98, 0.014, 0.035]}
+              color={ALU}
+              radius={0.005}
+            />
+          </>
+        ) : (
+          <Rounded
+            p={[0, flat ? -0.02 : -0.01, 0]}
+            s={[L * 0.98, flat ? 0.1 : 0.125, flat ? 0.22 : vee ? 0.22 : 0.26]}
+            color={CAST}
+            radius={0.014}
+          />
+        )}
         {vee && !sectioned && (
           <Rounded
             p={[0, 0.05, 0]}
@@ -607,28 +660,34 @@ export function EngineAssembly({ car, body, shape }: AssemblyProps) {
             rotation={[bank.angle, 0, 0]}
           >
             <Rounded
-              p={[0, 0.1, bank.side < 0 ? -0.02 : -0.09]}
-              s={[L * 0.96, 0.16, bank.side < 0 ? 0.12 : 0.028]}
+              p={[0, 0.072, -0.105]}
+              s={[L * 0.96, 0.065, 0.018]}
               color="#828b8f"
               radius={0.006}
             />
             <Rounded
-              p={[0, 0.21, bank.side < 0 ? -0.015 : -0.08]}
-              s={[L * 0.92, 0.055, bank.side < 0 ? 0.1 : 0.026]}
+              p={[0, 0.233, -0.105]}
+              s={[L * 0.92, 0.015, 0.022]}
               color={ALU}
               radius={0.005}
             />
             <Rounded
-              p={[0, 0.3, bank.side < 0 ? 0 : -0.07]}
-              s={[L * 0.88, 0.04, bank.side < 0 ? 0.12 : 0.03]}
+              p={[0, 0.3, -0.105]}
+              s={[L * 0.88, 0.025, 0.02]}
               color={cover}
               metal={0.12}
               rough={0.48}
               radius={0.005}
             />
+            <Rounded
+              p={[0, 0.233, 0.1]}
+              s={[L * 0.92, 0.015, 0.023]}
+              color={ALU}
+              radius={0.005}
+            />
             <Repeated
               poses={bank.cylinders.map((x) => ({
-                p: [x, 0.31, bank.side < 0 ? 0.04 : -0.055] as V3,
+                p: [x, 0.31, -0.105] as V3,
               }))}
               size={[0.02, 0.012, 0.04]}
               color="#6d777c"
@@ -637,7 +696,7 @@ export function EngineAssembly({ car, body, shape }: AssemblyProps) {
             <Repeated
               bolt
               poses={bank.cylinders.map((x) => ({
-                p: [x, 0.245, bank.side < 0 ? 0.055 : 0.02] as V3,
+                p: [x, 0.245, 0.101] as V3,
               }))}
             />
           </group>

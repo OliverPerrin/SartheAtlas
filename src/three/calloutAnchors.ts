@@ -60,7 +60,14 @@ export function calloutAnchors(
               e([L * 0.2, car.engine.config === "F" ? 0.29 : 0.4, 0]),
             ),
         a("exhaust", e([L * 0.12, 0.05, 0.285])),
-        a("circuit", e([L * 0.43, 0.2, -0.29])),
+        a(
+          "circuit",
+          e(
+            engineeringLayoutFor(car).drySump
+              ? [L * 0.43, 0.2, -0.29]
+              : [L * 0.36, -0.0825, 0.13],
+          ),
+        ),
       ];
     }
     case "gearbox": {
