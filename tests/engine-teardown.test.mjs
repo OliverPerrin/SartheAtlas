@@ -20,6 +20,7 @@ import {
   barrelTubeRadius,
   barrelTubeGeometry,
   camCoverColor,
+  camCoverPose,
   coverDistances,
   coverLayer,
   coverLayerDelay,
@@ -39,9 +40,14 @@ import {
   turboStudyPositions,
 } from "../src/three/engineTeardown.ts";
 
-test("deck apertures and tilted jackets expose near-bank crowns in the powertrain view", () => {
+test("lifted covers, jackets and deck apertures expose near-bank crowns in the powertrain view", () => {
   const material = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide });
   const jacketGeometry = barrelTubeGeometry();
+  const crownSamples = Array.from({ length: 45 }, (_, i) => {
+    const angle = ((i % 15) * Math.PI * 2) / 15;
+    const radius = (Math.floor(i / 15) + 1) * 0.012;
+    return [Math.cos(angle) * radius, 0.032, Math.sin(angle) * radius];
+  });
   for (const car of cars) {
     const shape = shapes[car.id];
     const body = new Body(shape.body);
@@ -52,6 +58,7 @@ test("deck apertures and tilted jackets expose near-bank crowns in the powertrai
     model.scale.setScalar(layout.engineScale);
     const jackets = [];
     const decks = [];
+    const covers = [];
     for (const bank of mechanism.banks) {
       const cylinders = mechanism.cylinders.filter(
         (c) => c.angle === bank.angle,
@@ -73,6 +80,15 @@ test("deck apertures and tilted jackets expose near-bank crowns in the powertrai
       deck.position.y = 0.2;
       group.add(deck);
       decks.push(deck);
+      const cover = new THREE.Mesh(
+        openCoverGeometry(layout.engineLength * 0.9, width, 0.064),
+        material,
+      );
+      const coverPose = camCoverPose(bank.angle, 1);
+      cover.position.set(...coverPose.position);
+      cover.rotation.set(...coverPose.rotation);
+      group.add(cover);
+      covers.push(cover);
       deck.updateMatrixWorld(true);
       // Test triangle intersections through each machined bore, not just vertices.
       for (const x of xs) {
@@ -116,15 +132,61 @@ test("deck apertures and tilted jackets expose near-bank crowns in the powertrai
         direction.length() - 0.0001,
       );
       assert.equal(
-        ray.intersectObjects([...jackets, ...decks], false).length,
+        ray.intersectObjects([...jackets, ...decks, ...covers], false).length,
         0,
         `${car.id}: crown at ${cylinder.x} is exposed`,
       );
+      for (const [x, y, z] of [
+        ...crownSamples,
+        [0, 0.025, 0],
+        [0.02, 0.025, 0.01],
+        [-0.02, 0.025, 0.01],
+        [0, 0.02, 0.025],
+        [0, 0.02, -0.025],
+      ]) {
+        const target = new THREE.Vector3(
+          ...rotatedBankPoint(cylinder.x + x, 0.174 + y, z, cylinder.angle),
+        ).applyMatrix4(model.matrixWorld);
+        const direction = target.clone().sub(camera);
+        const sampleRay = new THREE.Raycaster(
+          camera,
+          direction.clone().normalize(),
+          0,
+          direction.length() - 0.0001,
+        );
+        assert.equal(
+          sampleRay.intersectObjects(covers, false).length,
+          0,
+          `${car.id}: cam cover clears the crown surface`,
+        );
+      }
     }
     decks.forEach((deck) => deck.geometry.dispose());
+    covers.forEach((cover) => cover.geometry.dispose());
   }
   jacketGeometry.dispose();
   material.dispose();
+});
+
+test("cam covers lift before tipping and return to the original gasket seat", () => {
+  for (const angle of [
+    0,
+    -Math.PI / 2,
+    Math.PI / 2,
+    Math.PI / 3,
+    (65 * Math.PI) / 360,
+  ]) {
+    const seated = camCoverPose(angle, 0);
+    assert.equal(seated.position[1], 0.31);
+    assert.ok(seated.position[0] === 0 && seated.position[2] === 0);
+    assert.ok(seated.rotation.every((value) => value === 0));
+    const raised = camCoverPose(angle, 0.5);
+    assert.equal(raised.position[1], 0.31 + engineCoverTravel.camCover / 2);
+    assert.equal(Math.abs(raised.rotation[0]), 0);
+    const open = camCoverPose(angle, 1);
+    assert.equal(Math.abs(open.rotation[0]), Math.PI / 2);
+    assert.equal(Math.abs(open.position[2]), 0.04);
+  }
 });
 
 test("engine covers finish the driveline band and open housings force full lift", () => {

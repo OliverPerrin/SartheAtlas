@@ -18,6 +18,7 @@ import { refreshShadows } from "./shadowRefresh.ts";
 import {
   barrelTubeGeometry,
   camCoverColor,
+  camCoverPose,
   chargeFlanges,
   coverDistances,
   cylinderDeckGeometry,
@@ -378,7 +379,7 @@ export function EngineConstruction({
           <mesh position={[0, 0.306, 0]} geometry={gasket} receiveShadow>
             <Mat color={GASKET} metal={0.08} rough={0.9} />
           </mesh>
-          <group position={[0, 0.31 + distances.camCover, 0]}>
+          <group {...camCoverPose(bank.angle, phase)}>
             <SharedMesh
               geometry={cover}
               color={coverColor}

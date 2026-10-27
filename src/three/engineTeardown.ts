@@ -66,6 +66,25 @@ export function coverDistances(phase: number) {
   };
 }
 
+// Lift clear of the valve gear before tipping the lid away from the front
+// shoulder view. Both moves reverse to the exact gasket seat when closed.
+export function camCoverPose(bankAngle: number, phase: number) {
+  const fold = coverLayer(phase, 0.5);
+  const direction = Math.cos(bankAngle) - Math.sin(bankAngle) > 0 ? -1 : 1;
+  return {
+    position: [
+      0,
+      0.31 + coverDistances(phase).camCover,
+      direction * 0.04 * fold,
+    ] as [number, number, number],
+    rotation: [((direction * Math.PI) / 2) * fold, 0, 0] as [
+      number,
+      number,
+      number,
+    ],
+  };
+}
+
 export function bankNormal(angle: number): [number, number, number] {
   return [0, Math.cos(angle), Math.sin(angle)];
 }
