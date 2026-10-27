@@ -200,16 +200,16 @@ function gt(o: GtOpts = {}): BodySpec {
   const tf = fa,
     tr = fa + wb / L;
   const noseH = (o.noseH ?? 0.5) - 0.07,
-    hoodH = o.hoodH ?? 0.84,
-    beltH = o.beltH ?? 0.92,
-    roofH = o.roofH ?? 1.2,
+    hoodH = o.hoodH ?? 0.76,
+    beltH = o.beltH ?? 0.86,
+    roofH = o.roofH ?? 1.24,
     ws = o.ws ?? 0.4,
     rs = o.roofStart ?? 0.5,
     re = o.roofEnd ?? 0.66,
     rend = o.rearEnd ?? 0.82,
-    deckH = o.deckH ?? 1.0,
+    deckH = o.deckH ?? 0.95,
     tailH = o.tailH ?? 0.95,
-    cw = o.cabinW ?? 0.6;
+    cw = o.cabinW ?? 0.64;
   const h = W / 2;
   return {
     kind: "gt",
@@ -429,7 +429,7 @@ export const shapes: Record<string, Shape> = {
   },
   // GT3 cars
   "296": {
-    body: gt({ L: 4.6, wb: 2.6, ws: 0.28, roofStart: 0.4, roofEnd: 0.52, rearEnd: 0.8, roofH: 1.17, hoodH: 0.8, deckH: 1.0, noseH: 0.46, cabinW: 0.56 }),
+    body: gt({ L: 4.6, wb: 2.6, ws: 0.28, roofStart: 0.4, roofEnd: 0.52, rearEnd: 0.8, roofH: 1.21, hoodH: 0.72, deckH: 0.95, noseH: 0.46, cabinW: 0.6 }),
     lights: "slim",
     tail: "bar",
     wing: { style: "swan", t: 0.93, y: 1.26, chord: 0.36, span: 1.84, plate: 0.3 },
@@ -440,7 +440,7 @@ export const shapes: Record<string, Shape> = {
     splitter: 0.14,
   },
   corvette: {
-    body: gt({ L: 4.7, wb: 2.72, ws: 0.3, roofStart: 0.41, roofEnd: 0.54, rearEnd: 0.78, roofH: 1.18, hoodH: 0.82, deckH: 1.02, noseH: 0.48, cabinW: 0.56 }),
+    body: gt({ L: 4.7, wb: 2.72, ws: 0.3, roofStart: 0.41, roofEnd: 0.54, rearEnd: 0.78, roofH: 1.22, hoodH: 0.74, deckH: 0.97, noseH: 0.48, cabinW: 0.6 }),
     lights: "slim",
     tail: "split",
     wing: { style: "swan", t: 0.93, y: 1.27, chord: 0.36, span: 1.86, plate: 0.3 },
@@ -451,7 +451,7 @@ export const shapes: Record<string, Shape> = {
     splitter: 0.14,
   },
   mclaren: {
-    body: gt({ L: 4.6, wb: 2.67, ws: 0.27, roofStart: 0.4, roofEnd: 0.5, rearEnd: 0.8, roofH: 1.14, hoodH: 0.76, deckH: 0.98, noseH: 0.44, cabinW: 0.52 }),
+    body: gt({ L: 4.6, wb: 2.67, ws: 0.27, roofStart: 0.4, roofEnd: 0.5, rearEnd: 0.8, roofH: 1.18, hoodH: 0.68, deckH: 0.93, noseH: 0.44, cabinW: 0.56 }),
     lights: "eye",
     tail: "bar",
     wing: { style: "swan", t: 0.93, y: 1.24, chord: 0.36, span: 1.84, plate: 0.3 },
@@ -462,7 +462,7 @@ export const shapes: Record<string, Shape> = {
     splitter: 0.14,
   },
   vantage: {
-    body: gt({ L: 4.55, wb: 2.7, ws: 0.44, roofStart: 0.53, roofEnd: 0.65, rearEnd: 0.84, roofH: 1.2, hoodH: 0.84, deckH: 1.0, noseH: 0.52 }),
+    body: gt({ L: 4.55, wb: 2.7, ws: 0.44, roofStart: 0.53, roofEnd: 0.65, rearEnd: 0.84, roofH: 1.24, hoodH: 0.76, deckH: 0.95, noseH: 0.52 }),
     lights: "slim",
     tail: "bar",
     wing: { style: "swan", t: 0.94, y: 1.25, chord: 0.36, span: 1.86, plate: 0.3 },
@@ -473,7 +473,7 @@ export const shapes: Record<string, Shape> = {
     splitter: 0.14,
   },
   m4: {
-    body: gt({ L: 4.9, W: 2.05, wb: 2.92, ws: 0.4, roofStart: 0.5, roofEnd: 0.67, rearEnd: 0.84, roofH: 1.25, hoodH: 0.88, beltH: 0.96, deckH: 1.03, noseH: 0.56, tailH: 1.0, cabinW: 0.64 }),
+    body: gt({ L: 4.9, W: 2.05, wb: 2.92, ws: 0.4, roofStart: 0.5, roofEnd: 0.67, rearEnd: 0.84, roofH: 1.29, hoodH: 0.8, beltH: 0.9, deckH: 0.98, noseH: 0.56, tailH: 1.0, cabinW: 0.68 }),
     lights: "slim",
     tail: "split",
     wing: { style: "swan", t: 0.94, y: 1.3, chord: 0.38, span: 1.9, plate: 0.3 },
@@ -484,7 +484,7 @@ export const shapes: Record<string, Shape> = {
     splitter: 0.14,
   },
   mercedes: {
-    body: gt({ L: 4.75, wb: 2.63, fa: 0.2, ws: 0.47, roofStart: 0.56, roofEnd: 0.67, rearEnd: 0.86, roofH: 1.2, hoodH: 0.84, deckH: 1.0, noseH: 0.5 }),
+    body: gt({ L: 4.75, wb: 2.63, fa: 0.2, ws: 0.47, roofStart: 0.56, roofEnd: 0.67, rearEnd: 0.86, roofH: 1.24, hoodH: 0.76, deckH: 0.95, noseH: 0.5 }),
     lights: "slim",
     tail: "bar",
     wing: { style: "swan", t: 0.94, y: 1.26, chord: 0.36, span: 1.86, plate: 0.3 },
@@ -495,7 +495,7 @@ export const shapes: Record<string, Shape> = {
     splitter: 0.14,
   },
   ford: {
-    body: gt({ L: 4.85, wb: 2.75, ws: 0.44, roofStart: 0.53, roofEnd: 0.64, rearEnd: 0.86, roofH: 1.22, hoodH: 0.9, beltH: 0.96, deckH: 1.02, noseH: 0.56, tailH: 1.0 }),
+    body: gt({ L: 4.85, wb: 2.75, ws: 0.44, roofStart: 0.53, roofEnd: 0.64, rearEnd: 0.86, roofH: 1.26, hoodH: 0.82, beltH: 0.9, deckH: 0.97, noseH: 0.56, tailH: 1.0 }),
     lights: "slim",
     tail: "tribar",
     wing: { style: "swan", t: 0.94, y: 1.3, chord: 0.38, span: 1.9, plate: 0.3 },
@@ -506,7 +506,7 @@ export const shapes: Record<string, Shape> = {
     splitter: 0.14,
   },
   lexus: {
-    body: gt({ L: 4.75, wb: 2.73, ws: 0.43, roofStart: 0.52, roofEnd: 0.66, rearEnd: 0.84, roofH: 1.22, hoodH: 0.86, beltH: 0.95, deckH: 1.02, noseH: 0.54, tailH: 0.99 }),
+    body: gt({ L: 4.75, wb: 2.73, ws: 0.43, roofStart: 0.52, roofEnd: 0.66, rearEnd: 0.84, roofH: 1.26, hoodH: 0.78, beltH: 0.89, deckH: 0.97, noseH: 0.54, tailH: 0.99 }),
     lights: "spindle",
     tail: "split",
     wing: { style: "swan", t: 0.94, y: 1.29, chord: 0.38, span: 1.9, plate: 0.3 },
@@ -517,7 +517,7 @@ export const shapes: Record<string, Shape> = {
     splitter: 0.14,
   },
   porsche: {
-    body: gt({ L: 4.62, W: 2.05, wb: 2.46, fa: 0.2, ws: 0.3, roofStart: 0.42, roofEnd: 0.54, rearEnd: 0.9, roofH: 1.22, hoodH: 0.78, beltH: 0.9, deckH: 0.98, noseH: 0.48, tailH: 0.94, cabinW: 0.58 }),
+    body: gt({ L: 4.62, W: 2.05, wb: 2.46, fa: 0.2, ws: 0.3, roofStart: 0.42, roofEnd: 0.54, rearEnd: 0.9, roofH: 1.26, hoodH: 0.7, beltH: 0.84, deckH: 0.93, noseH: 0.48, tailH: 0.94, cabinW: 0.62 }),
     lights: "round",
     tail: "bar",
     wing: { style: "swan", t: 0.93, y: 1.3, chord: 0.4, span: 1.9, plate: 0.32 },

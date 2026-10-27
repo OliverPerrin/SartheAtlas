@@ -222,7 +222,7 @@ export default function Explorer({ params }: { params: URLSearchParams }) {
     if (isInspectionPreset(view)) {
       setExploded(0);
       setBodyRemoved(true);
-      setSectioned(view === "powertrain");
+      setSectioned(false);
       setWheelsRemoved(view === "running");
       setXray(false);
       setRules(false);

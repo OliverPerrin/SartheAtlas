@@ -36,7 +36,7 @@ The catalogue is a dated provisional snapshot, not a live entry list. Keep sourc
 - Detailed exterior view by default; separate original prototype and GT engineering studies: component selection, animated exploded view, removable / transparent bodywork, turntable and camera presets.
 - 14 engineering assemblies with component-level roles, interfaces and evidence from 28 primary sources. The hybrid system is excluded for non-hybrid cars.
 - Detailed cockpit, pedal box, powertrain and running-gear close views; removable bodywork and wheels expose the mechanical assemblies.
-- Sectioned engine and transmission studies expose pistons, rods, crank/cam hardware, shaft bearings, gear pairs and selectors. Internal dimensions, ratios, valve layout and timing remain illustrative.
+- Open housings reveals sectioned engine and transmission studies that expose pistons, rods, crank/cam hardware, shaft bearings, gear pairs and selectors. Internal dimensions, ratios, valve layout and timing remain illustrative.
 - Team-inspired colour studies and Ferrari number / palette options.
 - 18 attributed creator-hosted detailed exterior references, with explicit year and variant caveats.
 - Georeferenced Circuit de la Sarthe atlas with IGN aerial photography, real ground relief, mapped buildings, selectable corners and an interactive elevation profile. The sourced pit route includes entry and exit, with overhead inspection and close-up controls. The separate driving study retains illustrative class lap animation.
