@@ -51,14 +51,15 @@ export const linerOuterRadius = 0.049;
 export function coverDistances(phase: number) {
   return {
     camCover:
-      engineCoverTravel.camCover *
-      coverLayer(phase, coverLayerDelay.camCover),
-    barrel: engineCoverTravel.barrel * coverLayer(phase, coverLayerDelay.barrel),
+      engineCoverTravel.camCover * coverLayer(phase, coverLayerDelay.camCover),
+    barrel:
+      engineCoverTravel.barrel * coverLayer(phase, coverLayerDelay.barrel),
     crankcaseSide:
       engineCoverTravel.crankcaseSide *
       coverLayer(phase, coverLayerDelay.crankcaseSide),
     sump: engineCoverTravel.sump * coverLayer(phase, coverLayerDelay.sump),
-    plenum: engineCoverTravel.plenum * coverLayer(phase, coverLayerDelay.plenum),
+    plenum:
+      engineCoverTravel.plenum * coverLayer(phase, coverLayerDelay.plenum),
     compressorCover:
       engineCoverTravel.compressorCover *
       coverLayer(phase, coverLayerDelay.compressorCover),
@@ -70,7 +71,9 @@ export function bankNormal(angle: number): [number, number, number] {
 }
 
 // Bank-local +Z, after the bank's X rotation. This is the open face of the liner.
-export function sleeveOpeningDirection(angle: number): [number, number, number] {
+export function sleeveOpeningDirection(
+  angle: number,
+): [number, number, number] {
   return [0, -Math.sin(angle), Math.cos(angle)];
 }
 
@@ -94,9 +97,8 @@ export type EngineArchitecture = {
 };
 
 export function engineArchitecture(car: Car): EngineArchitecture {
-  const turboCount = (
-    !car.engine.turbo ? 0 : (car.engine.turboCount ?? 2)
-  ) as 0 | 1 | 2;
+  const turboCount = (!car.engine.turbo ? 0 : (car.engine.turboCount ?? 2)) as
+    0 | 1 | 2;
   const config = car.engine.config;
   if (config === "F") {
     return {
@@ -149,7 +151,8 @@ export function engineArchitecture(car: Car): EngineArchitecture {
     };
   }
   return {
-    family: turboCount > 0 ? "twin-turbo-vee-eight" : "naturally-aspirated-vee-eight",
+    family:
+      turboCount > 0 ? "twin-turbo-vee-eight" : "naturally-aspirated-vee-eight",
     turboCount,
     turboSite: turboCount > 0 ? "bank-exhaust" : "none",
     intake: turboCount > 0 ? "charge-manifold" : "airbox",
@@ -234,7 +237,11 @@ export function openCoverGeometry(
     box(length, skirt, wall, [0, skirt / 2, width / 2 - wall / 2]),
     box(length, skirt, wall, [0, skirt / 2, -(width / 2 - wall / 2)]),
     box(wall, skirt, width - wall * 2, [length / 2 - wall / 2, skirt / 2, 0]),
-    box(wall, skirt, width - wall * 2, [-(length / 2 - wall / 2), skirt / 2, 0]),
+    box(wall, skirt, width - wall * 2, [
+      -(length / 2 - wall / 2),
+      skirt / 2,
+      0,
+    ]),
     box(length + flange * 2, wall * 0.7, wall, [
       0,
       wall * 0.35,
@@ -273,15 +280,69 @@ export function gasketFrameGeometry(
 }
 
 // Full water-jacket tube. Seated, it surrounds the open liner half.
-export function barrelTubeGeometry(
-  length = 0.176,
-  radius = barrelTubeRadius,
-) {
+export function barrelTubeGeometry(length = 0.176, radius = barrelTubeRadius) {
   return new THREE.CylinderGeometry(radius, radius, length, 20, 1, true);
 }
 
+// Tilt the removed jackets toward the front shoulder for inspection. They
+// retain their local peel translation; their open ends no longer mask the bore.
+export function jacketInspectionTilt(bankAngle: number, phase: number) {
+  const bankInverse = new THREE.Quaternion().setFromAxisAngle(
+    new THREE.Vector3(1, 0, 0),
+    -bankAngle,
+  );
+  const direction = new THREE.Vector3(1, 1, 1)
+    .normalize()
+    .applyQuaternion(bankInverse);
+  const tilted = new THREE.Quaternion().setFromUnitVectors(
+    new THREE.Vector3(0, 1, 0),
+    direction,
+  );
+  return new THREE.Quaternion().slerp(
+    tilted,
+    coverLayer(phase, coverLayerDelay.barrel),
+  );
+}
+
+// A machined deck with actual bore apertures, not a slab across piston crowns.
+// Hole centres come from the mechanism, including its bank stagger.
+export function cylinderDeckGeometry(
+  length: number,
+  width: number,
+  xs: number[],
+) {
+  const radius = 0.045;
+  const half = Math.max(
+    length * 0.45,
+    ...xs.map((x) => Math.abs(x) + radius + 0.007),
+  );
+  const deck = new THREE.Shape();
+  deck.moveTo(-half, -width / 2);
+  deck.lineTo(half, -width / 2);
+  deck.lineTo(half, width / 2);
+  deck.lineTo(-half, width / 2);
+  deck.closePath();
+  for (const x of xs) {
+    const bore = new THREE.Path();
+    bore.absarc(x, 0, radius, 0, Math.PI * 2, true);
+    deck.holes.push(bore);
+  }
+  const geometry = new THREE.ExtrudeGeometry(deck, {
+    depth: 0.018,
+    bevelEnabled: false,
+    curveSegments: 24,
+  });
+  geometry.rotateX(-Math.PI / 2);
+  geometry.translate(0, -0.009, 0);
+  return geometry;
+}
+
 // Crankcase side cover, open toward local -Z so the gasket face meets the case.
-export function sideShellGeometry(length: number, height: number, depth = 0.016) {
+export function sideShellGeometry(
+  length: number,
+  height: number,
+  depth = 0.016,
+) {
   const wall = 0.006;
   const flange = 0.01;
   return merged([
@@ -290,10 +351,26 @@ export function sideShellGeometry(length: number, height: number, depth = 0.016)
     box(length, wall, depth, [0, -height / 2 + wall / 2, depth / 2]),
     box(wall, height, depth, [length / 2 - wall / 2, 0, depth / 2]),
     box(wall, height, depth, [-length / 2 + wall / 2, 0, depth / 2]),
-    box(length + flange * 2, wall, wall, [0, height / 2 + flange / 2, wall / 2]),
-    box(length + flange * 2, wall, wall, [0, -height / 2 - flange / 2, wall / 2]),
-    box(wall, height + flange * 2, wall, [length / 2 + flange / 2, 0, wall / 2]),
-    box(wall, height + flange * 2, wall, [-length / 2 - flange / 2, 0, wall / 2]),
+    box(length + flange * 2, wall, wall, [
+      0,
+      height / 2 + flange / 2,
+      wall / 2,
+    ]),
+    box(length + flange * 2, wall, wall, [
+      0,
+      -height / 2 - flange / 2,
+      wall / 2,
+    ]),
+    box(wall, height + flange * 2, wall, [
+      length / 2 + flange / 2,
+      0,
+      wall / 2,
+    ]),
+    box(wall, height + flange * 2, wall, [
+      -length / 2 - flange / 2,
+      0,
+      wall / 2,
+    ]),
   ]);
 }
 
@@ -306,7 +383,11 @@ export function sumpPanGeometry(length: number, width: number, depth: number) {
     box(length, depth, wall, [0, -depth / 2, width / 2 - wall / 2]),
     box(length, depth, wall, [0, -depth / 2, -(width / 2 - wall / 2)]),
     box(wall, depth, width - wall * 2, [length / 2 - wall / 2, -depth / 2, 0]),
-    box(wall, depth, width - wall * 2, [-(length / 2 - wall / 2), -depth / 2, 0]),
+    box(wall, depth, width - wall * 2, [
+      -(length / 2 - wall / 2),
+      -depth / 2,
+      0,
+    ]),
     box(length + flange * 2, wall * 0.7, wall, [
       0,
       -wall * 0.2,
@@ -384,11 +465,7 @@ export function headerPaths(car: Car, length: number) {
         );
       const mid: [number, number, number] = nearest
         ? [length * 0.12, 0.05, side * 0.285]
-        : [
-            port[0] * 0.55 + collector[0] * 0.45,
-            0.05,
-            side * 0.285,
-          ];
+        : [port[0] * 0.55 + collector[0] * 0.45, 0.05, side * 0.285];
       return [port, mid, collector] as [number, number, number][];
     });
   });

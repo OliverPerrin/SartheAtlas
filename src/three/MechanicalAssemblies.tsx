@@ -303,6 +303,14 @@ function Turbocharger({
         metal={0.92}
         rough={0.22}
       />
+      <Cylinder
+        p={[0.066, 0, 0]}
+        radius={0.033}
+        length={0.008}
+        axis="x"
+        color={TI}
+        rough={0.3}
+      />
       <group position={[compressorLift, 0, 0]}>
         <mesh position={[0.086, 0, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
           <cylinderGeometry args={[0.046, 0.052, 0.042, 28, 1, true]} />
@@ -316,14 +324,6 @@ function Turbocharger({
           <ringGeometry args={[0.01, 0.023, 24]} />
           <Mat color="#1b252b" metal={0.45} rough={0.48} side={THREE.DoubleSide} />
         </mesh>
-        <Cylinder
-          p={[0.066, 0, 0]}
-          radius={0.033}
-          length={0.008}
-          axis="x"
-          color={TI}
-          rough={0.3}
-        />
         <Repeated
           bolt
           poses={Array.from({ length: 6 }, (_, i) => {

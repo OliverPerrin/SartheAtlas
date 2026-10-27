@@ -20,10 +20,12 @@ import {
   camCoverColor,
   chargeFlanges,
   coverDistances,
+  cylinderDeckGeometry,
   engineArchitecture,
   gasketFrameGeometry,
   headerPaths,
   intakePaths,
+  jacketInspectionTilt,
   openCoverGeometry,
   plenumPlacement,
   sideShellGeometry,
@@ -31,9 +33,10 @@ import {
   turboStudyPositions,
 } from "./engineTeardown.ts";
 
-const machinerySections = import("./MachinerySections.tsx");
 const EngineSection = lazy(() =>
-  machinerySections.then((module) => ({ default: module.EngineSection })),
+  import("./MachinerySections.tsx").then((module) => ({
+    default: module.EngineSection,
+  })),
 );
 
 const CAST = "#626c72";
@@ -109,7 +112,13 @@ function SharedMesh({
   doubleSide?: boolean;
 }) {
   return (
-    <mesh position={position} rotation={rotation} geometry={geometry} castShadow receiveShadow>
+    <mesh
+      position={position}
+      rotation={rotation}
+      geometry={geometry}
+      castShadow
+      receiveShadow
+    >
       <Mat
         color={color}
         metal={metal}
@@ -129,6 +138,7 @@ function AlongBank({
   metal = 0.76,
   rough = 0.4,
   doubleSide = false,
+  tilt,
 }: {
   xs: number[];
   y: number;
@@ -138,21 +148,27 @@ function AlongBank({
   metal?: number;
   rough?: number;
   doubleSide?: boolean;
+  tilt?: THREE.Quaternion;
 }) {
   const mesh = useRef<THREE.InstancedMesh>(null);
   const key = xs.join(",");
   useLayoutEffect(() => {
     if (!mesh.current) return;
     const matrix = new THREE.Matrix4();
+    if (tilt) matrix.makeRotationFromQuaternion(tilt);
     xs.forEach((x, index) => {
-      matrix.makeTranslation(x, y, z);
+      matrix.setPosition(x, y, z);
       mesh.current!.setMatrixAt(index, matrix);
     });
     mesh.current.instanceMatrix.needsUpdate = true;
     mesh.current.computeBoundingSphere();
-  }, [key, xs, y, z]);
+  }, [key, xs, y, z, tilt]);
   return (
-    <instancedMesh ref={mesh} args={[geometry, undefined, xs.length]} receiveShadow>
+    <instancedMesh
+      ref={mesh}
+      args={[geometry, undefined, xs.length]}
+      receiveShadow
+    >
       <Mat
         color={color}
         metal={metal}
@@ -204,7 +220,22 @@ export function EngineConstruction({
     ),
   );
   const coverColor = camCoverColor(car);
-  const headWidth = car.engine.config === "I" ? 0.2 : car.engine.config === "F" ? 0.15 : 0.17;
+  const headWidth =
+    car.engine.config === "I" ? 0.2 : car.engine.config === "F" ? 0.15 : 0.17;
+  const bankParts = useMemo(
+    () =>
+      banks.map((bank) => {
+        const xs = mechanism.cylinders
+          .filter((cylinder) => cylinder.angle === bank.angle)
+          .map((cylinder) => cylinder.x);
+        return { xs, deck: cylinderDeckGeometry(length, headWidth * 0.92, xs) };
+      }),
+    [banks, mechanism, length, headWidth],
+  );
+  useEffect(
+    () => () => bankParts.forEach((part) => part.deck.dispose()),
+    [bankParts],
+  );
   const cover = useDisposed(
     useMemo(
       () => openCoverGeometry(length * 0.9, headWidth, 0.064),
@@ -268,14 +299,29 @@ export function EngineConstruction({
         )}
         {architecture.crankcaseOpening === "camera-side" ? (
           <group position={[0, -0.01, 0.09 + distances.crankcaseSide]}>
-            <SharedMesh geometry={sideCover} color={ALU} metal={0.84} rough={0.32} doubleSide />
+            <SharedMesh
+              geometry={sideCover}
+              color={ALU}
+              metal={0.84}
+              rough={0.32}
+              doubleSide
+            />
           </group>
         ) : (
           <group position={[0, 0.062 + distances.plenum, 0]}>
-            <SharedMesh geometry={valleyPlate} color={CAST} rough={0.55} doubleSide />
+            <SharedMesh
+              geometry={valleyPlate}
+              color={CAST}
+              rough={0.55}
+              doubleSide
+            />
           </group>
         )}
-        <mesh position={[length * 0.5, 0.01, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+        <mesh
+          position={[length * 0.5, 0.01, 0]}
+          rotation={[0, 0, Math.PI / 2]}
+          castShadow
+        >
           <cylinderGeometry
             args={[
               car.engine.config === "F" ? 0.09 : 0.11,
@@ -302,10 +348,13 @@ export function EngineConstruction({
         ))}
       </group>
 
-      {banks.map((bank) => (
+      {banks.map((bank, bankIndex) => (
         <group key={bank.side} name="engine-bank" rotation={[bank.angle, 0, 0]}>
-          <mesh position={[0, 0.2, 0]} receiveShadow>
-            <boxGeometry args={[length * 0.9, 0.018, headWidth * 0.92]} />
+          <mesh
+            position={[0, 0.2, 0]}
+            geometry={bankParts[bankIndex].deck}
+            receiveShadow
+          >
             <Mat color={ALU} metal={0.84} rough={0.3} />
           </mesh>
           {[-1, 1].map((side) => (
@@ -316,7 +365,11 @@ export function EngineConstruction({
           ))}
           {bank.cylinders.map((x) =>
             [-1, 1].map((side) => (
-              <mesh key={`${x}-${side}`} position={[x, 0.322, side * 0.055]} castShadow>
+              <mesh
+                key={`${x}-${side}`}
+                position={[x, 0.322, side * 0.055]}
+                castShadow
+              >
                 <boxGeometry args={[0.022, 0.036, 0.026]} />
                 <Mat color="#4e585e" metal={0.75} rough={0.42} />
               </mesh>
@@ -326,7 +379,13 @@ export function EngineConstruction({
             <Mat color={GASKET} metal={0.08} rough={0.9} />
           </mesh>
           <group position={[0, 0.31 + distances.camCover, 0]}>
-            <SharedMesh geometry={cover} color={coverColor} metal={0.16} rough={0.48} doubleSide />
+            <SharedMesh
+              geometry={cover}
+              color={coverColor}
+              metal={0.16}
+              rough={0.48}
+              doubleSide
+            />
             {bank.cylinders.map((x) => (
               <mesh key={x} position={[x, 0.07, 0]}>
                 <boxGeometry args={[0.028, 0.012, 0.04]} />
@@ -334,12 +393,20 @@ export function EngineConstruction({
               </mesh>
             ))}
           </group>
-          <AlongBank xs={bank.cylinders} y={0.147} z={0} geometry={sleeve} color={BORE} rough={0.4} />
           <AlongBank
-            xs={bank.cylinders}
+            xs={bankParts[bankIndex].xs}
+            y={0.147}
+            z={0}
+            geometry={sleeve}
+            color={BORE}
+            rough={0.4}
+          />
+          <AlongBank
+            xs={bankParts[bankIndex].xs}
             y={0.147}
             z={distances.barrel}
             geometry={barrel}
+            tilt={jacketInspectionTilt(bank.angle, phase)}
             color={CAST}
             rough={0.56}
             doubleSide
@@ -347,8 +414,17 @@ export function EngineConstruction({
         </group>
       ))}
 
-      <group name="engine-sump" position={[0.01, (drySump ? -0.1 : -0.12) - distances.sump, 0]}>
-        <SharedMesh geometry={pan} color="#58636a" metal={0.74} rough={0.48} doubleSide />
+      <group
+        name="engine-sump"
+        position={[0.01, (drySump ? -0.1 : -0.12) - distances.sump, 0]}
+      >
+        <SharedMesh
+          geometry={pan}
+          color="#58636a"
+          metal={0.74}
+          rough={0.48}
+          doubleSide
+        />
       </group>
 
       <group
@@ -360,7 +436,9 @@ export function EngineConstruction({
       >
         <SharedMesh
           geometry={plenumShell}
-          color={architecture.intake === "charge-manifold" ? "#3c464c" : "#20272c"}
+          color={
+            architecture.intake === "charge-manifold" ? "#3c464c" : "#20272c"
+          }
           metal={architecture.intake === "charge-manifold" ? 0.4 : 0.08}
           rough={0.55}
           doubleSide
@@ -373,7 +451,8 @@ export function EngineConstruction({
             <cylinderGeometry args={[0.028, 0.028, 0.05, 20]} />
             <Mat color={ALU} metal={0.8} rough={0.34} />
           </mesh>
-        ) : architecture.intake === "airbox" || architecture.intake === "boxer-plenum" ? (
+        ) : architecture.intake === "airbox" ||
+          architecture.intake === "boxer-plenum" ? (
           <mesh
             position={[plenum.size[0] / 2 + 0.04, plenum.size[1] / 2, 0]}
             rotation={[0, 0, Math.PI / 2]}
@@ -397,8 +476,20 @@ export function EngineConstruction({
         ))}
       </group>
 
-      <Tubes paths={intakes} radius={0.016} color="#687a82" metal={0.75} rough={0.4} />
-      <Tubes paths={headers} radius={0.014} color={HEADER} metal={0.9} rough={0.62} />
+      <Tubes
+        paths={intakes}
+        radius={0.016}
+        color="#687a82"
+        metal={0.75}
+        rough={0.4}
+      />
+      <Tubes
+        paths={headers}
+        radius={0.014}
+        color={HEADER}
+        metal={0.9}
+        rough={0.62}
+      />
       {turbos.length === 1 && (
         <Tubes
           paths={[-1, 1].map((side) => [
@@ -428,14 +519,27 @@ export function EngineConstruction({
 
       {expose && !detailed && (
         <group name="Illustrative engine mechanisms">
-          <Rod a={[-length * 0.48, 0, 0]} b={[length * 0.48, 0, 0]} r={0.014} color="#84969f" />
+          <Rod
+            a={[-length * 0.48, 0, 0]}
+            b={[length * 0.48, 0, 0]}
+            r={0.014}
+            color="#84969f"
+          />
           {mechanism.cylinders.map((cylinder, index) => (
             <group key={index}>
-              <mesh position={cylinder.piston} rotation={[cylinder.angle, 0, 0]}>
+              <mesh
+                position={cylinder.piston}
+                rotation={[cylinder.angle, 0, 0]}
+              >
                 <cylinderGeometry args={[0.04, 0.04, 0.04, 16]} />
                 <Mat color={ALU} metal={0.8} rough={0.34} />
               </mesh>
-              <Rod a={cylinder.crankPin} b={cylinder.wristPin} r={0.008} color="#84969f" />
+              <Rod
+                a={cylinder.crankPin}
+                b={cylinder.wristPin}
+                r={0.008}
+                color="#84969f"
+              />
             </group>
           ))}
           {banks.map((bank) =>
@@ -444,13 +548,17 @@ export function EngineConstruction({
                 key={`${bank.side}-${side}`}
                 a={[
                   -length * 0.42,
-                  Math.cos(bank.angle) * 0.326 - Math.sin(bank.angle) * side * 0.059,
-                  Math.sin(bank.angle) * 0.326 + Math.cos(bank.angle) * side * 0.059,
+                  Math.cos(bank.angle) * 0.326 -
+                    Math.sin(bank.angle) * side * 0.059,
+                  Math.sin(bank.angle) * 0.326 +
+                    Math.cos(bank.angle) * side * 0.059,
                 ]}
                 b={[
                   length * 0.42,
-                  Math.cos(bank.angle) * 0.326 - Math.sin(bank.angle) * side * 0.059,
-                  Math.sin(bank.angle) * 0.326 + Math.cos(bank.angle) * side * 0.059,
+                  Math.cos(bank.angle) * 0.326 -
+                    Math.sin(bank.angle) * side * 0.059,
+                  Math.sin(bank.angle) * 0.326 +
+                    Math.cos(bank.angle) * side * 0.059,
                 ]}
                 r={0.012}
                 color="#84969f"
