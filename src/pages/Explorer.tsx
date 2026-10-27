@@ -225,7 +225,9 @@ export default function Explorer({ params }: { params: URLSearchParams }) {
         : "smooth",
     });
     if (isInspectionPreset(view)) {
-      setExploded(0);
+      // Keep the layer the visitor is already on: the inspection cameras read
+      // the same stage weights as the parts, so switching view mid-teardown
+      // must not silently re-assemble the car.
       setBodyRemoved(true);
       setSectioned(false);
       setWheelsRemoved(view === "running" || view === "powertrain");
