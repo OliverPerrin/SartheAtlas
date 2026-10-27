@@ -424,6 +424,7 @@ export function CarScene(p: SceneProps) {
       wheelsRemoved: p.wheelsRemoved,
       sectioned: p.sectioned,
       inspection: isInspectionPreset(p.preset),
+      exploded: p.exploded,
     }),
     [
       p.car,
@@ -437,6 +438,7 @@ export function CarScene(p: SceneProps) {
       p.wheelsRemoved,
       p.sectioned,
       p.preset,
+      p.exploded,
     ],
   );
   const under = p.preset === "under";
