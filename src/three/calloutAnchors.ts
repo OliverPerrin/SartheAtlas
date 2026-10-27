@@ -165,12 +165,18 @@ export function calloutAnchors(
     }
     case "cockpit": {
       const c = cockpitLayout(car, body, shape);
+      // Surface points rather than part centres, so leaders start on visible
+      // upholstery, rim, pedal face and instrument face.
       return [
-        a("seat", c.seat),
-        a("harness", [c.seat[0] + 0.14, c.seat[1] + 0.02, c.z + 0.1]),
-        a("wheel", c.wheel),
-        a("pedal box", c.pedals),
-        a("display", c.dash),
+        a("seat", [c.seatX + 0.11, c.floor + 0.085, c.z + 0.14]),
+        a("harness", [c.seatX - 0.2, c.floor + 0.46, c.z + 0.095]),
+        a("wheel", [c.wheel[0] - 0.02, c.wheel[1] + 0.15, c.wheel[2] + 0.11]),
+        a("pedal box", [
+          c.pedals[0] + 0.035,
+          c.pedals[1] + 0.16,
+          c.pedals[2] + 0.09,
+        ]),
+        a("display", [c.dash[0] - 0.06, c.dash[1] + 0.04, c.dash[2] + 0.09]),
       ];
     }
     case "body": {

@@ -43,6 +43,7 @@ import {
 } from "../data/systems.ts";
 import type { Group, Rule, SystemId } from "../data/systems.ts";
 import { presets, isInspectionPreset } from "../three/cameraPresets.ts";
+import { LAYER_STAGES, stageAt } from "../three/layerPlan.ts";
 import {
   engineeringDetailsFor,
   carEngineeringSummary,
@@ -123,11 +124,15 @@ export default function Explorer({ params }: { params: URLSearchParams }) {
   const fonts = useFonts();
   const touch = useCoarsePointer();
   const ref = exteriorReferences[car.id];
+  const startExploded = Math.min(
+    1,
+    Math.max(0, Number(params.get("x")) || 0),
+  );
   const defaultExterior =
-    Boolean(ref) && params.get("view") !== "study" && params.get("x") !== "1";
+    Boolean(ref) && params.get("view") !== "study" && startExploded <= 0;
   const [selected, setSelected] = useState<SystemId | null>(null);
   const [hovered, setHovered] = useState<SystemId | null>(null);
-  const [exploded, setExploded] = useState(params.get("x") === "1" ? 1 : 0);
+  const [exploded, setExploded] = useState(startExploded);
   const [xray, setXray] = useState(false);
   const [bodyRemoved, setBodyRemoved] = useState(false);
   const [wheelsRemoved, setWheelsRemoved] = useState(false);
@@ -260,7 +265,11 @@ export default function Explorer({ params }: { params: URLSearchParams }) {
         else if (k === "r") setRules((v) => !v);
         else if (k === "d") setDims((v) => !v);
         else if (k === "t") setSpin((v) => !v);
-        else setExploded((v) => (v > 0.5 ? 0 : 1));
+        else
+          setExploded((v) => {
+            const next = LAYER_STAGES.find((s) => s.at > v + 0.001);
+            return next ? next.at : 0;
+          });
       } else if (k === "escape") {
         setSelected(null);
         setFocus(false);
@@ -279,6 +288,7 @@ export default function Explorer({ params }: { params: URLSearchParams }) {
     ? systems.find((s) => s.id === hovered)?.name
     : null;
   const cls = classInfo[car.category];
+  const stage = stageAt(exploded);
 
   return (
     <main
@@ -666,23 +676,42 @@ export default function Explorer({ params }: { params: URLSearchParams }) {
         </div>
         {!exterior && (
           <div className="stage-bottom">
-            <label className="explode">
-              <Layers size={16} />
-              <span>Exploded view</span>
-              <input
-                type="range"
-                min={0}
-                max={1}
-                step={0.01}
-                value={exploded}
-                onChange={(e) => {
-                  setExploded(Number(e.target.value));
-                  setExterior(false);
-                }}
-                aria-label="Exploded view"
-              />
-              <output>{Math.round(exploded * 100)}%</output>
-            </label>
+            <div className="layer-control">
+              <label className="explode">
+                <Layers size={16} />
+                <span>Lift layers</span>
+                <input
+                  type="range"
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  value={exploded}
+                  onChange={(e) => {
+                    setExploded(Number(e.target.value));
+                    setExterior(false);
+                  }}
+                  aria-label="Lift layers"
+                  aria-valuetext={`Stage ${stage.stage} of ${LAYER_STAGES.length - 1}: ${stage.label}. ${stage.detail}`}
+                />
+                <output>{stage.short}</output>
+              </label>
+              <div className="layer-steps" role="group" aria-label="Lift stages">
+                {LAYER_STAGES.map((s) => (
+                  <button
+                    key={s.stage}
+                    className={Math.abs(exploded - s.at) < 0.005 ? "on" : ""}
+                    aria-pressed={Math.abs(exploded - s.at) < 0.005}
+                    title={s.detail}
+                    onClick={() => {
+                      setExploded(s.at);
+                      setExterior(false);
+                    }}
+                  >
+                    {s.short}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div className="seg small" role="group" aria-label="Finish">
               {(
                 [
@@ -780,8 +809,8 @@ export default function Explorer({ params }: { params: URLSearchParams }) {
               <h2>Look closer.</h2>
               <p>
                 Orbit the car to see its shape. Select a component to uncover
-                the engineering underneath, or separate the assembly with the
-                exploded-view slider.
+                the engineering underneath, or lift the assembly layer by layer
+                with the layer control.
               </p>
               <button
                 className="inspection-start"
@@ -810,7 +839,7 @@ export default function Explorer({ params }: { params: URLSearchParams }) {
                   <kbd>1</kbd>–<kbd>9</kbd> / <kbd>0</kbd> camera views
                 </li>
                 <li>
-                  <kbd>E</kbd> explode · <kbd>X</kbd> X-ray
+                  <kbd>E</kbd> lift stages · <kbd>X</kbd> X-ray
                 </li>
                 <li>
                   <kbd>R</kbd> rule colours · <kbd>D</kbd> dimensions

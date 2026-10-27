@@ -54,6 +54,7 @@ export class SceneBoundary extends Component<
 import type { Preset } from "./cameraPresets.ts";
 import { isInspectionPreset } from "./cameraPresets.ts";
 import { inspectionFrame, setCameraProjection } from "./inspectionCamera.ts";
+import { layerWeights } from "./layerPlan.ts";
 export { presets } from "./cameraPresets.ts";
 export type { Preset } from "./cameraPresets.ts";
 const presetPos: Record<
@@ -143,12 +144,27 @@ function Rig({
             : 3.0;
     const need = extent / Math.tan(half) + (preset === "three" ? 1.2 : 1);
     if (v.length() < need) v.setLength(Math.min(need, 24));
+    const layers = layerWeights(lift);
     if (lift > 0) {
-      v.multiplyScalar(1 + lift * 0.5);
-      if (preset !== "top" && preset !== "under") v.y += lift * 0.6;
+      // Follow the same staged lift as the parts, keeping the separated
+      // bodywork and the remaining structure inside the frame.
+      v.multiplyScalar(
+        1 +
+          layers.bodywork * 0.22 +
+          layers.cooling * 0.06 +
+          layers.cabin * 0.05,
+      );
+      if (preset !== "top" && preset !== "under")
+        v.y += layers.bodywork * 0.3 + layers.cabin * 0.08;
     }
     goal.current = v;
-    targetGoal.current.set(0, preset === "under" ? 0.2 : 0.45 + lift * 0.75, 0);
+    targetGoal.current.set(
+      0,
+      preset === "under"
+        ? 0.2
+        : 0.45 + layers.bodywork * 0.48 + layers.cabin * 0.12,
+      0,
+    );
     invalidate();
   }, [
     preset,
@@ -425,6 +441,7 @@ export function CarScene(p: SceneProps) {
       sectioned: p.sectioned,
       inspection: isInspectionPreset(p.preset),
       exploded: p.exploded,
+      preset: p.preset,
     }),
     [
       p.car,

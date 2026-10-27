@@ -24,6 +24,8 @@ import { slickTyreGeometry } from "./tyre.ts";
 import { CabinOverview, BrakeOverview } from "./DetailPreview.tsx";
 import { Callouts } from "./Callouts.tsx";
 import { studyDetailPolicy } from "./detailPolicy.ts";
+import { layerWeights } from "./layerPlan.ts";
+import type { LayerId } from "./layerPlan.ts";
 import { rimGeometry, spokeMatrices } from "./wheelGeometry.ts";
 
 let mechanicalModule: ReturnType<typeof importMechanical> | undefined;
@@ -105,6 +107,8 @@ type PartProps = {
   onHover: (id: SystemId | null) => void;
   children: ReactNode;
   pickable?: boolean;
+  /** Which staged lift carries this part. Defaults to the driveline layer. */
+  layer?: LayerId;
 };
 
 function Part({
@@ -115,6 +119,7 @@ function Part({
   onHover,
   children,
   pickable = true,
+  layer = "cabin",
 }: PartProps) {
   const ref = useRef<THREE.Group>(null);
   const invalidate = useThree((s) => s.invalidate);
@@ -122,7 +127,9 @@ function Part({
   const target = useMemo(() => new THREE.Vector3(), []);
   useFrame((_, dt) => {
     if (!ref.current) return;
-    target.set(...offset).multiplyScalar(exploded);
+    target
+      .set(...offset)
+      .multiplyScalar(layerWeights(exploded)[layer]);
     if (ref.current.position.distanceTo(target) > 0.0005) {
       ref.current.position.lerp(target, 1 - Math.exp(-Math.min(dt, 0.08) * 6));
       refreshShadows(gl);
@@ -1390,7 +1397,8 @@ function WheelAssemblies({
           <Part
             key={`${x}/${side}`}
             id="wheels"
-            offset={[0, 0.05, side * 1.05]}
+            offset={[0, 0.04, side * 0.72]}
+            layer="bodywork"
             {...common}
           >
             <group
@@ -1551,7 +1559,13 @@ export function CarModel({
   return (
     <group>
       {!view.bodyRemoved && (
-        <Part id="body" offset={[0, 1.7, 0]} {...common} pickable={!view.xray}>
+        <Part
+          id="body"
+          offset={[0, 0.95, 0]}
+          layer="bodywork"
+          {...common}
+          pickable={!view.xray}
+        >
           <BodyShell
             body={body}
             shape={shape}
@@ -1568,24 +1582,44 @@ export function CarModel({
           <Callouts system="body" body={body} shape={shape} />
         </Part>
       )}
-      <Part id="wing" offset={[-0.7, 1.25, 0]} {...common}>
+      <Part
+        id="wing"
+        offset={[-0.45, 0.8, 0]}
+        layer="bodywork"
+        {...common}
+      >
         <Wing body={body} shape={shape} entry={entry} paint={paint} />
         <Callouts system="wing" body={body} shape={shape} />
       </Part>
       {/* Lamp units live in the body panels, so they leave with the bodywork. */}
       {(!view.bodyRemoved || view.selected === "lights") && (
-        <Part id="lights" offset={[-0.6, 0.6, 0]} {...common}>
+        <Part
+          id="lights"
+          offset={[-0.35, 0.35, 0]}
+          layer="bodywork"
+          {...common}
+        >
           <HeadLights body={body} shape={shape} />
           <TailLights body={body} shape={shape} />
           <Callouts system="lights" body={body} shape={shape} />
         </Part>
       )}
-      <Part id="floor" offset={[0, -0.5, 0]} {...common}>
+      <Part
+        id="floor"
+        offset={[0, 0.1, 0]}
+        layer="structure"
+        {...common}
+      >
         <Floor body={body} />
         <Callouts system="floor" body={body} shape={shape} />
       </Part>
       {detail.internals && (
-        <Part id="chassis" offset={[0, 0.2, 0]} {...common}>
+        <Part
+          id="chassis"
+          offset={[0, 0.28, 0]}
+          layer="structure"
+          {...common}
+        >
           <Callouts system="chassis" body={body} shape={shape} />
           {proto ? (
             <>
@@ -1695,7 +1729,12 @@ export function CarModel({
           )}
         </Part>
       )}
-      <Part id="cockpit" offset={[0, 0.9, 0]} {...common}>
+      <Part
+        id="cockpit"
+        offset={[0.03, 0.72, 0]}
+        layer="cabin"
+        {...common}
+      >
         <Callouts system="cockpit" body={body} shape={shape} />
         {detail.internals ? (
           <Suspense
@@ -1713,22 +1752,38 @@ export function CarModel({
       </Part>
       {detail.internals && (
         <Suspense fallback={null}>
-          <Part id="fuel" offset={[0, 0.55, 0]} {...common}>
+          <Part
+            id="fuel"
+            offset={[0, 0.5, 0]}
+            layer="cabin"
+            {...common}
+          >
             <FuelAssembly car={car} body={body} shape={shape} />
             <Callouts system="fuel" body={body} shape={shape} />
           </Part>
-          <Part id="engine" offset={[0, 0.75, 0]} {...common}>
+          <Part
+            id="engine"
+            offset={[-0.08, 0.5, 0]}
+            layer="cabin"
+            {...common}
+          >
             <EngineAssembly car={car} body={body} shape={shape} />
             <Callouts system="engine" body={body} shape={shape} />
           </Part>
-          <Part id="gearbox" offset={[-0.7, 0.3, 0]} {...common}>
+          <Part
+            id="gearbox"
+            offset={[-0.48, 0.34, 0]}
+            layer="cabin"
+            {...common}
+          >
             <GearboxAssembly car={car} body={body} shape={shape} />
             <Callouts system="gearbox" body={body} shape={shape} />
           </Part>
           {car.hybrid && (
             <Part
               id="hybrid"
-              offset={lmh ? [0.6, 0.5, 0] : [0, -0.35, 0]}
+              offset={lmh ? [0.45, 0.38, 0] : [-0.15, 0.34, 0]}
+              layer="cabin"
               {...common}
             >
               <HybridAssembly car={car} body={body} shape={shape} />
@@ -1739,7 +1794,8 @@ export function CarModel({
             <Part
               key={`cool${side}`}
               id="cooling"
-              offset={[0, 0.15, side * 0.75]}
+              offset={[0.06, 0.22, side * 0.55]}
+              layer="cooling"
               {...common}
             >
               <CoolingAssembly
@@ -1764,7 +1820,12 @@ export function CarModel({
           {detail.wheelEnds ? (
             <Suspense
               fallback={
-                <Part id="brakes" offset={[0, 0.1, c.s * 0.65]} {...common}>
+                <Part
+                  id="brakes"
+                  offset={[0, 0.06, c.s * 0.5]}
+                  layer="cabin"
+                  {...common}
+                >
                   <BrakeOverview
                     car={car}
                     body={body}
@@ -1775,7 +1836,12 @@ export function CarModel({
                 </Part>
               }
             >
-              <Part id="suspension" offset={[0, 0.05, c.s * 0.4]} {...common}>
+              <Part
+                id="suspension"
+                offset={[0, 0.04, c.s * 0.32]}
+                layer="cabin"
+                {...common}
+              >
                 <SuspensionAssembly
                   car={car}
                   body={body}
@@ -1787,7 +1853,12 @@ export function CarModel({
                   <Callouts system="suspension" body={body} shape={shape} />
                 )}
               </Part>
-              <Part id="brakes" offset={[0, 0.1, c.s * 0.65]} {...common}>
+              <Part
+                id="brakes"
+                offset={[0, 0.06, c.s * 0.5]}
+                layer="cabin"
+                {...common}
+              >
                 <BrakeAssembly
                   car={car}
                   body={body}
@@ -1801,7 +1872,12 @@ export function CarModel({
               </Part>
             </Suspense>
           ) : (
-            <Part id="brakes" offset={[0, 0.1, c.s * 0.65]} {...common}>
+            <Part
+              id="brakes"
+              offset={[0, 0.06, c.s * 0.5]}
+              layer="cabin"
+              {...common}
+            >
               <BrakeOverview
                 car={car}
                 body={body}

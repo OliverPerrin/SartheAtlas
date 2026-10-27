@@ -193,15 +193,61 @@
   padding: 16px 24px;
   background: #10161d;
 }
+.layer-control {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 280px;
+  max-width: 560px;
+}
 .explorer .explode {
   font-size: 11px;
   gap: 8px;
-  min-width: 240px;
+  min-width: 0;
   max-width: none;
+  width: 100%;
 }
 .explorer .explode input {
   min-width: 50px;
   accent-color: #e1d4b8;
+}
+.explorer .explode output {
+  width: auto;
+  min-width: 64px;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.layer-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.layer-steps button {
+  padding: 5px 9px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.layer-steps button:hover {
+  color: var(--text);
+  background: var(--panel2);
+}
+.layer-steps button.on {
+  color: #10161d;
+  border-color: #e1d4b8;
+  background: #e1d4b8;
+}
+.layer-steps button:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 1px;
 }
 .explorer .stage-bottom .seg.small button {
   height: 29px;
@@ -399,9 +445,19 @@
     padding: 12px 16px;
     gap: 10px;
   }
+  .layer-control {
+    flex-basis: 100%;
+    min-width: 0;
+    max-width: none;
+  }
   .explorer .explode {
     flex-basis: 100%;
     max-width: none;
+  }
+  .layer-steps button {
+    flex: 1 1 auto;
+    padding: 6px 7px;
+    font-size: 9px;
   }
   .explorer .stage-bottom .btn {
     padding: 7px 8px;

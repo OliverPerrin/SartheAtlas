@@ -79,10 +79,15 @@ function screenScale(
 
 // Pixel offset from a part to its label. Labels fan outward from the centre
 // of the view and are nudged apart when their boxes would overlap.
-const REACH_PX = 28;
-const RISE_PX = 30;
+const REACH_PX = 32;
+const RISE_PX = 26;
 const GAP_PX = 5;
 const EDGE_PX = 84;
+const MOBILE_EDGE_PX = 46;
+const MOBILE_LABEL_PX = 18;
+
+const clamp = (value: number, min: number, max: number) =>
+  Math.min(max, Math.max(min, value));
 
 type Item = { at: V3; index: number; text: string };
 type Placed = {
@@ -112,12 +117,12 @@ function leaderLine(at: V3) {
   return line;
 }
 
-function separate(placed: Placed[]) {
+function separate(placed: Placed[], labelPx: number, edge: number, height: number) {
   const boxes = placed.map((p) => ({
     p,
     left: () => (p.right ? p.x : p.x - p.w),
   }));
-  for (let pass = 0; pass < 6; pass++) {
+  for (let pass = 0; pass < 8; pass++) {
     boxes.sort((a, b) => a.p.y - b.p.y);
     let moved = false;
     for (let i = 0; i < boxes.length; i++)
@@ -127,14 +132,15 @@ function separate(placed: Placed[]) {
         const overlapX =
           Math.min(a.left() + a.p.w, b.left() + b.p.w) -
           Math.max(a.left(), b.left());
-        const need = LABEL_PX + GAP_PX - (b.p.y - a.p.y);
+        const need = labelPx + GAP_PX - (b.p.y - a.p.y);
         if (overlapX > 0 && need > 0) {
-          b.p.y += need;
+          b.p.y = Math.min(b.p.y + need, height - edge);
           moved = true;
         }
       }
     if (!moved) break;
   }
+  for (const { p } of boxes) p.y = clamp(p.y, edge, height - edge);
 }
 
 /**
@@ -197,21 +203,26 @@ export function Callouts({
     const root = group.current;
     if (!root || !items.length) return;
     const fov = (camera as THREE.PerspectiveCamera).fov ?? 40;
+    // Small screens get shorter labels and a tighter safe area so the fan-out
+    // still has room to separate boxes between the canvas edges.
+    const compact = size.width < 560;
+    const labelPx = compact ? MOBILE_LABEL_PX : LABEL_PX;
+    const edge = compact ? MOBILE_EDGE_PX : EDGE_PX;
     const placed: Placed[] = items.map((item, i) => {
       point.set(...item.at);
       root.localToWorld(point).project(camera);
       const x = ((point.x + 1) / 2) * size.width;
       const y = ((1 - point.y) / 2) * size.height;
-      const w = LABEL_PX * textures[i].aspect;
+      const w = labelPx * textures[i].aspect;
       // Fan outward, unless that would run under the edge controls.
       let right = point.x >= 0;
-      if (right && x + REACH_PX + w > size.width - EDGE_PX) right = false;
-      else if (!right && x - REACH_PX - w < EDGE_PX) right = true;
+      if (right && x + REACH_PX + w > size.width - edge) right = false;
+      else if (!right && x - REACH_PX - w < edge) right = true;
       return {
         right,
         x: right
-          ? Math.min(x + REACH_PX, size.width - EDGE_PX - w)
-          : Math.max(x - REACH_PX, EDGE_PX + w),
+          ? Math.min(x + REACH_PX, size.width - edge - w)
+          : Math.max(x - REACH_PX, edge + w),
         y: y - RISE_PX,
         w,
         z: point.z,
@@ -219,7 +230,12 @@ export function Callouts({
           Math.abs(point.x) < 0.97 && Math.abs(point.y) < 0.97 && point.z < 1,
       };
     });
-    separate(placed.filter((p) => p.shown));
+    separate(
+      placed.filter((p) => p.shown),
+      labelPx,
+      edge,
+      size.height,
+    );
     placed.forEach((p, i) => {
       const label = labels.current[i];
       const dot = dots.current[i];
@@ -236,7 +252,7 @@ export function Callouts({
         .position as THREE.BufferAttribute;
       positions.setXYZ(1, point.x, point.y, point.z);
       positions.needsUpdate = true;
-      screenScale(label, LABEL_PX, textures[i].aspect, fov, size.height);
+      screenScale(label, labelPx, textures[i].aspect, fov, size.height);
       screenScale(dot, DOT_PX, 1, fov, size.height);
     });
   });

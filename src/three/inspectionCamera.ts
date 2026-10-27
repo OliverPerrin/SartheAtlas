@@ -4,6 +4,8 @@ import type { Shape } from "./shapes.ts";
 import type { Preset } from "./cameraPresets.ts";
 import type { V3 } from "./primitives.tsx";
 import * as THREE from "three";
+import { cockpitLayout } from "./cockpitLayout.ts";
+import { layerWeights } from "./layerPlan.ts";
 import { mechanicalLayout } from "./mechanicalGeometry.ts";
 
 export function setCameraProjection(
@@ -23,52 +25,64 @@ export function inspectionFrame(
   preset: Preset,
   lift: number,
 ) {
-  const proto = car.category !== "LMGT3";
-  const roof = body.x(shape.cockpit.roof);
-  const driver = proto ? 0.08 : -0.36;
-  const raised = lift * 0.9;
+  const layers = layerWeights(lift);
+  const cabinRise = 0.72 * layers.cabin;
+  // A high rear-quarter view looks over the seat back into the wheel, dash
+  // and pedal box, instead of placing the near plane against the headrest.
+  const cockpit = cockpitLayout(car, body, shape);
   if (preset === "cockpit")
     return {
       position: [
-        roof - 0.28,
-        (proto ? 0.91 : 1.04) + raised,
-        driver + 0.14,
+        cockpit.wheel[0] - 0.95,
+        cockpit.wheel[1] + 0.78 + cabinRise,
+        cockpit.z + 0.86,
       ] as V3,
-      target: [roof + 0.44, (proto ? 0.53 : 0.65) + raised, driver] as V3,
-      fov: 68,
+      target: [
+        cockpit.wheel[0],
+        cockpit.wheel[1] + cabinRise,
+        cockpit.wheel[2],
+      ] as V3,
+      fov: 46,
     };
   if (preset === "pedals")
-    // Prototype footwells are enclosed by the tub, so look from inside it,
-    // below the steering wheel; open GT cabins allow a side view.
-    return proto
-      ? {
-          position: [roof + 0.3, 0.34 + raised, driver + 0.1] as V3,
-          target: [roof + 0.82, 0.15 + raised, driver] as V3,
-          fov: 60,
-        }
-      : {
-          position: [roof + 0.12, 0.39 + raised, driver + 0.5] as V3,
-          target: [roof + 0.82, 0.2 + raised, driver] as V3,
-          fov: 55,
-        };
+    // Look over the sill and down into the footwell. The wheel and dash sit
+    // outboard of this line, so the pedals stay visible without hiding parts.
+    return {
+      position: [
+        cockpit.pedals[0] - 0.72,
+        cockpit.pedals[1] + 0.62 + cabinRise,
+        cockpit.z + 0.92,
+      ] as V3,
+      target: [
+        cockpit.pedals[0] + 0.02,
+        cockpit.pedals[1] + 0.1 + cabinRise,
+        cockpit.z + 0.02,
+      ] as V3,
+      fov: 48,
+    };
   if (preset === "running")
     return {
       position: [
         body.frontX + 0.65,
-        1.02 + 0.05 * lift,
-        0.32 + 0.4 * lift,
+        1.02 + 0.05 * layers.bodywork,
+        0.32 + 0.35 * layers.cabin,
       ] as V3,
       target: [
         body.frontX,
-        0.35 + 0.05 * lift,
-        body.wheelZ * 0.65 + 0.4 * lift,
+        0.35 + 0.04 * layers.cabin,
+        body.wheelZ * 0.65 + 0.5 * layers.cabin,
       ] as V3,
       fov: 48,
     };
   const engine = mechanicalLayout(car, body, shape).engineX;
+  const engineRise = 0.5 * layers.cabin;
   return {
-    position: [engine + 1.15, 1.48 + 0.75 * lift, 1.15] as V3,
-    target: [engine, 0.47 + 0.75 * lift, 0] as V3,
+    position: [
+      engine + 1.15 - 0.08 * layers.cabin,
+      1.48 + engineRise,
+      1.15,
+    ] as V3,
+    target: [engine - 0.08 * layers.cabin, 0.47 + engineRise, 0] as V3,
     fov: 42,
   };
 }
