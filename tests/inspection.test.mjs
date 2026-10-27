@@ -45,6 +45,11 @@ test("inspection cameras follow the same staged weights as the parts for every c
             frame.position[0] < layout.wheel[0],
             "instrument faces remain visible from the driver side",
           );
+        } else if (preset === "pedals" && layout.prototype) {
+          const roof = body.x(shape.cockpit.roof);
+          assert.ok(close(frame.target[0], roof + 0.82));
+          assert.ok(close(frame.target[1], 0.15 + cabinRise));
+          assert.ok(close(frame.target[2], layout.z));
         } else if (preset === "pedals") {
           assert.ok(close(frame.target[0], layout.pedals[0] + 0.02));
           assert.ok(close(frame.target[1], layout.pedals[1] + 0.1 + cabinRise));
@@ -93,6 +98,35 @@ test("inspection cameras follow the same staged weights as the parts for every c
       assert.deepEqual(cooled, assembled);
       assert.notDeepEqual(cabinLifted.target, assembled.target);
       assert.deepEqual(structure, cabinLifted);
+    }
+  }
+});
+
+test("prototype pedal sightlines clear the opaque tub walls through lifting and lowering", () => {
+  for (const car of cars.filter((car) => car.category !== "LMGT3")) {
+    const shape = shapes[car.id];
+    const body = new Body(shape.body);
+    const xFrom = body.x(shape.cockpit.from);
+    const xTo = body.x(shape.cockpit.to);
+    // Opaque chassis sidewalls and upper rails, as rendered by CarModel.
+    for (const lift of [0, 0.25, 0.5, 0.625, 0.75, 1, 0.75, 0.5, 0]) {
+      const frame = inspectionFrame(car, body, shape, "pedals", lift);
+      const origin = new THREE.Vector3(...frame.position);
+      const target = new THREE.Vector3(...frame.target);
+      const direction = target.clone().sub(origin).normalize();
+      const ray = new THREE.Ray(origin, direction);
+      const rise = 0.32 * layerWeights(lift).structure;
+      for (const side of [-1, 1]) {
+        for (const [y, height, width] of [[0.32, 0.46, 0.075], [0.55, 0.035, 0.09]]) {
+          const wall = new THREE.Box3().setFromCenterAndSize(
+            new THREE.Vector3((xFrom + xTo) / 2, y + rise, side * 0.35),
+            new THREE.Vector3(xFrom - xTo, height, width),
+          );
+          const hit = ray.intersectBox(wall, new THREE.Vector3());
+          assert.ok(!hit || hit.distanceTo(origin) > target.distanceTo(origin),
+            `${car.id} at ${lift}: chassis wall obscures pedals`);
+        }
+      }
     }
   }
 });

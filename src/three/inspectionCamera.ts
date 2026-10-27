@@ -44,9 +44,18 @@ export function inspectionFrame(
       ] as V3,
       fov: 46,
     };
+  if (preset === "pedals" && cockpit.prototype) {
+    // The prototype tub has opaque sidewalls: inspect from inside the
+    // footwell, below the wheel, and follow the cabin as it lifts.
+    const roof = body.x(shape.cockpit.roof);
+    return {
+      position: [roof + 0.3, 0.34 + cabinRise, cockpit.z + 0.1] as V3,
+      target: [roof + 0.82, 0.15 + cabinRise, cockpit.z] as V3,
+      fov: 60,
+    };
+  }
   if (preset === "pedals")
-    // Look over the sill and down into the footwell. The wheel and dash sit
-    // outboard of this line, so the pedals stay visible without hiding parts.
+    // The wider GT cabin permits a view over the sill into the footwell.
     return {
       position: [
         cockpit.pedals[0] - 0.72,
