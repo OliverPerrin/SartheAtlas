@@ -3,7 +3,13 @@ import assert from "node:assert/strict";
 import { cars } from "../src/data/cars.ts";
 import { Body } from "../src/three/body.ts";
 import { shapes } from "../src/three/shapes.ts";
-import { mechanicalLayout } from "../src/three/mechanicalGeometry.ts";
+import {
+  coolingFanPhase,
+  coolingFanTravel,
+  mechanicalGroupMultiplicity,
+  mechanicalLayout,
+} from "../src/three/mechanicalGeometry.ts";
+import { engineeringLayoutFor } from "../src/data/engineeringDetails.ts";
 import {
   engineMechanism,
   pistonStudyGeometry,
@@ -134,4 +140,42 @@ test("liner section is genuinely open and mechanism geometry keeps central apert
   sleeve.dispose();
   piston.dispose();
   gear.dispose();
+});
+
+test("cooling fan peel occupies only the first half of the cooling band", () => {
+  assert.equal(coolingFanPhase(0), 0);
+  assert.equal(coolingFanPhase(0.25), 0);
+  assert.equal(coolingFanPhase(0.375), 1);
+  assert.equal(coolingFanPhase(0.5), 1);
+  assert.equal(coolingFanPhase(1), 1);
+  const mid = coolingFanPhase(0.3125);
+  assert.ok(mid > 0.45 && mid < 0.55, `smoothstep midpoint ${mid}`);
+  assert.equal(coolingFanTravel.shroud, 0.1);
+  assert.equal(coolingFanTravel.rotor, 0.18);
+});
+
+test("named mechanical groups follow architecture, not one mesh per car", () => {
+  for (const car of cars) {
+    const groups = mechanicalGroupMultiplicity(car);
+    assert.equal(groups["engine-crankcase"], 1, car.id);
+    assert.equal(groups["engine-sump"], 1, car.id);
+    assert.equal(groups["gearbox-case"], 1, car.id);
+    assert.equal(groups["engine-bank"], car.engine.config === "I" ? 1 : 2, car.id);
+    const turbos = car.engine.turbo ? (car.engine.turboCount ?? 2) : 0;
+    assert.equal(groups["engine-turbo"], turbos, car.id);
+    const cooling = car.category === "LMGT3" ? 1 : 2;
+    assert.equal(groups["cooling-radiator"], cooling, car.id);
+    assert.equal(groups["cooling-fan"], cooling, car.id);
+    assert.equal(groups["fan-shroud"], cooling, car.id);
+    assert.equal(
+      groups["cooling-charge-cooler"],
+      car.engine.turbo ? cooling : 0,
+      car.id,
+    );
+    assert.equal(engineeringLayoutFor(car).drySump, car.id === "bmw" || car.id === "alpine" || car.id === "oreca" || car.id === "vantage" || car.id === "mercedes" || car.id === "porsche");
+  }
+  assert.equal(mechanicalGroupMultiplicity(cars.find((c) => c.id === "alpine"))["engine-turbo"], 1);
+  assert.equal(mechanicalGroupMultiplicity(cars.find((c) => c.id === "m4"))["engine-bank"], 1);
+  assert.equal(mechanicalGroupMultiplicity(cars.find((c) => c.id === "porsche"))["engine-bank"], 2);
+  assert.equal(mechanicalGroupMultiplicity(cars.find((c) => c.id === "aston"))["engine-turbo"], 0);
 });

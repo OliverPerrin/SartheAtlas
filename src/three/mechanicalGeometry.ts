@@ -145,3 +145,38 @@ export function drivelineInterfaces(car: Car, layout: MechanicalLayout) {
     couplingLength: Math.abs(engineOutputX - bellhousingX),
   };
 }
+
+// Same journal spacing as the sectioned crank. Illustrative, not a measured throw.
+export function crankMainPositions(length: number, perBank: number) {
+  return Array.from(
+    { length: perBank + 1 },
+    (_, i) => -length * 0.46 + (i * length * 0.92) / Math.max(1, perBank),
+  );
+}
+
+// Fan and shroud peel across the first half of the cooling band.
+// 0 at e <= 0.25, 1 at e >= 0.375. Smoothstep, then held.
+export function coolingFanPhase(exploded: number) {
+  const x = Math.min(1, Math.max(0, (exploded - 0.25) / 0.125));
+  return x * x * (3 - 2 * x);
+}
+
+// Travel along the radiator's local +X face normal, not a world axis.
+export const coolingFanTravel = { shroud: 0.1, rotor: 0.18 } as const;
+
+// How many objects share each semantic name. Three.js name lookup is not used.
+export function mechanicalGroupMultiplicity(car: Car) {
+  const cooling = car.category === "LMGT3" ? 1 : 2;
+  const turbos = car.engine.turbo ? (car.engine.turboCount ?? 2) : 0;
+  return {
+    "engine-crankcase": 1,
+    "engine-bank": car.engine.config === "I" ? 1 : 2,
+    "engine-sump": 1,
+    "engine-turbo": turbos,
+    "gearbox-case": 1,
+    "cooling-radiator": cooling,
+    "cooling-fan": cooling,
+    "fan-shroud": cooling,
+    "cooling-charge-cooler": car.engine.turbo ? cooling : 0,
+  } as const;
+}
