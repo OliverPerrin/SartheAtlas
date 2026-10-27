@@ -76,36 +76,7 @@ export function inspectionFrame(
     };
   const engine = mechanicalLayout(car, body, shape).engineX;
   const engineRise = 0.5 * layers.cabin;
-  if (preset === "powertrain") {
-    // Front-mid cars are best seen from the front quarter. Mid- and rear-engine
-    // GT cars have the tub, fuel cell, roll hoop and transaxle packed around
-    // the engine, so look in from the rear quarter, low enough to keep the
-    // cylinder banks and headers readable instead of foreshortened.
-    if (car.engine.position === "front-mid")
-      return {
-        position: [
-          engine + 1.15 - 0.08 * layers.cabin,
-          1.48 + engineRise,
-          1.15,
-        ] as V3,
-        target: [engine - 0.08 * layers.cabin, 0.47 + engineRise, 0] as V3,
-        fov: 42,
-      };
-    const rear = car.engine.position === "rear";
-    // Leave headroom for the engine teardown envelope: cam covers travel
-    // 0.13 m along the bank normal and the plenum 0.09 m upwards, so frame
-    // the assembled engine a little wider than its closed silhouette.
-    return {
-      position: [
-        engine - (rear ? 0.9 : 0.44),
-        (rear ? 1.12 : 1.68) + engineRise,
-        rear ? 0.98 : 1.04,
-      ] as V3,
-      target: [engine + (rear ? 0.04 : 0), (rear ? 0.45 : 0.4) + engineRise, 0] as V3,
-      fov: 46,
-    };
-  }
-  return {
+  const frontQuarter = {
     position: [
       engine + 1.15 - 0.08 * layers.cabin,
       1.48 + engineRise,
@@ -114,4 +85,33 @@ export function inspectionFrame(
     target: [engine - 0.08 * layers.cabin, 0.47 + engineRise, 0] as V3,
     fov: 42,
   };
+  if (preset === "powertrain") {
+    // Front-mid cars present the engine bay towards the nose. Cars with the
+    // engine amidships or in the tail have the tub, fuel cell and roll hoop
+    // packed ahead of it, so look in from the rear quarter; sit level with the
+    // deck so the near bank crowns read over the plenum and the hoop only
+    // crosses the far edge of the frame.
+    if (car.engine.position === "front-mid") return frontQuarter;
+    if (car.engine.position === "rear")
+      return {
+        position: [engine - 0.9, 1.12 + engineRise, 0.98] as V3,
+        target: [engine + 0.04, 0.45 + engineRise, 0] as V3,
+        fov: 46,
+      };
+    // Mid cars hide the engine behind the tub, fuel cell and roll hoop. Sit
+    // level with the deck so the near-bank crowns read over the plenum: GT
+    // machinery packs lower and tighter, prototype pipework sits squarer and
+    // needs a touch more stand-off to clear the lifted covers.
+    const gt = car.category === "LMGT3";
+    return {
+      position: [
+        engine - (gt ? 0.44 : 0.8),
+        (gt ? 1.4 : 1.55) + engineRise,
+        gt ? 1.4 : 1.2,
+      ] as V3,
+      target: [engine, 0.4 + engineRise, 0] as V3,
+      fov: 46,
+    };
+  }
+  return frontQuarter;
 }

@@ -51,19 +51,21 @@ test("inspection cameras follow the same staged weights as the parts for every c
           assert.ok(close(frame.target[2], layout.z + 0.02));
         } else if (preset === "powertrain") {
           const rear = car.engine.position === "rear";
-          const frontMid = car.engine.position === "front-mid";
+          const frontQuarter = car.engine.position === "front-mid";
           assert.ok(
             close(
               frame.target[0],
-              frontMid
-                ? engine - 0.08 * layers.cabin
-                : engine + (rear ? 0.04 : 0),
+              rear
+                ? engine + 0.04
+                : frontQuarter
+                  ? engine - 0.08 * layers.cabin
+                  : engine,
             ),
           );
           assert.ok(
             close(
               frame.target[1],
-              (rear ? 0.45 : frontMid ? 0.47 : 0.4) + 0.5 * layers.cabin,
+              (rear ? 0.45 : frontQuarter ? 0.47 : 0.4) + 0.5 * layers.cabin,
             ),
           );
         } else {
