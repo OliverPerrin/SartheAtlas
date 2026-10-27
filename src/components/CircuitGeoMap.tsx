@@ -340,14 +340,16 @@ export default function CircuitGeoMap(props: Props) {
       "bottom-right",
     );
     m.addControl(
-      new maplibregl.ScaleControl({ maxWidth: 120, unit: "metric" }),
-      "bottom-left",
-    );
-    m.addControl(
       new maplibregl.AttributionControl({
         customAttribution:
           '<a href="https://geoservices.ign.fr/rgealti" target="_blank">Terrain © IGN RGE ALTI</a> · <a href="https://geoservices.ign.fr/bdtopo" target="_blank">Buildings © IGN BD TOPO</a> · <a href="https://www.openstreetmap.org/copyright" target="_blank">Track © OpenStreetMap contributors</a>',
       }),
+      "bottom-right",
+    );
+    // Bottom controls stack upwards, so the scale sits above the attribution,
+    // clear of the hint and source caption on the left.
+    m.addControl(
+      new maplibregl.ScaleControl({ maxWidth: 120, unit: "metric" }),
       "bottom-right",
     );
     m.on("error", (event) => {
@@ -691,13 +693,15 @@ export default function CircuitGeoMap(props: Props) {
     const corner = props.track.corners.find(
       (corner) => corner.name === props.activeCorner,
     );
-    if (corner)
+    if (corner) {
+      minimizeAttribution(map.current);
       map.current.flyTo({
         center: geoAt(props.track, corner.fraction),
         zoom: 16.5,
         pitch: tilted ? 55 : 0,
         duration: 900,
       });
+    }
   }, [props.activeCorner, props.track, ready, tilted]);
   useEffect(() => {
     if (!ready || !map.current || props.focusFraction == null) return;

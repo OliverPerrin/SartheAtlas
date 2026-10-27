@@ -36,6 +36,7 @@ const TrackScene = lazy(() =>
 const CircuitGeoMap = lazy(() => import("../components/CircuitGeoMap.tsx"));
 import type { CamMode, ColorMode } from "../three/TrackScene.tsx";
 import TrackMap, { namedCorners } from "../components/TrackMap.tsx";
+import { useCoarsePointer } from "../components/useCoarsePointer.ts";
 import "./Pages.css";
 import "./Circuit.css";
 
@@ -168,6 +169,7 @@ export default function Circuit() {
   const [follow, setFollow] = useState<ClassName>("Hypercar");
   const [corner, setCorner] = useState<string | null>(null);
   const [pitFocused, setPitFocused] = useState(false);
+  const touch = useCoarsePointer();
   const [telemetry] = useState(createLapStore);
   const sectionId = useSyncExternalStore(
     telemetry.subscribe,
@@ -460,12 +462,16 @@ export default function Circuit() {
           </div>
         )}
 
-        <p className="circuit-hint">
+        <p className="circuit-hint" hidden={Boolean(cornerData)}>
           {cam === "follow"
             ? `Following ${follow} · switch to Overview to explore`
             : geographic
-              ? "Drag to pan · right-drag to tilt · select a corner"
-              : "Drag to orbit · scroll to zoom · select a corner"}
+              ? touch
+                ? "Drag to pan · two-finger drag to tilt · tap a corner"
+                : "Drag to pan · right-drag to tilt · select a corner"
+              : touch
+                ? "Drag to orbit · pinch to zoom · tap a corner"
+                : "Drag to orbit · scroll to zoom · select a corner"}
         </p>
         {cornerData && (
           <div

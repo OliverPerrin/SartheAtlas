@@ -51,6 +51,7 @@ import type { PaintMode } from "../three/livery.ts";
 import { linkProps, navigate } from "../router.ts";
 import Silhouette from "../components/Silhouette.tsx";
 import { useFonts } from "../components/useFonts.ts";
+import { useCoarsePointer } from "../components/useCoarsePointer.ts";
 import ExteriorViewer from "../ExteriorViewer.tsx";
 import ExteriorFilm from "../components/ExteriorFilm.tsx";
 import { exteriorTuning, materialRecipeFor } from "../data/exteriorTuning.ts";
@@ -118,6 +119,7 @@ export default function Explorer({ params }: { params: URLSearchParams }) {
   const entry: Entry =
     list.find((e) => e.number === params.get("entry")) ?? list[0];
   const fonts = useFonts();
+  const touch = useCoarsePointer();
   const ref = exteriorReferences[car.id];
   const defaultExterior =
     Boolean(ref) && params.get("view") !== "study" && params.get("x") !== "1";
@@ -552,7 +554,11 @@ export default function Explorer({ params }: { params: URLSearchParams }) {
           {!exterior && (
             <div className="viewer-hint">
               <MousePointer2 size={13} />
-              <span>Drag to orbit · scroll to zoom · click to inspect</span>
+              <span>
+                {touch
+                  ? "Drag to orbit · pinch to zoom · tap to inspect"
+                  : "Drag to orbit · scroll to zoom · click to inspect"}
+              </span>
             </div>
           )}
           {!exterior && (
