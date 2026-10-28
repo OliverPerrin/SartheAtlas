@@ -11,7 +11,7 @@ import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.j
 import type { Car } from "../data/cars.ts";
 import type { Body } from "./body.ts";
 import type { Shape } from "./shapes.ts";
-import { Block, Mat, Rod, usePartLook } from "./primitives.tsx";
+import { Block, Mat, Rod, usePartLook, useView } from "./primitives.tsx";
 import type { V3 } from "./primitives.tsx";
 import { cockpitLayout } from "./cockpitLayout.ts";
 import { seatShellGeometry, harnessRibbonGeometry } from "./cockpitGeometry.ts";
@@ -360,17 +360,17 @@ function SeatAssembly({
           <Belt
             width={0.041}
             points={[
-              [0.0, 0.025, side * 0.21],
-              [0.025, 0.1, side * 0.15],
-              [0.02, 0.108, side * 0.018],
+              [0.02, 0.075, side * 0.185],
+              [0.03, 0.09, side * 0.13],
+              [0.028, 0.105, side * 0.02],
             ]}
           />
           <Belt
             width={0.028}
             points={[
-              [0.13, -0.006, side * 0.055],
-              [0.135, 0.056, side * 0.045],
-              [0.033, 0.105, side * 0.022],
+              [0.13, 0.02, side * 0.055],
+              [0.135, 0.07, side * 0.045],
+              [0.035, 0.105, side * 0.022],
             ]}
           />
           <Block
@@ -957,6 +957,104 @@ function Equipment({
   );
 }
 
+function CockpitTub({
+  prototype,
+  floor,
+  z,
+  seatX,
+  pedals,
+}: {
+  prototype: boolean;
+  floor: number;
+  z: number;
+  seatX: number;
+  pedals: V3;
+}) {
+  // Prototype cockpits are a narrow central tub; GT cabins are wider and sit
+  // off-centre. The floor, sills and low bulkhead are illustrative, not a
+  // manufacturer drawing, but they give the seat and pedal box a real surround.
+  const half = prototype ? 0.35 : 0.47;
+  const rear = seatX - 0.3;
+  const front = pedals[0] + 0.2;
+  const length = front - rear;
+  return (
+    <group>
+      <SoftBox
+        p={[(rear + front) / 2, floor - 0.018, z]}
+        s={[length, 0.032, half * 2]}
+        composite
+        radius={0.012}
+      />
+      {[-1, 1].map((side) => (
+        <group key={side}>
+          <SoftBox
+            p={[(rear + front) / 2, floor + 0.1, z + side * half]}
+            s={[length * 0.88, 0.13, 0.04]}
+            composite
+            radius={0.012}
+          />
+          <SoftBox
+            p={[seatX + 0.3, floor + 0.2, z + side * (half - 0.03)]}
+            s={[0.48, 0.2, 0.035]}
+            radius={0.02}
+          />
+        </group>
+      ))}
+      {/* Low rear bulkhead: high enough to read as a firewall, low enough to
+          keep the over-the-shoulder camera sightline onto the seat and pedals. */}
+      <SoftBox
+        p={[rear + 0.02, floor + 0.145, z]}
+        s={[0.04, 0.29, half * 2]}
+        composite
+        radius={0.008}
+      />
+      {[-1, 1].map((side) => (
+        <group key={side}>
+          <SoftBox
+            p={[rear + 0.045, floor + 0.255, z + side * 0.12]}
+            s={[0.02, 0.035, 0.05]}
+            color="#11161a"
+            radius={0.008}
+          />
+          <Block
+            p={[seatX - 0.02, floor + 0.035, z + side * 0.18]}
+            s={[0.42, 0.028, 0.035]}
+            color={C.steel}
+            metal={0.8}
+          />
+          <Fasteners
+            axis="y"
+            radius={0.003}
+            points={[
+              [seatX - 0.2, floor + 0.05, z + side * 0.18],
+              [seatX + 0.16, floor + 0.05, z + side * 0.18],
+            ]}
+          />
+        </group>
+      ))}
+      {!prototype && (
+        <group>
+          {/* Outboard door bars sit behind the window net on the driver's side. */}
+          {[0.25, 0.45].map((height) => (
+            <SoftBox
+              key={height}
+              p={[seatX + 0.08, floor + height, z - 0.31]}
+              s={[0.62, 0.055, 0.055]}
+              radius={0.022}
+            />
+          ))}
+          <Rod
+            a={[seatX - 0.19, floor + 0.25, z - 0.31]}
+            b={[seatX - 0.19, floor + 0.45, z - 0.31]}
+            r={0.018}
+            color="#30373d"
+          />
+        </group>
+      )}
+    </group>
+  );
+}
+
 function WindowNet({ x, y, z }: { x: number; y: number; z: number }) {
   return (
     <group position={[x, y, z]}>
@@ -1016,6 +1114,8 @@ export function CockpitAssembly({
 }) {
   const layout = cockpitLayout(car, body, shape),
     { prototype, floor, z, wheel, dash, pedals, seatX } = layout;
+  const view = useView();
+  const lifted = (view.exploded ?? 0) > 0.2;
   const texture = useMemo(() => carbonTexture(), []);
   const fabric = useMemo(() => fabricTexture(), []);
   useEffect(() => () => texture.dispose(), [texture]);
@@ -1023,6 +1123,22 @@ export function CockpitAssembly({
   return (
     <CarbonContext.Provider value={texture}>
       <FabricContext.Provider value={fabric}>
+        {lifted && (
+          <pointLight
+            position={[seatX + 0.05, floor + 1.15, z]}
+            color="#ffe8d0"
+            intensity={16}
+            distance={3.2}
+            decay={2}
+          />
+        )}
+        <CockpitTub
+          prototype={prototype}
+          floor={floor}
+          z={z}
+          seatX={seatX}
+          pedals={pedals}
+        />
         <SeatAssembly x={seatX} y={floor} z={z} prototype={prototype} />
         <SteeringAssembly p={wheel} prototype={prototype} />
         <group position={dash} rotation={[0, 0, 0.12]}>
@@ -1060,13 +1176,7 @@ export function CockpitAssembly({
         {!prototype && (
           <WindowNet x={seatX + 0.05} y={floor + 0.26} z={-0.64} />
         )}
-        {/* Cockpit floor scuff panels, heel support and bulkhead service bolts. */}
-        <SoftBox
-          p={[wheel[0] + 0.06, floor - 0.013, z]}
-          s={[0.63, 0.014, 0.37]}
-          composite
-          radius={0.003}
-        />
+        {/* Heel support and bulkhead service bolts. */}
         <SoftBox
           p={[pedals[0] - 0.17, floor + 0.012, z]}
           s={[0.11, 0.036, 0.26]}

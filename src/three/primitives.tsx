@@ -3,6 +3,7 @@ import * as THREE from "three";
 import type { Car } from "../data/cars.ts";
 import type { SystemId } from "../data/systems.ts";
 import { ruleFor, ruleInfo } from "../data/systems.ts";
+import type { Preset } from "./cameraPresets.ts";
 
 export type V3 = [number, number, number];
 
@@ -19,6 +20,7 @@ export type ViewState = {
   sectioned?: boolean;
   inspection?: boolean;
   exploded?: number;
+  preset?: Preset;
 };
 
 export const ViewCtx = createContext<ViewState | null>(null);

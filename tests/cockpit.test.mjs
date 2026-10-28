@@ -4,6 +4,10 @@ import {
   seatShellGeometry,
   harnessRibbonGeometry,
 } from "../src/three/cockpitGeometry.ts";
+import { cars } from "../src/data/cars.ts";
+import { shapes } from "../src/three/shapes.ts";
+import { Body } from "../src/three/body.ts";
+import { cockpitLayout } from "../src/three/cockpitLayout.ts";
 
 function assertSurface(geometry) {
   const position = geometry.getAttribute("position"),
@@ -86,5 +90,34 @@ test("shoulder, lap and crotch belts preserve finite width and do not collapse a
         ) < 0.000001,
       );
     geometry.dispose();
+  }
+});
+
+test("prototype and GT cabins keep a recognisably different layout on every car", () => {
+  for (const car of cars) {
+    const shape = shapes[car.id];
+    const body = new Body(shape.body);
+    const layout = cockpitLayout(car, body, shape);
+    const gt = car.category === "LMGT3";
+    assert.equal(layout.prototype, !gt);
+    assert.ok(
+      [...layout.pedals, ...layout.wheel, ...layout.seat].every(Number.isFinite),
+    );
+    assert.ok(layout.pedals[0] > layout.seatX, "pedals sit ahead of the seat");
+    assert.ok(layout.wheel[0] > layout.seatX, "wheel sits ahead of the seat");
+    if (gt) {
+      // GT cabins are offset toward the driver's side, wider and sit higher.
+      assert.ok(layout.z < 0, "GT seat is offset from the centreline");
+      assert.ok(layout.floor >= 0.17);
+      const width = layout.bounds.max[2] - layout.bounds.min[2];
+      assert.ok(width > 1.2, "GT cabin has a wider door-to-door surround");
+      assert.ok(layout.bounds.min[2] < -0.6);
+    } else {
+      // Prototype cockpits are a narrow central single-seat tub.
+      assert.ok(Math.abs(layout.z) < 0.1);
+      assert.ok(layout.floor <= 0.12);
+      const width = layout.bounds.max[2] - layout.bounds.min[2];
+      assert.ok(width < 0.72, "prototype tub stays narrow");
+    }
   }
 });
