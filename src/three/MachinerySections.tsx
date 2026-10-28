@@ -213,7 +213,6 @@ export function EngineSection({ car, length }: { car: Car; length: number }) {
   }, [gl, invalidate, car.id]);
   const mechanism = useMemo(() => engineMechanism(car, length), [car, length]);
   const piston = useGeometry("piston");
-  const sleeve = useGeometry("sleeve");
   const rodWeb = useGeometry("web");
   const rodFlange = useGeometry("flange");
   const ring = useGeometry("piston-ring");
@@ -229,7 +228,6 @@ export function EngineSection({ car, length }: { car: Car; length: number }) {
   const camLobe = useGeometry("cam-lobe");
   const camBearing = useGeometry("cam-bearing");
   const pistonPoses: Pose[] = [];
-  const sleevePoses: Pose[] = [];
   const ringPoses: Pose[] = [];
   const rodPoses: Pose[] = [];
   const flangePoses: Pose[] = [];
@@ -242,10 +240,6 @@ export function EngineSection({ car, length }: { car: Car; length: number }) {
   for (const cylinder of mechanism.cylinders) {
     const q = bankQuaternion(cylinder.angle);
     pistonPoses.push({ p: cylinder.piston, q });
-    sleevePoses.push({
-      p: rotatedBankPoint(cylinder.x, 0.147, 0, cylinder.angle),
-      q,
-    });
     for (const y of [0.194, 0.187, 0.18])
       ringPoses.push({
         p: rotatedBankPoint(cylinder.x, y, 0, cylinder.angle),
@@ -334,12 +328,6 @@ export function EngineSection({ car, length }: { car: Car; length: number }) {
         poses={pistonPoses}
         color={ALU}
         rough={0.32}
-      />
-      <Instances
-        geometry={sleeve}
-        poses={sleevePoses}
-        color="#737f85"
-        rough={0.43}
       />
       <Instances
         geometry={ring}

@@ -15,23 +15,23 @@ import type { Body } from "./body.ts";
 import type { Shape } from "./shapes.ts";
 import { Block, Loft, Mat, Rod, useView } from "./primitives.tsx";
 import type { V3 } from "./primitives.tsx";
-const EngineSection = lazy(() =>
-  import("./MachinerySections.tsx").then((m) => ({ default: m.EngineSection })),
-);
 const TransmissionSection = lazy(() =>
   import("./MachinerySections.tsx").then((m) => ({
     default: m.TransmissionSection,
   })),
 );
+import { EngineConstruction } from "./EngineConstruction.tsx";
+import {
+  coverDistances,
+  engineCoverPhase,
+  turboStudyPositions,
+} from "./engineTeardown.ts";
 import {
   annularDiscGeometry,
   coolingFanPhase,
   coolingFanTravel,
-  crankMainPositions,
-  engineBanks,
   drivelineInterfaces,
   mechanicalLayout,
-  rotatedBankPoint,
 } from "./mechanicalGeometry.ts";
 
 const ALU = "#8f999f";
@@ -255,10 +255,18 @@ function Collar({
   );
 }
 
-function Turbocharger({ p, side }: { p: V3; side: number }) {
-  const sectioned = useView().sectioned ?? false;
+function Turbocharger({
+  p,
+  side,
+  compressorLift,
+}: {
+  p: V3;
+  side: number;
+  compressorLift: number;
+}) {
   // Illustrative cartridge: hot turbine volute, bearing housing, compressor.
   // Wheel blade count and diameters are not a manufacturer drawing.
+  // The compressor cover slides off the stationary wheel; it is not a cut solid.
   const blades = Array.from({ length: 10 }, (_, i) => {
     const a = (i / 10) * Math.PI * 2;
     return {
@@ -284,57 +292,17 @@ function Turbocharger({ p, side }: { p: V3; side: number }) {
         color={CAST}
         rough={0.4}
       />
-      <mesh position={[0.086, 0, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
-        <cylinderGeometry
-          args={[
-            0.046,
-            0.052,
-            0.042,
-            28,
-            1,
-            sectioned,
-            0,
-            sectioned ? Math.PI : Math.PI * 2,
-          ]}
-        />
-        <Mat
-          color="#d7dde0"
-          metal={0.88}
-          rough={0.28}
-          side={sectioned ? THREE.DoubleSide : undefined}
-        />
+      <mesh position={[0.064, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+        <torusGeometry args={[0.04, 0.004, 8, 20]} />
+        <Mat color="#1b252b" metal={0.4} rough={0.55} />
       </mesh>
-      <mesh position={[0.122, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry
-          args={[
-            0.022,
-            0.04,
-            0.034,
-            24,
-            1,
-            sectioned,
-            0,
-            sectioned ? Math.PI : Math.PI * 2,
-          ]}
-        />
-        <Mat
-          color="#c5ccd0"
-          metal={0.84}
-          rough={0.26}
-          side={sectioned ? THREE.DoubleSide : undefined}
-        />
-      </mesh>
-      <mesh position={[0.141, 0, 0]} rotation={[0, Math.PI / 2, 0]}>
-        <ringGeometry
-          args={sectioned ? [0.04, 0.046, 24] : [0.01, 0.023, 24]}
-        />
-        <Mat
-          color="#1b252b"
-          metal={0.45}
-          rough={0.48}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
+      <Repeated
+        poses={blades}
+        size={[0.004, 0.03, 0.012]}
+        color="#e7ebed"
+        metal={0.92}
+        rough={0.22}
+      />
       <Cylinder
         p={[0.066, 0, 0]}
         radius={0.033}
@@ -343,17 +311,30 @@ function Turbocharger({ p, side }: { p: V3; side: number }) {
         color={TI}
         rough={0.3}
       />
-      <Repeated poses={blades} size={[0.004, 0.03, 0.012]} color="#e7ebed" metal={0.92} rough={0.22} />
-      <Repeated
-        bolt
-        poses={Array.from({ length: 6 }, (_, i) => {
-          const a = (i / 6) * Math.PI * 2;
-          return {
-            p: [0.1, Math.cos(a) * 0.04, Math.sin(a) * 0.04] as V3,
-            r: [0, 0, Math.PI / 2] as V3,
-          };
-        })}
-      />
+      <group position={[compressorLift, 0, 0]}>
+        <mesh position={[0.086, 0, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+          <cylinderGeometry args={[0.046, 0.052, 0.042, 28, 1, true]} />
+          <Mat color="#d7dde0" metal={0.88} rough={0.28} side={THREE.DoubleSide} />
+        </mesh>
+        <mesh position={[0.122, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+          <cylinderGeometry args={[0.022, 0.04, 0.034, 24, 1, true]} />
+          <Mat color="#c5ccd0" metal={0.84} rough={0.26} side={THREE.DoubleSide} />
+        </mesh>
+        <mesh position={[0.141, 0, 0]} rotation={[0, Math.PI / 2, 0]}>
+          <ringGeometry args={[0.01, 0.023, 24]} />
+          <Mat color="#1b252b" metal={0.45} rough={0.48} side={THREE.DoubleSide} />
+        </mesh>
+        <Repeated
+          bolt
+          poses={Array.from({ length: 6 }, (_, i) => {
+            const a = (i / 6) * Math.PI * 2;
+            return {
+              p: [0.1, Math.cos(a) * 0.04, Math.sin(a) * 0.04] as V3,
+              r: [0, 0, Math.PI / 2] as V3,
+            };
+          })}
+        />
+      </group>
       <Pipes
         paths={[
           [
@@ -386,46 +367,15 @@ function Turbocharger({ p, side }: { p: V3; side: number }) {
 }
 
 export function EngineAssembly({ car, body, shape }: AssemblyProps) {
-  const sectioned = useView().sectioned ?? false;
+  const view = useView();
+  const sectioned = view.sectioned ?? false;
+  const phase = engineCoverPhase(view.exploded ?? 0, sectioned);
   const layout = mechanicalLayout(car, body, shape);
   const architecture = engineeringLayoutFor(car);
   const drySump = architecture.drySump;
   const L = layout.engineLength;
-  const banks = engineBanks(car, L);
-  const mains = crankMainPositions(L, banks[0]?.cylinders.length ?? 1);
-  const flat = car.engine.config === "F";
-  const vee = car.engine.config === "V";
-  const cover =
-    car.make === "Ferrari"
-      ? "#9e2027"
-      : car.make === "Aston Martin"
-        ? "#38544a"
-        : "#343d43";
-  const turboCount = architecture.turboCount;
-  const turboPositions: V3[] = Array.from({ length: turboCount }, (_, i) =>
-    car.engine.config === "I"
-      ? [-L * 0.25 + i * L * 0.44, 0.04, 0.31]
-      : [-L * 0.43, 0.025, turboCount === 1 ? 0.3 : (i ? 1 : -1) * 0.3],
-  );
-  const intakePaths: V3[][] = [];
-  const headers: V3[][] = [];
-  for (const bank of banks) {
-    for (const x of bank.cylinders) {
-      const side = bank.side || 1;
-      const port = rotatedBankPoint(x, 0.235, -side * 0.095, bank.angle);
-      intakePaths.push([
-        port,
-        [x, 0.305, side * 0.07],
-        [x, car.engine.config === "F" ? 0.26 : 0.375, 0],
-      ]);
-      const exhaust = rotatedBankPoint(x, 0.205, side * 0.11, bank.angle);
-      headers.push([
-        exhaust,
-        [x + 0.02, 0.05, side * 0.285],
-        [-L * 0.5 - 0.04, -0.015, side * 0.28],
-      ]);
-    }
-  }
+  const compressorLift = coverDistances(phase).compressorCover;
+  const turboPositions = turboStudyPositions(car, L);
   const frontBolts: Pose[] = Array.from({ length: 10 }, (_, i) => {
     const a = (i / 10) * Math.PI * 2;
     return {
@@ -438,117 +388,15 @@ export function EngineAssembly({ car, body, shape }: AssemblyProps) {
       position={[layout.engineX, layout.engineY, 0]}
       scale={layout.engineScale}
     >
-      <group name="engine-crankcase">
-        {sectioned ? (
-          <>
-            <Rounded
-              p={[0, -0.06, -0.115]}
-              s={[L * 0.98, 0.105, 0.025]}
-              color={CAST}
-              radius={0.006}
-            />
-            <Rounded
-              p={[0, -0.101, 0.112]}
-              s={[L * 0.98, 0.014, 0.035]}
-              color={ALU}
-              radius={0.005}
-            />
-          </>
-        ) : (
-          <Rounded
-            p={[0, flat ? -0.02 : -0.01, 0]}
-            s={[L * 0.98, flat ? 0.1 : 0.125, flat ? 0.22 : vee ? 0.22 : 0.26]}
-            color={CAST}
-            radius={0.014}
-          />
-        )}
-        {vee && !sectioned && (
-          <Rounded
-            p={[0, 0.05, 0]}
-            s={[L * 0.86, 0.03, 0.09]}
-            color="#5c676d"
-            radius={0.006}
-          />
-        )}
-        {sectioned &&
-          mains.map((x) => (
-            <group key={x}>
-              <Rounded
-                p={[x, -0.028, -0.015]}
-                s={[0.032, 0.042, 0.15]}
-                color="#4a545a"
-                radius={0.004}
-              />
-              <Cylinder
-                p={[x, 0, 0]}
-                radius={0.022}
-                length={0.018}
-                axis="x"
-                color="#9c8866"
-                metal={0.65}
-                rough={0.42}
-              />
-            </group>
-          ))}
-        {!sectioned && (
-          <Cylinder
-            p={[L / 2 + 0.008, 0.01, 0]}
-            radius={flat ? 0.09 : 0.115}
-            length={0.026}
-            axis="x"
-            color={CAST}
-          />
-        )}
-        <Rounded
-          p={[L * 0.5, 0.015, sectioned ? -0.04 : 0]}
-          s={[
-            0.05,
-            flat ? 0.14 : 0.17,
-            sectioned ? 0.12 : flat ? 0.16 : 0.2,
-          ]}
-          color="#59636a"
-          radius={0.01}
+      <EngineConstruction car={car} length={L} phase={phase} drySump={drySump} />
+      {turboPositions.map((p, i) => (
+        <Turbocharger
+          key={i}
+          p={p}
+          side={Math.sign(p[2]) || 1}
+          compressorLift={compressorLift}
         />
-        {!sectioned && (
-          <Cylinder
-            p={[L / 2 + 0.05, -0.025, 0]}
-            radius={0.046}
-            length={0.026}
-            axis="x"
-            color="#2a3136"
-            metal={0.45}
-            rough={0.48}
-          />
-        )}
-      </group>
-      {sectioned && (
-        <Suspense fallback={null}>
-          <EngineSection car={car} length={L} />
-        </Suspense>
-      )}
-      <group name="engine-sump">
-        <Rounded
-          p={[0.01, drySump ? -0.112 : -0.145, 0]}
-          s={[L * 0.86, drySump ? 0.05 : 0.08, drySump ? 0.22 : 0.26]}
-          color="#58636a"
-          radius={0.012}
-        />
-        <Rounded
-          p={[L * 0.36, drySump ? -0.085 : -0.11, 0.13]}
-          s={[0.1, 0.055, 0.045]}
-          color={ALU}
-          radius={0.008}
-        />
-        <Repeated
-          poses={Array.from({ length: 8 }, (_, i) => ({
-            p: [-L * 0.36 + (i * L * 0.72) / 7, drySump ? -0.1 : -0.125, 0] as V3,
-          }))}
-          size={[0.01, drySump ? 0.035 : 0.045, drySump ? 0.2 : 0.24]}
-          color="#9aa3a8"
-          metal={0.7}
-          rough={0.4}
-        />
-      </group>
+      ))}
       <Cylinder
         p={[L / 2 + 0.03, -0.02, 0]}
         radius={0.054}
@@ -558,221 +406,6 @@ export function EngineAssembly({ car, body, shape }: AssemblyProps) {
         rough={0.55}
       />
       <Repeated bolt poses={frontBolts} />
-      {!sectioned &&
-        banks.map((bank) => (
-          <group
-            key={bank.side}
-            name="engine-bank"
-            rotation={[bank.angle, 0, 0]}
-          >
-            <Rounded
-              p={[0, 0.12, 0]}
-              s={[L * 0.96, 0.15, flat ? 0.16 : 0.21]}
-              color="#828b8f"
-              radius={0.01}
-            />
-            <Rounded
-              p={[0, 0.198, 0]}
-              s={[L * 0.94, 0.008, flat ? 0.15 : 0.2]}
-              color="#1a2124"
-              metal={0.05}
-              rough={0.85}
-              radius={0.002}
-            />
-            <Rounded
-              p={[0, 0.267, 0]}
-              s={[L * 0.96, 0.066, 0.226]}
-              color={ALU}
-              radius={0.012}
-            />
-            <Rounded
-              p={[0, 0.325, 0]}
-              s={[L * 0.94, 0.048, 0.205]}
-              color={cover}
-              metal={0.12}
-              rough={0.48}
-              radius={0.012}
-            />
-            <Repeated
-              poses={Array.from({ length: 6 }, (_, i) => ({
-                p: [-L * 0.37 + i * L * 0.145, 0.352, 0],
-              }))}
-              size={[0.009, 0.007, 0.14]}
-              color="#171f23"
-              metal={0.1}
-            />
-            <Repeated
-              bolt
-              poses={bank.cylinders.flatMap((x) =>
-                [-1, 1].map((side) => ({ p: [x, 0.355, side * 0.079] as V3 })),
-              )}
-            />
-            {bank.cylinders.map((x, i) => (
-              <group key={i}>
-                <Rounded
-                  p={[x, 0.366, 0]}
-                  s={[0.044, 0.021, 0.05]}
-                  color="#1d272b"
-                  metal={0.05}
-                  radius={0.005}
-                />
-                <Cylinder
-                  p={[x, 0.276, -0.121]}
-                  radius={0.012}
-                  length={0.03}
-                  axis="z"
-                  color={BRASS}
-                />
-              </group>
-            ))}
-            <Pipes
-              paths={[
-                [
-                  [-L * 0.39, 0.365, 0.023],
-                  [0, 0.37, 0.03],
-                  [L * 0.39, 0.365, 0.023],
-                ],
-              ]}
-              radius={0.004}
-            />
-            <Rod
-              a={[-L * 0.44, 0.238, -0.116]}
-              b={[L * 0.44, 0.238, -0.116]}
-              r={0.011}
-              color={ALU}
-            />
-            <Repeated
-              bolt
-              poses={[-L * 0.41, L * 0.41].flatMap((x) =>
-                [-1, 1].map((side) => ({
-                  p: [x, 0.05, side * 0.148] as V3,
-                  r: [Math.PI / 2, 0, 0] as V3,
-                })),
-              )}
-            />
-          </group>
-        ))}
-      {sectioned &&
-        banks.map((bank) => (
-          <group
-            key={`section-wall${bank.side}`}
-            name="engine-bank"
-            rotation={[bank.angle, 0, 0]}
-          >
-            <Rounded
-              p={[0, 0.072, -0.105]}
-              s={[L * 0.96, 0.065, 0.018]}
-              color="#828b8f"
-              radius={0.006}
-            />
-            <Rounded
-              p={[0, 0.233, -0.105]}
-              s={[L * 0.92, 0.015, 0.022]}
-              color={ALU}
-              radius={0.005}
-            />
-            <Rounded
-              p={[0, 0.3, -0.105]}
-              s={[L * 0.88, 0.025, 0.02]}
-              color={cover}
-              metal={0.12}
-              rough={0.48}
-              radius={0.005}
-            />
-            <Rounded
-              p={[0, 0.233, 0.1]}
-              s={[L * 0.92, 0.015, 0.023]}
-              color={ALU}
-              radius={0.005}
-            />
-            <Repeated
-              poses={bank.cylinders.map((x) => ({
-                p: [x, 0.31, -0.105] as V3,
-              }))}
-              size={[0.02, 0.012, 0.04]}
-              color="#6d777c"
-              metal={0.75}
-            />
-            <Repeated
-              bolt
-              poses={bank.cylinders.map((x) => ({
-                p: [x, 0.245, 0.101] as V3,
-              }))}
-            />
-          </group>
-        ))}
-      {!sectioned && (
-        <Pipes
-          paths={intakePaths}
-          radius={0.019}
-          color="#687a82"
-          metal={0.75}
-          rough={0.4}
-        />
-      )}
-
-      {!sectioned && (
-        <>
-          <Rounded
-            p={[0.015, car.engine.config === "F" ? 0.29 : 0.4, 0]}
-            s={[L * 0.82, 0.08, 0.145]}
-            color={CARBON}
-            metal={0}
-            rough={0.55}
-            radius={0.03}
-          />
-          <Cylinder
-            p={[L * 0.48, car.engine.config === "F" ? 0.29 : 0.4, 0]}
-            radius={0.035}
-            length={0.09}
-            axis="x"
-            color={ALU}
-          />
-          <Collar
-            p={[L * 0.52, car.engine.config === "F" ? 0.29 : 0.4, 0]}
-            radius={0.039}
-          />
-        </>
-      )}
-      <Pipes
-        paths={headers}
-        radius={0.015}
-        color="#9c8b72"
-        metal={0.9}
-        rough={0.68}
-      />
-      {turboCount === 1 && banks.length === 2 && (
-        <Pipes
-          paths={[
-            [
-              [-L * 0.5 - 0.04, -0.015, -0.28],
-              [-L * 0.5 - 0.12, -0.04, -0.19],
-              [-L * 0.5 - 0.12, -0.04, 0.16],
-              [-L * 0.43 - 0.035, 0.015, 0.24],
-            ],
-          ]}
-          radius={0.021}
-          color="#9c8b72"
-          metal={0.9}
-          rough={0.68}
-        />
-      )}
-      {turboPositions.map((p, i) => (
-        <Turbocharger key={i} p={p} side={Math.sign(p[2]) || 1} />
-      ))}
-      {!sectioned && turboCount > 0 && (
-        <Pipes
-          paths={turboPositions.map((p) => [
-            [p[0] + 0.07, p[1] + 0.05, p[2]],
-            [0, 0.25, p[2]],
-            [L * 0.41, 0.33, p[2] * 0.65],
-            [L * 0.53, 0.4, 0],
-          ])}
-          radius={0.026}
-          color="#252f36"
-          rough={0.5}
-        />
-      )}
       {/* Remote tank only where the profile records a dry sump. Routes stay illustrative. */}
       {drySump && (
         <group>
