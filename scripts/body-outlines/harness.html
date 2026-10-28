@@ -1,0 +1,127 @@
+<!doctype html><html><body style="margin:0;background:#ff00ff;overflow:hidden">
+<iframe id="f" style="width:1600px;height:1000px;border:0;display:block" allow="autoplay; fullscreen; xr-spatial-tracking"></iframe>
+<script src="https://static.sketchfab.com/api/sketchfab-viewer-1.12.1.js"></script>
+<script>
+const q = new URLSearchParams(location.search);
+const tuning = JSON.parse(q.get("tuning") || "{}");
+window.state = { ready: false };
+function rotate(api, rotation, done) {
+  if (!rotation) return done();
+  api.getSceneGraph((err, graph) => {
+    const matches = [];
+    const walk = (n) => { if (n.name === rotation.nodeName && n.type === "MatrixTransform") matches.push(n); (n.children || []).forEach(walk); };
+    walk(graph);
+    if (matches.length !== 1) return done();
+    const id = matches[0].instanceID;
+    api.getMatrix(id, (e, m) => {
+      const len = Math.hypot(...rotation.axis); const [x, y, z] = rotation.axis.map(v => v / len);
+      const c = Math.cos(rotation.angle), s = Math.sin(rotation.angle), t = 1 - c;
+      const r = [x*x*t+c, y*x*t+z*s, z*x*t-y*s, 0, x*y*t-z*s, y*y*t+c, z*y*t+x*s, 0, x*z*t+y*s, y*z*t-x*s, z*z*t+c, 0, 0,0,0,1];
+      const out = Array.from({ length: 16 }, (_, i) => { const row = i % 4, col = Math.floor(i / 4); return [0,1,2,3].reduce((sum,k)=>sum + r[k*4+row]*m.local[col*4+k], 0); });
+      api.setMatrix(id, out, () => done());
+    });
+  });
+}
+function hide(api, names, done) {
+  if (!names || !names.length) return done();
+  api.getNodeMap((e, nodes) => {
+    const targets = Object.values(nodes).filter(n => n.name && names.includes(n.name));
+    let left = targets.length; if (!left) return done();
+    targets.forEach(n => api.hide(n.instanceID, () => { if (--left === 0) done(); }));
+  });
+}
+new Sketchfab(document.getElementById("f")).init(q.get("id"), {
+  autostart: 1, transparent: 1, preload: 1, camera: 0, scrollwheel: 0,
+  ui_controls: 0, ui_infos: 0, ui_inspector: 0, ui_stop: 0, ui_watermark: 0, ui_watermark_link: 0, ui_hint: 0,
+  ui_settings: 0, ui_help: 0, ui_vr: 0, ui_fullscreen: 0, ui_annotations: 0, ui_loading: 0, ui_ar: 0, annotations_visible: 0,
+  success(api) {
+    window.api = api;
+    api.addEventListener("viewerready", () => {
+      rotate(api, tuning.modelRotation, () => hide(api, tuning.hiddenNodeNames, () => {
+        api.setTextureQuality && api.setTextureQuality("ld");
+        // Plain silhouettes: no vignette/bloom over the transparent background, no ground shadow.
+        try { api.setPostProcessing({ enable: false }); } catch (e) {}
+        try { api.setEnvironment({ shadowEnabled: false }); } catch (e) {}
+        api.getCameraLookAt((e, cam) => { window.state = { ready: true, cam }; });
+      }));
+    });
+  },
+  error() { window.state = { error: true }; },
+});
+window.look = (pos, target, fov) => new Promise(res => {
+  api.setFov(fov, () => api.setCameraLookAt(pos, target, 0, () => setTimeout(res, 900)));
+});
+</script></body></html>
+<script>
+// Analysis helpers (data URLs are same-origin, so canvases stay readable).
+window.decode = (url) => new Promise((res) => { const img = new Image(); img.onload = () => { const c = document.createElement("canvas"); c.width = img.width; c.height = img.height; const ctx = c.getContext("2d"); ctx.drawImage(img, 0, 0); res(ctx.getImageData(0, 0, c.width, c.height)); }; img.src = url; });
+window.matte = async (magenta, green) => {
+  const a = await decode(magenta), b = await decode(green);
+  const w = a.width, h = a.height, mask = new Uint8Array(w * h);
+  for (let i = 0; i < w * h; i++) {
+    const alpha = 1 - (b.data[i * 4 + 1] - a.data[i * 4 + 1]) / 255;
+    mask[i] = alpha > 0.5 ? 2 : alpha > 0.12 ? 1 : 0; // 2 opaque, 1 translucent (glass)
+  }
+  // Ignore viewer UI: title, logos and the rotate hint.
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (y < 70 || y > h - 150 || x < 60 || x > w - 60) mask[y * w + x] = 0;
+  window.lastMask = { w, h, mask, image: a };
+  let x0 = w, x1 = -1, y0 = h, y1 = -1;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (mask[y * w + x] === 2) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+  return { w, h, x0, x1, y0, y1 };
+};
+// Per column: lowest opaque pixel, highest pixel of the body (scanning up from the
+// bottom and tolerating gaps up to `gap` px, so glass stays in but a wing above a
+// clear gap is excluded), and the very top pixel.
+window.columns = (gap) => {
+  const { w, h, mask } = window.lastMask;
+  const out = [];
+  for (let x = 0; x < w; x++) {
+    let bottom = -1;
+    for (let y = h - 1; y >= 0; y--) if (mask[y * w + x] === 2) { bottom = y; break; }
+    if (bottom < 0) { out.push(null); continue; }
+    let top = bottom, run = 0;
+    for (let y = bottom; y >= 0; y--) {
+      if (mask[y * w + x]) { top = y; run = 0; } else if (++run > gap) break;
+    }
+    let first = top;
+    for (let y = 0; y < h; y++) if (mask[y * w + x]) { first = y; break; }
+    out.push([bottom, top, first]);
+  }
+  return out;
+};
+window.setBg = (c) => { document.body.style.background = c; };
+// Count near-black opaque pixels per column within `band` px above `ground`: tyres
+// show as tall dark columns.
+window.dark = (ground, band) => {
+  const { w, mask, image } = window.lastMask;
+  const out = [];
+  for (let x = 0; x < w; x++) {
+    let n = 0;
+    for (let y = Math.max(0, ground - band); y <= ground; y++) {
+      const i = y * w + x;
+      if (mask[i] !== 2) continue;
+      const r = image.data[i * 4], g = image.data[i * 4 + 1], b = image.data[i * 4 + 2];
+      if (0.3 * r + 0.59 * g + 0.11 * b < 48) n++;
+    }
+    out.push(n);
+  }
+  return out;
+};
+window.rotateRoot = (angle, axis) => new Promise((res) => {
+  api.getSceneGraph((e, graph) => {
+    let node = null;
+    const walk = (n) => { if (!node && n.type === "MatrixTransform") node = n; (n.children || []).forEach(walk); };
+    walk(graph);
+    if (!node) return res(false);
+    api.getMatrix(node.instanceID, (e2, m) => {
+      const len = Math.hypot(...axis); const [x, y, z] = axis.map(v => v / len);
+      const c = Math.cos(angle), s = Math.sin(angle), t = 1 - c;
+      const r = [x*x*t+c, y*x*t+z*s, z*x*t-y*s, 0, x*y*t-z*s, y*y*t+c, z*y*t+x*s, 0, x*z*t+y*s, y*z*t-x*s, z*z*t+c, 0, 0,0,0,1];
+      // Apply in world space: R * M.
+      const out = Array.from({ length: 16 }, (_, i) => { const row = i % 4, col = Math.floor(i / 4); return [0,1,2,3].reduce((sum,k)=>sum + r[k*4+row]*m.world[col*4+k], 0); });
+      // Convert back to local: local' = parentInv * out, approximated by assuming the root's parent is identity.
+      api.setMatrix(node.instanceID, out, () => res(true));
+    });
+  });
+});
+</script>
