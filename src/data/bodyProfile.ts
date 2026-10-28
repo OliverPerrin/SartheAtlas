@@ -33,7 +33,7 @@ export const V = {
   top: [0.85, 1] as const,
 };
 
-function monotone(keys: Keys) {
+export function monotone(keys: Keys) {
   const k = [...keys].sort((a, b) => a[0] - b[0]);
   const xs = k.map((p) => p[0]);
   const ys = k.map((p) => p[1]);
