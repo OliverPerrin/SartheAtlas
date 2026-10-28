@@ -7,6 +7,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
 } from "react";
 import type { ReactNode } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
@@ -55,6 +56,10 @@ import type { Preset } from "./cameraPresets.ts";
 import { isInspectionPreset } from "./cameraPresets.ts";
 import { inspectionFrame, setCameraProjection } from "./inspectionCamera.ts";
 import { layerWeights } from "./layerPlan.ts";
+import { createBuildClock, usesGarage } from "./teardown.ts";
+import type { BuildClock, StudioMode } from "./teardown.ts";
+import { GarageRegistry, TeardownCtx, useTeardown } from "./teardownLayout.ts";
+import { AeroFlow, BuildDriver, GarageFloor } from "./TeardownStage.tsx";
 export { presets } from "./cameraPresets.ts";
 export type { Preset } from "./cameraPresets.ts";
 const presetPos: Record<
@@ -92,6 +97,8 @@ export type SceneProps = {
   bodyRemoved?: boolean;
   wheelsRemoved?: boolean;
   sectioned?: boolean;
+  studio?: StudioMode;
+  clock?: BuildClock;
 };
 
 function Rig({
@@ -100,14 +107,20 @@ function Rig({
   lift,
   compact,
   car,
+  studio,
 }: {
   preset: Preset;
   nonce: number;
   lift: number;
   compact: boolean;
   car: Car;
+  studio: StudioMode;
 }) {
   const { body, shape } = useBody(car);
+  const { garage } = useTeardown();
+  const version = useSyncExternalStore(garage.subscribe, garage.getVersion);
+  // Only the garage framing depends on the measured layout.
+  const layoutVersion = usesGarage(studio) ? version : 0;
   const { camera, size } = useThree();
   const invalidate = useThree((s) => s.invalidate);
   const controls = useThree((s) => s.controls) as unknown as OrbitImpl | null;
@@ -115,6 +128,50 @@ function Rig({
   const targetGoal = useRef(new THREE.Vector3(0, 0.45, 0));
   useEffect(() => {
     const perspective = camera as THREE.PerspectiveCamera;
+    if (studio !== "cutaway") {
+      const aspect = size.width / Math.max(1, size.height);
+      if (studio === "tunnel") {
+        setCameraProjection(perspective, 30, 0.1);
+        goal.current = new THREE.Vector3(6.4, 2.2, 7.6).multiplyScalar(
+          aspect < 0.8 ? 2.15 : aspect < 1.2 ? 1.35 : 1,
+        );
+        targetGoal.current.set(-0.4, 0.45, 0);
+      } else {
+        // High over the garage floor: back off until every corner of the
+        // measured layout (and the tallest parts on it) is inside the frame.
+        setCameraProjection(perspective, 34, 0.1);
+        const { bounds } = garage.current();
+        const centre = new THREE.Vector3(
+          (bounds.x0 + bounds.x1) / 2,
+          0,
+          (bounds.z0 + bounds.z1) / 2,
+        );
+        const hx = (bounds.x1 - bounds.x0) / 2 + 0.3;
+        const hz = (bounds.z1 - bounds.z0) / 2 + 0.3;
+        const direction = new THREE.Vector3(0.14, 1, 0.9).normalize();
+        const probe = new THREE.PerspectiveCamera(34, aspect, 0.1, 80);
+        const corner = new THREE.Vector3();
+        let distance = 8;
+        for (; distance < 40; distance += 0.25) {
+          probe.position.copy(direction).multiplyScalar(distance).add(centre);
+          probe.lookAt(centre);
+          probe.updateMatrixWorld();
+          let fits = true;
+          for (const x of [-hx, hx])
+            for (const y of [0, 0.9])
+              for (const z of [-hz, hz]) {
+                corner.set(x, y, z).add(centre).project(probe);
+                if (Math.abs(corner.x) > 0.97 || Math.abs(corner.y) > 0.86)
+                  fits = false;
+              }
+          if (fits) break;
+        }
+        goal.current = direction.multiplyScalar(distance).add(centre);
+        targetGoal.current.copy(centre);
+      }
+      invalidate();
+      return;
+    }
     if (isInspectionPreset(preset)) {
       const frame = inspectionFrame(car, body, shape, preset, lift);
       setCameraProjection(perspective, frame.fov, 0.012);
@@ -152,10 +209,7 @@ function Rig({
       // Follow the same staged lift as the parts, keeping the separated
       // bodywork and the remaining structure inside the frame.
       v.multiplyScalar(
-        1 +
-          outer * 0.38 +
-          layers.cooling * 0.06 +
-          layers.cabin * 0.05,
+        1 + outer * 0.38 + layers.cooling * 0.06 + layers.cabin * 0.05,
       );
       if (preset !== "top" && preset !== "under")
         v.y += outer * 0.78 + layers.cabin * 0.08;
@@ -163,9 +217,7 @@ function Rig({
     goal.current = v;
     targetGoal.current.set(
       0,
-      preset === "under"
-        ? 0.2
-        : 0.45 + outer * 0.85 + layers.cabin * 0.12,
+      preset === "under" ? 0.2 : 0.45 + outer * 0.85 + layers.cabin * 0.12,
       0,
     );
     invalidate();
@@ -178,6 +230,9 @@ function Rig({
     lift,
     compact,
     car,
+    studio,
+    garage,
+    layoutVersion,
     body,
     shape,
     invalidate,
@@ -274,15 +329,39 @@ const Studio = memo(function Studio({
   compact,
   lift,
   poseRevision,
+  wide = false,
+  tunnel = false,
 }: {
   night: boolean;
   under: boolean;
   compact: boolean;
   lift: number;
   poseRevision: string;
+  wide?: boolean;
+  tunnel?: boolean;
 }) {
   const gl = useThree((state) => state.gl);
   const invalidate = useThree((state) => state.invalidate);
+  const sun = useRef<THREE.DirectionalLight>(null);
+  useEffect(() => {
+    // The garage layout spreads parts well beyond the car's own footprint.
+    const shadow = sun.current?.shadow;
+    if (!shadow) return;
+    const camera = shadow.camera;
+    // A cached map keeps its old size and bounds; let three rebuild it.
+    shadow.map?.dispose();
+    shadow.map = null;
+    const reach = wide ? 9 : 5;
+    Object.assign(camera, {
+      left: -reach,
+      right: reach,
+      top: reach,
+      bottom: -reach,
+    });
+    camera.updateProjectionMatrix();
+    refreshShadows(gl);
+    invalidate();
+  }, [wide, gl, invalidate]);
   useEffect(() => {
     refreshShadows(gl);
     invalidate();
@@ -336,18 +415,19 @@ const Studio = memo(function Studio({
     ),
     [night],
   );
-  const background = night ? "#090c10" : "#161b21";
+  const background = tunnel ? "#030508" : night ? "#090c10" : "#161b21";
   return (
     <>
       <color attach="background" args={[background]} />
-      <fog attach="fog" args={[background, 16, 38]} />
+      <fog attach="fog" args={[background, wide ? 34 : 16, wide ? 80 : 38]} />
       <ambientLight intensity={night ? 0.12 : 0.3} />
       <directionalLight
+        ref={sun}
         position={[3, 7, 4]}
         intensity={night ? 1.2 : 2.3}
         color="#fff3e5"
         castShadow={!compact}
-        shadow-mapSize={[1024, 1024]}
+        shadow-mapSize={wide ? [2048, 2048] : [1024, 1024]}
         shadow-camera-left={-5}
         shadow-camera-right={5}
         shadow-camera-top={5}
@@ -386,7 +466,7 @@ const Studio = memo(function Studio({
           frames={under ? 0 : settledPose === poseRevision ? 1 : Infinity}
           position={[0, -0.008 - lift * 0.65, 0]}
           opacity={0.68}
-          scale={11}
+          scale={wide ? 22 : 11}
           blur={2.4}
           far={2.8}
           resolution={compact ? 256 : 384}
@@ -462,6 +542,19 @@ export function CarScene(p: SceneProps) {
     ],
   );
   const under = p.preset === "under";
+  const studio = p.studio ?? "cutaway";
+  const tunnel = studio === "tunnel";
+  const [garage] = useState(() => new GarageRegistry());
+  const [ownClock] = useState(createBuildClock);
+  const clock = p.clock ?? ownClock;
+  useEffect(() => garage.invalidate(), [garage, detailRevision, p.car.id]);
+  const teardown = useMemo(
+    () => ({ mode: studio, clock, garage }),
+    [studio, clock, garage],
+  );
+  const [reducedMotion] = useState(
+    () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+  );
   return (
     <SceneBoundary>
       <div
@@ -487,32 +580,47 @@ export function CarScene(p: SceneProps) {
           onPointerMissed={() => p.onHover(null)}
         >
           <Studio
-            night={p.night}
+            wide={usesGarage(studio)}
+            tunnel={tunnel}
+            night={p.night || tunnel}
             under={under}
             compact={!!p.compact}
             lift={p.exploded}
-            poseRevision={`${p.car.id}/${p.exploded}/${p.bodyRemoved}/${p.wheelsRemoved}/${p.focus ? p.selected : "all"}/${p.xray}/${p.sectioned}/${detailRevision}`}
+            poseRevision={`${studio}/${p.car.id}/${p.exploded}/${p.bodyRemoved}/${p.wheelsRemoved}/${p.focus ? p.selected : "all"}/${p.xray}/${p.sectioned}/${detailRevision}`}
           />
-          <ViewCtx.Provider value={view}>
-            <Suspense fallback={null}>
-              <CarModel
-                car={p.car}
-                entry={p.entry}
-                paint={p.paint}
-                exploded={p.exploded}
-                onSelect={p.onSelect}
-                onHover={p.onHover}
-                fontsReady={p.fontsReady}
-                onDetailReady={detailReady}
-              />
-            </Suspense>
-          </ViewCtx.Provider>
-          {p.dims && <Dimensions car={p.car} />}
+          <TeardownCtx.Provider value={teardown}>
+            <BuildDriver />
+            {usesGarage(studio) && <GarageFloor />}
+            {tunnel && <AeroFlow car={p.car} animate={!reducedMotion} />}
+            <ViewCtx.Provider value={view}>
+              <Suspense fallback={null}>
+                <CarModel
+                  car={p.car}
+                  entry={p.entry}
+                  paint={p.paint}
+                  exploded={p.exploded}
+                  onSelect={p.onSelect}
+                  onHover={p.onHover}
+                  fontsReady={p.fontsReady}
+                  onDetailReady={detailReady}
+                />
+              </Suspense>
+            </ViewCtx.Provider>
+            <Rig
+              studio={studio}
+              car={p.car}
+              preset={p.preset}
+              nonce={p.presetNonce}
+              lift={p.exploded}
+              compact={!!p.compact}
+            />
+          </TeardownCtx.Provider>
+          {p.dims && studio === "cutaway" && <Dimensions car={p.car} />}
           <OrbitControls
             makeDefault
             enablePan={false}
             minDistance={isInspectionPreset(p.preset) ? 0.18 : 3.2}
-            maxDistance={25}
+            maxDistance={usesGarage(studio) ? 34 : 25}
             autoRotate={p.spin}
             onStart={() => {
               p.onHover(null);
@@ -523,13 +631,6 @@ export function CarScene(p: SceneProps) {
             }
             autoRotateSpeed={0.8}
             enableDamping
-          />
-          <Rig
-            car={p.car}
-            preset={p.preset}
-            nonce={p.presetNonce}
-            lift={p.exploded}
-            compact={!!p.compact}
           />
         </Canvas>
       </div>

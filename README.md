@@ -47,6 +47,10 @@ The catalogue is a dated provisional snapshot, not a live entry list. Keep sourc
 - 14 engineering assemblies with component-level roles, interfaces and evidence from 28 primary sources. The hybrid system is excluded for non-hybrid cars.
 - Detailed cockpit, pedal box, powertrain and running-gear close views; removable bodywork and wheels expose the mechanical assemblies.
 - Numbered on-model callouts name the parts of the selected system and match the numbered component list beside the viewer.
+- Teardown studio, linkable with `view=garage`, `view=build` or `view=tunnel`:
+  - **Garage** lays every mounted assembly out in primer on a taped pit-garage floor, grouped and labelled by system.
+  - **Build** plays a scrubbable nine-step assembly in build order (structure → corners → powertrain → energy → cooling → driver station → bodywork → wing → wheels) into an empty bay, with a caption per step; the livery goes on with the panels.
+  - **Wind tunnel** draws speed-coloured streamlines and particles around each study's own body: over the roof, past the flanks, through the underfloor and diffuser, over the wing and off its tips. It is a geometric illustration, not CFD, and becomes static when reduced motion is requested.
 - Open housings reveals sectioned engine and transmission studies that expose pistons, rods, crank/cam hardware, shaft bearings, gear pairs and selectors. Internal dimensions, ratios, valve layout and timing remain illustrative.
 - Team-inspired colour studies and Ferrari number / palette options.
 - 18 attributed creator-hosted detailed exterior references, with explicit year and variant caveats.

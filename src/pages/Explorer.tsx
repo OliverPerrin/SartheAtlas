@@ -5,6 +5,7 @@ import {
   useEffect,
   useRef,
   useState,
+  useSyncExternalStore,
 } from "react";
 import {
   ArrowUpRight,
@@ -44,6 +45,13 @@ import {
 import type { Group, Rule, SystemId } from "../data/systems.ts";
 import { presets, isInspectionPreset } from "../three/cameraPresets.ts";
 import { LAYER_STAGES, stageAt } from "../three/layerPlan.ts";
+import {
+  createBuildClock,
+  isStudioMode,
+  liveryApplied,
+} from "../three/teardown.ts";
+import type { StudioMode } from "../three/teardown.ts";
+import { TeardownBar } from "../components/TeardownBar.tsx";
 import {
   engineeringDetailsFor,
   carEngineeringSummary,
@@ -124,12 +132,24 @@ export default function Explorer({ params }: { params: URLSearchParams }) {
   const fonts = useFonts();
   const touch = useCoarsePointer();
   const ref = exteriorReferences[car.id];
-  const startExploded = Math.min(
-    1,
-    Math.max(0, Number(params.get("x")) || 0),
-  );
+  const startExploded = Math.min(1, Math.max(0, Number(params.get("x")) || 0));
+  const startStudio: StudioMode = isStudioMode(params.get("view"))
+    ? (params.get("view") as StudioMode)
+    : "cutaway";
   const defaultExterior =
-    Boolean(ref) && params.get("view") !== "study" && startExploded <= 0;
+    Boolean(ref) &&
+    params.get("view") !== "study" &&
+    startStudio === "cutaway" &&
+    startExploded <= 0;
+  const [studio, setStudio] = useState<StudioMode>(startStudio);
+  const [clock] = useState(() => {
+    const created = createBuildClock(startStudio === "build" ? 0 : 1);
+    if (startStudio === "build") created.play();
+    return created;
+  });
+  const livery = useSyncExternalStore(clock.subscribe, () =>
+    liveryApplied(clock.get()),
+  );
   const [selected, setSelected] = useState<SystemId | null>(null);
   const [hovered, setHovered] = useState<SystemId | null>(null);
   const [exploded, setExploded] = useState(startExploded);
@@ -202,6 +222,45 @@ export default function Explorer({ params }: { params: URLSearchParams }) {
     );
   };
 
+  const urlView = params.get("view");
+  useEffect(() => {
+    if (studio === "cutaway" && isStudioMode(urlView) && urlView !== "cutaway")
+      navigate(
+        "car",
+        { car: car.id, entry: params.get("entry") ?? undefined, view: "study" },
+        true,
+      );
+  }, [studio, urlView, car.id, params]);
+
+  const enterStudio = (mode: StudioMode) => {
+    setStudio(mode);
+    setExterior(false);
+    setSpin(false);
+    setExploded(0);
+    setXray(false);
+    setBodyRemoved(false);
+    setWheelsRemoved(false);
+    setSectioned(false);
+    setFocus(false);
+    setDims(false);
+    setSelected(null);
+    setPreset("three");
+    setNonce((n) => n + 1);
+    if (mode === "build") {
+      clock.set(0);
+      clock.play();
+    } else clock.pause();
+    navigate(
+      "car",
+      {
+        car: car.id,
+        entry: params.get("entry") ?? undefined,
+        view: mode === "cutaway" ? "study" : mode,
+      },
+      true,
+    );
+  };
+
   const select = (id: SystemId) => {
     setSelected(id);
     setTab("part");
@@ -214,6 +273,7 @@ export default function Explorer({ params }: { params: URLSearchParams }) {
     if (id === "wheels") setWheelsRemoved(false);
   };
   const chooseView = useCallback((view: Preset) => {
+    setStudio("cutaway");
     setExterior(false);
     setPreset(view);
     setNonce((n) => n + 1);
@@ -466,6 +526,31 @@ export default function Explorer({ params }: { params: URLSearchParams }) {
               </button>
             )}
             {!exterior && (
+              <div
+                className="studio-modes"
+                role="group"
+                aria-label="Teardown studio"
+              >
+                {(
+                  [
+                    ["cutaway", "Cutaway"],
+                    ["garage", "Garage"],
+                    ["build", "Build"],
+                    ["tunnel", "Wind tunnel"],
+                  ] as [StudioMode, string][]
+                ).map(([mode, label]) => (
+                  <button
+                    key={mode}
+                    className={studio === mode ? "on" : ""}
+                    aria-pressed={studio === mode}
+                    onClick={() => enterStudio(mode)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
+            {!exterior && studio === "cutaway" && (
               <div className="views" role="toolbar" aria-label="Camera views">
                 {[
                   presets[0],
@@ -530,7 +615,13 @@ export default function Explorer({ params }: { params: URLSearchParams }) {
               <CarScene
                 car={car}
                 entry={entry}
-                paint={paint}
+                paint={
+                  studio === "garage" || (studio === "build" && !livery)
+                    ? "clay"
+                    : paint
+                }
+                studio={studio}
+                clock={clock}
                 selected={selected}
                 hovered={hovered}
                 onSelect={select}
@@ -575,7 +666,7 @@ export default function Explorer({ params }: { params: URLSearchParams }) {
               </span>
             </div>
           )}
-          {!exterior && (
+          {!exterior && studio === "cutaway" && (
             <div className="tools" role="toolbar" aria-label="View options">
               <Toggle
                 on={rules}
@@ -676,7 +767,17 @@ export default function Explorer({ params }: { params: URLSearchParams }) {
             </button>
           )}
         </div>
-        {!exterior && (
+        {!exterior && studio !== "cutaway" && (
+          <div className="stage-bottom">
+            <TeardownBar
+              mode={studio}
+              car={car}
+              clock={clock}
+              onBuild={() => enterStudio("build")}
+            />
+          </div>
+        )}
+        {!exterior && studio === "cutaway" && (
           <div className="stage-bottom">
             <div className="layer-control">
               <label className="explode">
@@ -697,7 +798,11 @@ export default function Explorer({ params }: { params: URLSearchParams }) {
                 />
                 <output>{stage.short}</output>
               </label>
-              <div className="layer-steps" role="group" aria-label="Lift stages">
+              <div
+                className="layer-steps"
+                role="group"
+                aria-label="Lift stages"
+              >
                 {LAYER_STAGES.map((s) => (
                   <button
                     key={s.stage}
