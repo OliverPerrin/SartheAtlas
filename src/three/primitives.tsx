@@ -18,6 +18,7 @@ export type ViewState = {
   wheelsRemoved?: boolean;
   sectioned?: boolean;
   inspection?: boolean;
+  exploded?: number;
 };
 
 export const ViewCtx = createContext<ViewState | null>(null);

@@ -505,6 +505,7 @@ export function engineeringLayoutFor(car: Car) {
           ) || car.platform === "LMDh"
         ? "rear"
         : "unverified") as "rear" | "ahead-of-rear-engine" | "unverified",
+    drySump: profiles[car.id]?.drySump === true,
   };
 }
 

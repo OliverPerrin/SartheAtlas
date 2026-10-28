@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import type { Car } from "../data/cars.ts";
 import {
+  crankMainPositions,
   engineBanks,
   mechanicalLayout,
   rotatedBankPoint,
@@ -47,10 +48,7 @@ export function engineMechanism(car: Car, length: number) {
       } else pins.push(crankPin);
     });
   }
-  const mains = Array.from(
-    { length: bankCylinderCount + 1 },
-    (_, i) => -length * 0.46 + (i * length * 0.92) / bankCylinderCount,
-  );
+  const mains = crankMainPositions(length, bankCylinderCount);
   return {
     banks,
     cylinders,
