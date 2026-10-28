@@ -25,6 +25,8 @@ import { CabinOverview, BrakeOverview } from "./DetailPreview.tsx";
 import { Callouts } from "./Callouts.tsx";
 import { studyDetailPolicy } from "./detailPolicy.ts";
 import { layerWeights } from "./layerPlan.ts";
+import { detachedAmount, usesGarage } from "./teardown.ts";
+import { useTeardown } from "./teardownLayout.ts";
 import type { LayerId } from "./layerPlan.ts";
 import { rimGeometry, spokeMatrices } from "./wheelGeometry.ts";
 
@@ -131,14 +133,37 @@ function Part({
   const gl = useThree((state) => state.gl);
   const target = useMemo(() => new THREE.Vector3(), []);
   const extra = useMemo(() => new THREE.Vector3(), []);
+  const teardown = useTeardown();
+  const { garage } = teardown;
+  useEffect(() => {
+    if (ref.current) return garage.add(ref.current, id);
+  }, [garage, id]);
   useFrame((_, dt) => {
     if (!ref.current) return;
-    const layers = layerWeights(exploded);
-    target.set(...offset).multiplyScalar(layers[layer]);
-    if (rise && riseLayer)
-      target.add(extra.set(...rise).multiplyScalar(layers[riseLayer]));
+    let rate = 6;
+    if (usesGarage(teardown.mode)) {
+      // Garage and build modes: travel between the floor slot and the car,
+      // arcing up so parts clear one another on the way.
+      const slot = garage.offsetFor(ref.current);
+      const away =
+        teardown.mode === "garage"
+          ? 1
+          : detachedAmount(id, teardown.clock.get());
+      if (slot) target.set(...slot).multiplyScalar(away);
+      else target.set(0, 0, 0);
+      target.setY(target.y + Math.sin(Math.PI * away) * (slot ? 0.9 : 0));
+      if (teardown.mode === "build") rate = 16;
+    } else {
+      const layers = layerWeights(exploded);
+      target.set(...offset).multiplyScalar(layers[layer]);
+      if (rise && riseLayer)
+        target.add(extra.set(...rise).multiplyScalar(layers[riseLayer]));
+    }
     if (ref.current.position.distanceTo(target) > 0.0005) {
-      ref.current.position.lerp(target, 1 - Math.exp(-Math.min(dt, 0.08) * 6));
+      ref.current.position.lerp(
+        target,
+        1 - Math.exp(-Math.min(dt, 0.08) * rate),
+      );
       refreshShadows(gl);
       invalidate();
     }
@@ -1530,7 +1555,11 @@ export function CarModel({
 }: ModelProps) {
   const { shape, body } = useBody(car);
   const view = useView();
-  const detail = studyDetailPolicy(view, exploded);
+  const teardown = useTeardown();
+  const detail = studyDetailPolicy(
+    { ...view, teardown: usesGarage(teardown.mode) },
+    exploded,
+  );
   useEffect(() => {
     if (view.hovered === "cockpit") void loadCockpit();
     else if (
@@ -1621,22 +1650,12 @@ export function CarModel({
           <Callouts system="lights" body={body} shape={shape} />
         </Part>
       )}
-      <Part
-        id="floor"
-        offset={[0, -0.18, 0]}
-        layer="structure"
-        {...common}
-      >
+      <Part id="floor" offset={[0, -0.18, 0]} layer="structure" {...common}>
         <Floor body={body} />
         <Callouts system="floor" body={body} shape={shape} />
       </Part>
       {detail.internals && (
-        <Part
-          id="chassis"
-          offset={[0, 0.32, 0]}
-          layer="structure"
-          {...common}
-        >
+        <Part id="chassis" offset={[0, 0.32, 0]} layer="structure" {...common}>
           <Callouts system="chassis" body={body} shape={shape} />
           {proto ? (
             <>
@@ -1746,12 +1765,7 @@ export function CarModel({
           )}
         </Part>
       )}
-      <Part
-        id="cockpit"
-        offset={[0.03, 0.72, 0]}
-        layer="cabin"
-        {...common}
-      >
+      <Part id="cockpit" offset={[0.03, 0.72, 0]} layer="cabin" {...common}>
         <Callouts system="cockpit" body={body} shape={shape} />
         {detail.internals ? (
           <Suspense
@@ -1769,21 +1783,11 @@ export function CarModel({
       </Part>
       {detail.internals && (
         <Suspense fallback={null}>
-          <Part
-            id="fuel"
-            offset={[0, 0.5, 0]}
-            layer="cabin"
-            {...common}
-          >
+          <Part id="fuel" offset={[0, 0.5, 0]} layer="cabin" {...common}>
             <FuelAssembly car={car} body={body} shape={shape} />
             <Callouts system="fuel" body={body} shape={shape} />
           </Part>
-          <Part
-            id="engine"
-            offset={[-0.08, 0.5, 0]}
-            layer="cabin"
-            {...common}
-          >
+          <Part id="engine" offset={[-0.08, 0.5, 0]} layer="cabin" {...common}>
             <EngineAssembly car={car} body={body} shape={shape} />
             <Callouts system="engine" body={body} shape={shape} />
           </Part>

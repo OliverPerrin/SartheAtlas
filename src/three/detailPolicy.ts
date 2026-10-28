@@ -6,6 +6,8 @@ export type DetailIntent = {
   wheelsRemoved?: boolean;
   sectioned?: boolean;
   inspection?: boolean;
+  /** Garage layout or build sequence: every assembly is on show. */
+  teardown?: boolean;
   selected: SystemId | null;
 };
 
@@ -27,6 +29,7 @@ export function studyDetailPolicy(view: DetailIntent, exploded: number) {
     view.bodyRemoved ||
     view.sectioned ||
     view.inspection ||
+    view.teardown ||
     exploded > 0.001,
   );
   const internals =
