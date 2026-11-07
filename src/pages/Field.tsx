@@ -11,6 +11,7 @@ import { classPanel, entries, surname } from "../data/entries.ts";
 import { platformLabel } from "../data/systems.ts";
 import { linkProps, navigate } from "../router.ts";
 import CarPreview from "../components/CarPreview.tsx";
+import { photos, photoSrc, photoSrcSet } from "../data/photos.ts";
 import "./Pages.css";
 
 type Filter = "All" | ClassName;
@@ -125,16 +126,44 @@ export default function Field({ params }: { params: URLSearchParams }) {
   const resultCount = mode === "entries" ? list.length : carList.length;
   return (
     <main className="content field-page">
-      <div className="page-head">
-        <span className="kicker">The 2026 field</span>
-        <h1>
-          {entries.length} entries. <em>{cars.length} designs.</em>
+      <div className="field-hero">
+        <img
+          className="field-hero-photo"
+          src={photoSrc(photos.prototypes, 1100)}
+          srcSet={photoSrcSet(photos.prototypes)}
+          sizes="100vw"
+          alt={photos.prototypes.alt}
+          style={{ objectPosition: photos.prototypes.focus }}
+          fetchPriority="high"
+        />
+        <p className="field-hero-credit">
+          {photos.prototypes.caption} · {photos.prototypes.place} · Photo{" "}
+          <a href={photos.prototypes.source} target="_blank" rel="noreferrer">
+            {photos.prototypes.author}
+          </a>{" "}
+          ·{" "}
+          <a href={photos.prototypes.licenseUrl} target="_blank" rel="noreferrer">
+            {photos.prototypes.license}
+          </a>
+        </p>
+      <div className="page-head field-head">
+        <span className="eyebrow">The 2026 field · Provisional entry list</span>
+        <h1 className="lines" data-reveal>
+          <span className="line">
+            <span>{entries.length} entries.</span>
+          </span>
+          <span className="line" style={{ "--l": 1 } as React.CSSProperties}>
+            <span>
+              <em>{cars.length} designs.</em>
+            </span>
+          </span>
         </h1>
-        <p className="lead">
+        <p className="lead" data-reveal style={{ "--d": 3 } as React.CSSProperties}>
           Meet the machines that share the same 13.6 kilometres. Compare all
           three classes, find a favourite crew, then explore what sits beneath
           the bodywork.
         </p>
+      </div>
       </div>
       <div className="field-overview" aria-label="Field by class">
         {classOrder.map((c) => (
@@ -248,15 +277,19 @@ export default function Field({ params }: { params: URLSearchParams }) {
       )}
       {mode === "entries" ? (
         <div className="entry-grid">
-          {list.map((e) => {
+          {list.map((e, index) => {
             const car = carById(e.carId)!;
             return (
               <a
                 key={e.number}
                 className="entry-card"
+                data-reveal
+                data-spotlight
+                data-cursor="View"
                 style={
                   {
                     "--cls": classInfo[car.category].color,
+                    "--d": index % 4,
                   } as React.CSSProperties
                 }
                 {...linkProps("car", { car: car.id, entry: e.number })}
@@ -312,15 +345,19 @@ export default function Field({ params }: { params: URLSearchParams }) {
         </div>
       ) : (
         <div className="model-grid">
-          {carList.map((c) => {
+          {carList.map((c, index) => {
             const list = entries.filter((e) => e.carId === c.id);
             return (
               <a
                 key={c.id}
                 className="model-card"
+                data-reveal
+                data-spotlight
+                data-cursor="Open"
                 style={
                   {
                     "--cls": classInfo[c.category].color,
+                    "--d": index % 3,
                   } as React.CSSProperties
                 }
                 {...linkProps("car", { car: c.id })}

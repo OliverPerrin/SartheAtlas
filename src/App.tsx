@@ -1,22 +1,21 @@
-import { lazy, Suspense, useEffect } from "react";
-import { ArrowUpRight } from "lucide-react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { carById } from "./data/cars.ts";
-import { linkProps, useRoute } from "./router.ts";
+import { useRoute } from "./router.ts";
 import type { Page } from "./router.ts";
 import Home from "./pages/Home.tsx";
+import { Cursor, Footer, Header } from "./components/Chrome.tsx";
+import Intro from "./components/Intro.tsx";
+import { photos, photoSrc } from "./data/photos.ts";
+import { phaseInLeMans } from "./data/racePhase.ts";
+import { reducedMotion, startPointerEffects, startReveals } from "./motion.ts";
 import "./App.css";
+import "./Chrome.css";
 
 const Explorer = lazy(() => import("./pages/Explorer.tsx"));
 const Circuit = lazy(() => import("./pages/Circuit.tsx"));
 const Field = lazy(() => import("./pages/Field.tsx"));
 const About = lazy(() => import("./pages/About.tsx"));
-
-const nav: [Page, string][] = [
-  ["field", "The field"],
-  ["car", "Car explorer"],
-  ["circuit", "The circuit"],
-  ["about", "Sources"],
-];
+const CommandPalette = lazy(() => import("./components/CommandPalette.tsx"));
 
 function titleFor(page: Page, params: URLSearchParams) {
   const car = carById(params.get("car"));
@@ -34,55 +33,88 @@ function titleFor(page: Page, params: URLSearchParams) {
   }
 }
 
+// Decided once per page load: the countdown plays on the first home visit of a session.
+const firstVisit = (() => {
+  if (typeof window === "undefined") return false;
+  if (new URLSearchParams(location.search).has("intro")) return !reducedMotion();
+  try {
+    if (sessionStorage.getItem("sa-intro")) return false;
+    sessionStorage.setItem("sa-intro", "1");
+  } catch {
+    return false;
+  }
+  return !reducedMotion();
+})();
+
 export default function App() {
   const { page, params } = useRoute();
+  const [palette, setPalette] = useState(false);
+  const [intro, setIntro] = useState(() => page === "home" && firstVisit);
+  const [loader, setLoader] = useState(intro);
+  const shell = useRef<HTMLDivElement>(null);
   useEffect(() => {
     document.title = `${titleFor(page, params)} · Sarthe Atlas`;
   }, [page, params]);
+  // The page underneath stays put until the title sequence lifts.
+  useEffect(() => {
+    document.documentElement.classList.toggle("intro-lock", intro);
+    return () => document.documentElement.classList.remove("intro-lock");
+  }, [intro]);
+  useEffect(() => {
+    if (!shell.current) return;
+    const stopReveals = startReveals(shell.current);
+    const stopPointer = startPointerEffects();
+    return () => {
+      stopReveals();
+      stopPointer();
+    };
+  }, []);
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      const typing =
+        event.target instanceof Element &&
+        event.target.closest("input, textarea, select, [contenteditable]");
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setPalette((open) => !open);
+      } else if (event.key === "/" && !typing) {
+        event.preventDefault();
+        setPalette(true);
+      }
+    };
+    addEventListener("keydown", onKey);
+    return () => removeEventListener("keydown", onKey);
+  }, []);
+  const endIntro = useCallback(() => setIntro(false), []);
+  const hideLoader = useCallback(() => setLoader(false), []);
   const immersive = page === "car" || page === "circuit";
   return (
-    <div className={`app page-${page}`}>
+    <div
+      ref={shell}
+      className={`app page-${page}${immersive ? " immersive" : ""}${intro ? " intro" : ""}`}
+    >
       <a className="skip" href="#main">
         Skip to content
       </a>
-      <header className="header">
-        <a
-          className="brand"
-          aria-label="Sarthe Atlas home"
-          {...linkProps("home")}
-        >
-          <span className="brandmark" aria-hidden="true">
-            <svg viewBox="0 0 40 40">
-              <circle cx="20" cy="20" r="18.5" />
-              <path d="M9 26 L20 12 L31 26" />
-              <path d="M14 26 L20 18 L26 26" />
-            </svg>
-          </span>
-          <span className="brand-text">
-            <strong>SARTHE ATLAS</strong>
-            <small>24 HOURS OF LE MANS · 2026</small>
-          </span>
-        </a>
-        <nav aria-label="Main">
-          {nav.map(([id, label]) => (
-            <a
-              key={id}
-              {...linkProps(id)}
-              aria-current={page === id ? "page" : undefined}
-            >
-              {label}
-            </a>
-          ))}
-        </nav>
-        <div className="header-flag" aria-hidden="true">
-          <i className="c-hyper" />
-          <i className="c-lmp2" />
-          <i className="c-gt3" />
-        </div>
-      </header>
+      {loader && (
+        <Intro
+          src={photoSrc(
+            phaseInLeMans() === "day" ? photos.goldenHour : photos.lightTrails,
+            innerWidth > 1100 ? 2200 : 1100,
+          )}
+          onLift={endIntro}
+          onDone={hideLoader}
+        />
+      )}
+      <Header page={page} onSearch={() => setPalette(true)} />
       <div id="main" tabIndex={-1}>
         <Suspense
-          fallback={<div className="page-loading">Loading the explorer…</div>}
+          fallback={
+            <div className="page-loading">
+              <span className="loading-bar" aria-hidden="true" />
+              Loading the explorer…
+            </div>
+          }
         >
           {page === "home" && <Home />}
           {page === "field" && <Field params={params} />}
@@ -96,31 +128,13 @@ export default function App() {
           {page === "about" && <About />}
         </Suspense>
       </div>
-      {!immersive && (
-        <footer className="footer">
-          <div>
-            <strong>SARTHE ATLAS</strong>
-            <p>
-              An independent, open-source guide to the cars and circuit of the 24 Hours of Le
-              Mans. Not affiliated with the ACO, FIA WEC, manufacturers or
-              teams.
-            </p>
-          </div>
-          <div className="footer-links">
-            <a {...linkProps("field")}>The field</a>
-            <a {...linkProps("car")}>Car explorer</a>
-            <a {...linkProps("circuit")}>The circuit</a>
-            <a {...linkProps("about")}>
-              Sources & accuracy <ArrowUpRight size={13} />
-            </a>
-            <a href="https://github.com/OliverPerrin/SartheAtlas">
-              Source on GitHub <ArrowUpRight size={13} />
-            </a>
-            <a href="https://github.com/OliverPerrin/SartheAtlas/blob/main/CONTRIBUTING.md">
-              Contribute <ArrowUpRight size={13} />
-            </a>
-          </div>
-        </footer>
+      {!immersive && <Footer />}
+      {!immersive && <Cursor />}
+      {!immersive && <div className="grain" aria-hidden="true" />}
+      {palette && (
+        <Suspense fallback={null}>
+          <CommandPalette onClose={() => setPalette(false)} />
+        </Suspense>
       )}
     </div>
   );

@@ -1,0 +1,195 @@
+.intro-seq {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  overflow: hidden;
+  background: #030304;
+  color: #fff;
+  cursor: pointer;
+  transition: opacity 0.75s var(--ease);
+}
+.intro-out {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Light trails in the three class colours. */
+.intro-streaks i {
+  position: absolute;
+  left: 0;
+  width: 70vw;
+  height: 2px;
+  border-radius: 2px;
+  opacity: 0;
+  filter: drop-shadow(0 0 6px currentColor) drop-shadow(0 0 18px currentColor);
+  background: linear-gradient(90deg, transparent, currentColor 70%, #fff);
+  animation: streak 1.1s cubic-bezier(0.6, 0, 0.2, 1) both;
+}
+.intro-streaks i:nth-child(1) { top: 58%; color: var(--hyper); animation-delay: 0.15s; }
+.intro-streaks i:nth-child(2) { top: 61%; color: var(--lmp2); animation-delay: 0.32s; height: 1.5px; }
+.intro-streaks i:nth-child(3) { top: 64%; color: var(--gt3); animation-delay: 0.48s; }
+.intro-streaks i:nth-child(4) { top: 36%; color: var(--hyper); animation-delay: 0.8s; width: 40vw; height: 1px; }
+.intro-streaks i:nth-child(5) { top: 70%; color: var(--lmp2); animation-delay: 1s; width: 55vw; }
+.intro-streaks i:nth-child(6) { top: 66%; color: var(--gt3); animation-delay: 1.15s; width: 45vw; height: 1px; }
+@keyframes streak {
+  0% {
+    opacity: 0;
+    transform: translateX(-80vw) scaleX(0.4);
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(130vw) scaleX(1.4);
+  }
+}
+.intro-top {
+  position: absolute;
+  top: 26px;
+  left: var(--gutter);
+  right: var(--gutter);
+  display: flex;
+  justify-content: space-between;
+  font: 400 11px/1 var(--mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  animation: intro-fade 0.8s var(--ease) both;
+}
+.intro-clock {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 18px;
+  transition:
+    opacity 0.5s var(--ease),
+    filter 0.5s var(--ease),
+    transform 0.6s var(--ease);
+}
+.intro-clock > span {
+  font: 400 11px/1 var(--mono);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+.intro-clock strong {
+  font: 300 clamp(56px, 10vw, 150px) / 1 var(--mono);
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+.intro-clock strong i {
+  font-style: normal;
+  color: rgba(255, 255, 255, 0.28);
+}
+.intro-flag {
+  display: flex;
+  gap: 4px;
+  width: min(320px, 60vw);
+  height: 3px;
+}
+.intro-flag b {
+  flex: 1;
+  border-radius: 2px;
+  transform-origin: left;
+  animation: flag-fill 1.5s cubic-bezier(0.5, 0, 0.2, 1) both;
+}
+.intro-flag b:nth-child(1) { background: var(--hyper); }
+.intro-flag b:nth-child(2) { background: var(--lmp2); animation-delay: 0.15s; }
+.intro-flag b:nth-child(3) { background: var(--gt3); animation-delay: 0.3s; }
+@keyframes flag-fill {
+  from {
+    transform: scaleX(0);
+  }
+}
+.intro-reveal .intro-clock,
+.intro-zoom .intro-clock,
+.intro-out .intro-clock {
+  opacity: 0;
+  filter: blur(12px);
+  transform: scale(1.15);
+}
+
+/* The photograph seen through a giant "24", then flown through. */
+.intro-mask {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 0.6s var(--ease);
+}
+.intro-reveal .intro-mask,
+.intro-zoom .intro-mask,
+.intro-out .intro-mask {
+  opacity: 1;
+}
+.intro-bg {
+  fill: #000;
+}
+.intro-24 {
+  font: 900 600px/1 var(--wide);
+  font-stretch: expanded;
+  letter-spacing: -46px;
+  fill: #fff;
+  transform-box: view-box;
+  /* Inside the solid base stroke of the "2", so the zoom flies into the photo. */
+  transform-origin: 622px 616px;
+  transform: scale(0.82);
+  transition: transform 0.9s var(--ease);
+}
+.intro-reveal .intro-24 {
+  transform: scale(1);
+}
+.intro-zoom .intro-24,
+.intro-out .intro-24 {
+  transform: scale(46);
+  transition: transform 1.15s cubic-bezier(0.8, 0, 0.15, 1);
+}
+.intro-bg {
+  fill: #000;
+}
+/* Mid-flight, the unmasked photograph takes over so the landing is seamless. */
+.intro-full {
+  opacity: 0;
+  transition: opacity 0.22s 0.38s linear;
+}
+.intro-zoom .intro-full,
+.intro-out .intro-full {
+  opacity: 1;
+}
+.intro-mask image,
+.intro-mask .intro-full {
+  transform-origin: 800px 450px;
+  transform-box: view-box;
+  animation: intro-drift 3.5s var(--ease) both;
+}
+@keyframes intro-drift {
+  from {
+    transform: scale(1.18);
+  }
+}
+.intro-skip {
+  position: absolute;
+  right: var(--gutter);
+  bottom: 24px;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font: 500 12px/1 var(--sans);
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.04);
+  animation: intro-fade 0.6s 0.6s var(--ease) both;
+}
+.intro-skip:hover {
+  color: #fff;
+  border-color: #fff;
+}
+@keyframes intro-fade {
+  from {
+    opacity: 0;
+  }
+}

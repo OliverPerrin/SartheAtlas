@@ -1,20 +1,34 @@
 :root {
-  --bg: #070b12;
-  --bg2: #0c121c;
-  --panel: #101824;
-  --panel2: #162130;
-  --line: rgba(173, 192, 217, 0.12);
-  --line2: rgba(173, 192, 217, 0.24);
-  --text: #f0f3f7;
-  --muted: #94a1b5;
-  --dim: #738197;
-  --blue: #3d7bff;
-  --hyper: #e4002b;
-  --lmp2: #1d6bff;
-  --gt3: #ff7a00;
-  --display: "Barlow Condensed", "Arial Narrow", sans-serif;
-  --radius: 8px;
-  font-family: "DM Sans", system-ui, sans-serif;
+  /* Night-race surfaces: neutral carbon blacks, not navy. */
+  --bg: #060607;
+  --bg2: #0b0b0d;
+  --panel: #111114;
+  --panel2: #18181c;
+  --line: rgba(255, 255, 255, 0.09);
+  --line2: rgba(255, 255, 255, 0.18);
+  --text: #f2f1ec;
+  --muted: #a09f99;
+  --dim: #7a7974;
+  /* WEC class colours: Hypercar red leads; LMP2 blue and LMGT3 orange complete
+     the tricolour used for stripes, light trails and section marks. */
+  --accent: #ff1f3d;
+  --accent-ink: #ffffff;
+  --accent-deep: #c4001f;
+  --blue: #ff1f3d;
+  --hyper: #ff1f3d;
+  --lmp2: #2f7bff;
+  --gt3: #ff8a1f;
+  --tricolor: linear-gradient(90deg, var(--hyper) 0 33.34%, var(--lmp2) 0 66.67%, var(--gt3) 0);
+  --display: "Saira Condensed", "Barlow Condensed", "Arial Narrow", sans-serif;
+  --wide: "Saira", "Arial Black", sans-serif;
+  --serif: "Instrument Serif", "Times New Roman", serif;
+  --mono: "Geist Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --sans: "Geist", "DM Sans", system-ui, sans-serif;
+  --radius: 14px;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.76, 0, 0.24, 1);
+  --gutter: clamp(16px, 3.4vw, 56px);
+  font-family: var(--sans);
   color: var(--text);
   background: var(--bg);
   color-scheme: dark;
@@ -26,11 +40,19 @@
 * {
   box-sizing: border-box;
 }
+html {
+  scrollbar-color: #2a2a2e var(--bg);
+}
 body {
   margin: 0;
   min-width: 280px;
   overflow-x: clip;
   background: var(--bg);
+}
+html.menu-open body,
+html.palette-open body,
+html.intro-lock body {
+  overflow: hidden;
 }
 button,
 input,
@@ -56,26 +78,30 @@ p {
   margin: 0;
 }
 :focus-visible {
-  outline: 2px solid var(--blue);
+  outline: 2px solid var(--accent);
   outline-offset: 3px;
   border-radius: 4px;
 }
 ::selection {
-  background: rgba(61, 123, 255, 0.45);
+  background: var(--accent);
+  color: var(--accent-ink);
 }
 button svg,
 a svg {
   flex-shrink: 0;
 }
 kbd {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
   font:
-    600 11px/1 "DM Sans",
-    sans-serif;
-  padding: 3px 6px;
+    500 10.5px/1 var(--mono);
+  padding: 3px 5px;
   border: 1px solid var(--line2);
   border-bottom-width: 2px;
   border-radius: 5px;
   background: var(--panel2);
+  color: var(--muted);
 }
 @media (prefers-reduced-motion: reduce) {
   *,

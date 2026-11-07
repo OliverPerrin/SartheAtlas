@@ -4,22 +4,55 @@ import { exteriorReferences } from "../data/references.ts";
 import { ruleInfo } from "../data/systems.ts";
 import type { Rule } from "../data/systems.ts";
 import { linkProps } from "../router.ts";
+import { allPhotos, photos, photoSrc, photoSrcSet } from "../data/photos.ts";
 import "./Pages.css";
 
 export default function About() {
   return (
     <main className="content about">
-      <div className="page-head">
-        <span className="kicker">Sources & accuracy</span>
-        <h1>
-          What you are <em>looking at.</em>
+      <div className="masthead">
+        <div className="masthead-rule">
+          <span>Sarthe Atlas</span>
+          <span>The sources edition</span>
+          <span>Entry list snapshot · 5 May 2026</span>
+        </div>
+        <h1 className="lines" data-reveal>
+          <span className="line">
+            <span>What you are</span>
+          </span>
+          <span className="line" style={{ "--l": 1 } as React.CSSProperties}>
+            <span>
+              <em>looking at.</em>
+            </span>
+          </span>
         </h1>
-        <p className="lead">
+        <p className="lead deck" data-reveal style={{ "--d": 3 } as React.CSSProperties}>
           Sarthe Atlas is an independent guide. Here is where each piece of
           information comes from, and where the 3D models are approximations.
         </p>
       </div>
-      <div className="accuracy-summary">
+      <figure className="front-photo" data-reveal="clip">
+        <img
+          src={photoSrc(photos.finish, 1100)}
+          srcSet={photoSrcSet(photos.finish)}
+          sizes="(max-width: 1440px) 100vw, 1440px"
+          alt={photos.finish.alt}
+          style={{ objectPosition: photos.finish.focus }}
+        />
+        <figcaption>
+          <strong>Hour 24.</strong> {photos.finish.caption}, {photos.finish.place}.
+          Photo{" "}
+          <a href={photos.finish.source} target="_blank" rel="noreferrer">
+            {photos.finish.author}
+          </a>
+          ,{" "}
+          <a href={photos.finish.licenseUrl} target="_blank" rel="noreferrer">
+            {photos.finish.license}
+          </a>
+          .
+        </figcaption>
+      </figure>
+      <div className="accuracy-summary" data-reveal>
         <div>
           <span className="kicker">The reference</span>
           <strong>Public technical sources</strong>
@@ -177,7 +210,24 @@ export default function About() {
           })}
         </article>
         <article>
-          <span className="kicker">07 · Open source</span>
+          <span className="kicker">07 · Race photography</span>
+          <h2>Real photographs, credited</h2>
+          <p>
+            The photographs on the home page, the field and this page come from
+            Wikimedia Commons under Creative Commons licences. They are resized
+            and recompressed copies; nothing else is altered. Several were taken
+            at Petit Le Mans or Daytona rather than Le Mans, and every caption
+            says where. They show earlier seasons, not 2026 entries.
+          </p>
+          {allPhotos.map((photo) => (
+            <a key={photo.id} href={photo.source} target="_blank" rel="noreferrer">
+              {photo.caption} · {photo.place} · {photo.author} · {photo.license}{" "}
+              <ArrowUpRight size={14} />
+            </a>
+          ))}
+        </article>
+        <article>
+          <span className="kicker">08 · Open source</span>
           <h2>Help improve the atlas</h2>
           <p>
             Explore the code, report a problem or contribute a source-backed
@@ -203,7 +253,7 @@ export default function About() {
           </a>
         </article>
       </div>
-      <div className="about-next">
+      <div className="about-next" data-reveal>
         <div>
           <span className="kicker">Start with a machine</span>
           <h2>See the engineering for yourself.</h2>

@@ -4,7 +4,7 @@
   height: 100%;
   min-height: 0;
   overflow: hidden;
-  background: #0c0f13;
+  background: #0b0b0d;
 }
 .exterior-viewer.realistic-viewer .exterior-poster {
   position: absolute;
@@ -12,7 +12,7 @@
   width: 100%;
   height: 100%;
   object-fit: contain;
-  background: #0c0f13;
+  background: #0b0b0d;
 }
 .exterior-viewer.realistic-viewer .exterior-frame {
   position: absolute;
@@ -34,7 +34,7 @@
   bottom: 52px;
   display: flex;
   gap: 2px;
-  background: #111820e6;
+  background: #171717e6;
   border: 1px solid #ffffff1c;
   border-radius: 5px;
   padding: 4px;
@@ -50,13 +50,13 @@
 }
 .exterior-actions button:hover,
 .exterior-actions button[aria-pressed="true"] {
-  color: #f6ead0;
+  color: #f2f1ec;
   background: #ffffff14;
 }
 .exterior-actions button:focus-visible,
 .exterior-load-links button:focus-visible,
 .exterior-load-links a:focus-visible {
-  outline: 2px solid #e8ddc8;
+  outline: 2px solid #ff1f3d;
   outline-offset: 3px;
 }
 .exterior-load-state {
@@ -71,12 +71,12 @@
   color: #cad0d7;
   font-size: 12px;
   text-align: center;
-  background: radial-gradient(ellipse at center, #1c242e, #0c0f13);
+  background: radial-gradient(ellipse at center, #1d1d1d, #0b0b0d);
 }
 .exterior-load-state.with-poster {
   inset: auto 0 0;
   padding: 40px 20px 22px;
-  background: linear-gradient(transparent, #080b10e6);
+  background: linear-gradient(transparent, #0b0b0be6);
 }
 .exterior-load-message {
   display: flex;
@@ -88,7 +88,7 @@
   width: 14px;
   height: 14px;
   border: 1.5px solid #ffffff26;
-  border-top-color: #e8ddc8;
+  border-top-color: #ff1f3d;
   border-radius: 50%;
   animation: exterior-spinner 1s linear infinite;
 }
@@ -149,14 +149,14 @@
   align-items: center;
   gap: 10px;
   padding: 12px 18px;
-  background: #111820ed;
+  background: #171717ed;
   border: 1px solid #ffffff30;
   border-radius: 4px;
-  color: #f6ead0;
+  color: #f2f1ec;
   font-size: 12px;
   white-space: nowrap;
 }
 .exterior-start:focus-visible {
-  outline: 2px solid #e8ddc8;
+  outline: 2px solid #ff1f3d;
   outline-offset: 4px;
 }
