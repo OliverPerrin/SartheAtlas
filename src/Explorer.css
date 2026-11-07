@@ -2,11 +2,11 @@
 .explorer {
   grid-template-columns: 220px minmax(0, 1fr) 290px;
   grid-template-rows: max(680px, calc(100dvh - 72px)) auto;
-  background: #11171e;
+  background: #161616;
 }
 .explorer .ex-left,
 .explorer .ex-right {
-  background: #10161d;
+  background: #0e0e11;
   padding: 18px 16px;
 }
 .ex-section-heading {
@@ -53,7 +53,7 @@
   border-radius: 5px;
 }
 .explorer .car-list button.on {
-  background: #202930;
+  background: #272727;
 }
 .explorer .part-btn {
   border-radius: 4px;
@@ -70,7 +70,7 @@
   justify-content: stretch;
   gap: 18px;
   padding: 25px 28px;
-  background: linear-gradient(#161b21c9, transparent);
+  background: linear-gradient(#1a1a1ac9, transparent);
 }
 .explorer .stage-top > div,
 .explorer .stage-title > div {
@@ -99,7 +99,7 @@
 .explorer .views {
   width: fit-content;
   border-radius: 5px;
-  background: #10151aba;
+  background: #141414ba;
   padding: 3px;
   backdrop-filter: blur(14px);
 }
@@ -111,12 +111,12 @@
   letter-spacing: 1.2px;
 }
 .explorer .views button.on {
-  background: #e7dfcf;
-  color: #192027;
+  background: var(--accent);
+  color: #1f1f1f;
 }
 .explorer .ex-stage {
   scroll-margin-top: 64px;
-  background: #161b21;
+  background: #1a1a1a;
   overflow: hidden;
 }
 .explorer .stage-canvas {
@@ -125,7 +125,7 @@
 .explorer .tools {
   right: 14px;
   border-radius: 6px;
-  background: #111820c9;
+  background: #171717c9;
   border-color: #ffffff14;
   box-shadow: 0 12px 30px #0003;
 }
@@ -136,7 +136,7 @@
 }
 .explorer .tool.on {
   background: #e6dcc41f;
-  color: #ede2c9;
+  color: var(--accent);
   box-shadow: inset 0 0 0 1px #e6dcc444;
 }
 .explorer .tool:disabled {
@@ -166,8 +166,8 @@
 .explorer .hover-chip {
   bottom: 56px;
   border-radius: 4px;
-  background: #e8ddc8;
-  color: #20262b;
+  background: #ff1f3d;
+  color: #252525;
   font-size: 11px;
   padding: 7px 11px;
 }
@@ -182,16 +182,16 @@
   border: 1px solid #ffffff1c;
   border-radius: 4px;
   color: #bfc7ce;
-  background: #1118209c;
+  background: #1717179c;
 }
 .viewer-fullscreen:hover {
   color: white;
-  background: #242e38;
+  background: #2c2c2c;
 }
 .explorer .stage-bottom {
   gap: 12px;
   padding: 16px 24px;
-  background: #10161d;
+  background: #0e0e11;
 }
 .layer-control {
   display: flex;
@@ -210,7 +210,7 @@
 }
 .explorer .explode input {
   min-width: 50px;
-  accent-color: #e1d4b8;
+  accent-color: #ff1f3d;
 }
 .explorer .explode output {
   width: auto;
@@ -241,9 +241,9 @@
   background: var(--panel2);
 }
 .layer-steps button.on {
-  color: #10161d;
-  border-color: #e1d4b8;
-  background: #e1d4b8;
+  color: var(--accent-ink);
+  border-color: #ff1f3d;
+  background: #ff1f3d;
 }
 .layer-steps button:focus-visible {
   outline: 2px solid var(--blue);
@@ -281,9 +281,9 @@
   gap: 9px;
   align-items: center;
   width: fit-content;
-  color: #e8ddc8;
+  color: #ff1f3d;
   font-size: 12px;
-  border-bottom: 1px solid #e8ddc84d;
+  border-bottom: 1px solid #ff1f3d4d;
   padding-bottom: 6px;
 }
 .selected-system-heading {
@@ -312,7 +312,7 @@
   font-size: 12px;
 }
 .explorer .entries-strip {
-  background: #10161d;
+  background: #0e0e11;
   padding: 28px;
 }
 .explorer .strip-card {
@@ -320,15 +320,15 @@
 }
 .explorer .strip-card.on {
   border-color: var(--cls);
-  background: #1d252d;
+  background: #232323;
 }
 .explorer .exterior-status {
-  background: #161b21e6;
+  background: #1a1a1ae6;
   padding: 20px;
   font-size: 13px;
 }
 .explorer .exterior-status button {
-  color: #e8ddc8;
+  color: #ff1f3d;
   font-size: 12px;
   padding: 10px;
 }
@@ -339,7 +339,7 @@
   height: 24px;
   border-radius: 50%;
   border: 2px solid #ffffff18;
-  border-top-color: #e8ddc8;
+  border-top-color: #ff1f3d;
   animation: exterior-loading 1s linear infinite;
   margin-bottom: 8px;
 }
@@ -351,11 +351,11 @@
 .explorer .embed-credit {
   font-size: 10px;
   line-height: 1.7;
-  background: #10161d;
+  background: #0e0e11;
   border-top: 1px solid var(--line);
 }
 .explorer .embed-credit a {
-  color: #e8ddc8;
+  color: #ff1f3d;
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -364,7 +364,7 @@
   width: 100vw;
 }
 .explorer button:focus-visible {
-  outline: 2px solid #e8ddc8;
+  outline: 2px solid #ff1f3d;
   outline-offset: 3px;
 }
 @media (max-width: 1280px) {
@@ -501,11 +501,11 @@
   min-height: 32px;
   border: 1px solid #ffffff26;
   border-radius: 4px;
-  color: #e8ddc8;
-  background: #121920d9;
+  color: #ff1f3d;
+  background: #181818d9;
 }
 .explorer .viewer-navigation > .btn:hover {
-  background: #2c3238;
+  background: #313131;
 }
 @media (max-width: 560px) {
   .explorer .viewer-navigation > .btn {
@@ -560,7 +560,7 @@
   display: flex;
   gap: 3px;
   padding: 3px;
-  background: #0d131be8;
+  background: #121212e8;
   border: 1px solid #ffffff1d;
   border-radius: 5px;
   width: fit-content;
@@ -579,23 +579,23 @@
   border-radius: 3px;
 }
 .model-mode-switch button.on {
-  color: #111922;
-  background: #e8dfce;
+  color: #181818;
+  background: #ff1f3d;
 }
 .model-mode-switch button:hover:not(.on) {
   color: #fff;
   background: #ffffff0b;
 }
 .exterior-mode .stage-top {
-  background: linear-gradient(#0c1017e6, transparent);
+  background: linear-gradient(#101010e6, transparent);
 }
 .exterior-mode .embed-credit {
   font-size: 10px;
   padding: 12px 20px;
 }
 .exterior-specimen-note {
-  border-left: 2px solid #e8dfce;
-  background: #e8dfce08;
+  border-left: 2px solid #ff1f3d;
+  background: #ff1f3d08;
   padding: 13px 14px;
 }
 .exterior-specimen-note > span {
@@ -603,7 +603,7 @@
     700 10px "DM Sans",
     sans-serif;
   letter-spacing: 0.4px;
-  color: #e8dfce;
+  color: #ff1f3d;
 }
 .exterior-specimen-note p {
   font-size: 11px;
@@ -648,7 +648,7 @@
   padding: 10px;
   border: 1px solid #ffffff1d;
   border-radius: 4px;
-  background: #0e1621b0;
+  background: #151515b0;
 }
 .geometry-choice:hover {
   color: #fff;
@@ -661,7 +661,7 @@
   place-items: center;
   color: var(--muted);
   font-size: 12px;
-  background: #0d121a;
+  background: #111111;
 }
 
 .engineering-detail h3 {
@@ -705,7 +705,7 @@
 .engineering-components summary {
   cursor: pointer;
   font-size: 12px;
-  color: #e6d9bb;
+  color: #ff1f3d;
   line-height: 1.7;
 }
 /* Matches the numbered callouts on the 3D parts. */
@@ -717,7 +717,7 @@
   margin-right: 7px;
   border-radius: 50%;
   background: var(--blue);
-  color: #fff;
+  color: var(--accent-ink);
   font-size: 10px;
   font-weight: 700;
   vertical-align: 1px;
@@ -796,11 +796,11 @@
   text-align: left;
   font-size: 11px;
   padding: 11px 12px;
-  border: 1px solid #e6d9bb40;
-  color: #e6d9bb;
+  border: 1px solid #ff1f3d40;
+  color: #ff1f3d;
 }
 .engineering-starts button:hover {
-  background: #e6d9bb10;
+  background: #ff1f3d10;
 }
 .engineering-car-summary {
   margin-top: 20px;
@@ -832,7 +832,7 @@
   gap: 2px;
   padding: 3px;
   width: fit-content;
-  background: #0d131be8;
+  background: #121212e8;
   border: 1px solid #ffffff1d;
   border-radius: 5px;
 }
@@ -849,8 +849,8 @@
   color: var(--text);
 }
 .studio-modes button.on {
-  color: #101a23;
-  background: #e5d9c1;
+  color: var(--accent-ink);
+  background: #ff1f3d;
 }
 .teardown-bar {
   display: flex;
@@ -889,12 +889,12 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  color: #101a23;
-  background: #e5d9c1;
+  color: var(--accent-ink);
+  background: #ff1f3d;
 }
 .teardown-track input {
   width: 100%;
-  accent-color: #e5d9c1;
+  accent-color: #ff1f3d;
 }
 .teardown-steps {
   display: grid;
@@ -913,7 +913,7 @@
   background: #8d8673;
 }
 .teardown-steps li.on {
-  background: #e5d9c1;
+  background: #ff1f3d;
 }
 .flow-legend {
   flex-shrink: 0;

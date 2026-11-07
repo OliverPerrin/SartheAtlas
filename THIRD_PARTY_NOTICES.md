@@ -35,9 +35,20 @@ Creator attribution, model IDs and variant caveats are maintained in
 and [the asset register](docs/ASSET-REGISTER.md). Some upstream provenance is
 unverified; no blanket open-source asset license is claimed.
 
+## Race photography
+
+The photographs in `public/photos/` are resized and recompressed copies of
+Wikimedia Commons files, with no other changes. Each keeps its author and
+Creative Commons license (CC BY 2.0, CC BY 4.0, CC BY-SA 2.0 or CC BY-SA 4.0);
+the MIT license does not apply to them. Captions, authors, licenses and source
+pages are listed in `src/data/photos.ts`, beside each photo on the site and on
+the Sources page. Files derived from CC BY-SA originals stay under the same
+CC BY-SA license.
+
 ## Fonts and software dependencies
 
-Barlow Condensed and DM Sans are requested from Google Fonts. Their upstream
+Saira, Saira Condensed, Geist, Geist Mono, Instrument Serif, Barlow Condensed
+and DM Sans are requested from Google Fonts. Their upstream
 font distributions carry the SIL Open Font License; preserve the supplied
 license if self-hosting them. JavaScript and Rust dependencies retain their own
 licenses. `package-lock.json` and `tools/circuit-mesh/Cargo.lock` record versions;

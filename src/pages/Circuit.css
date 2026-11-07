@@ -7,7 +7,7 @@
   padding: 12px 16px 18px;
   margin: -12px -16px;
   border-radius: 6px;
-  background: linear-gradient(105deg, #071018cf, #07101800);
+  background: linear-gradient(105deg, #0e0e0ecf, #0e0e0e00);
 }
 .circuit .circuit-title h1 {
   font-size: clamp(32px, 4.6vw, 64px);
@@ -26,7 +26,7 @@
   display: flex;
   gap: 3px;
   padding: 4px;
-  background: #0a1420e6;
+  background: #121212e6;
   border: 1px solid #ffffff2a;
   border-radius: 5px;
   backdrop-filter: blur(10px);
@@ -42,12 +42,12 @@
   border-radius: 3px;
 }
 .circuit-presentation button.on {
-  color: #101a23;
-  background: #e5d9c1;
+  color: var(--accent-ink);
+  background: #ff1f3d;
 }
 .circuit .hud {
   top: 91px;
-  background: #0a1420ed;
+  background: #121212ed;
   border-color: #ffffff24;
 }
 .circuit .hud-speed strong {
@@ -56,14 +56,14 @@
 .circuit .circuit-stage .circuit-hint {
   top: auto;
   bottom: 78px;
-  background: #09131cbd;
+  background: #111111bd;
   padding: 5px 9px;
   border-radius: 3px;
   color: #e1e8e9;
 }
 .circuit .circuit-tools {
   bottom: 26px;
-  background: #0a1420e8;
+  background: #121212e8;
   border-color: #ffffff2a;
 }
 .circuit-elevation {
@@ -72,7 +72,7 @@
   padding: 42px 28px 0;
 }
 .circuit .geo-map-wrap .scene-error {
-  background: #08121de0;
+  background: #101010e0;
   z-index: 8;
 }
 .circuit .speed-legend {
@@ -227,7 +227,7 @@
   top: 160px;
   padding: 8px 12px;
   color: #e1e7ed;
-  background: #0a101ba6;
+  background: #0f0f0fa6;
   backdrop-filter: blur(8px);
   border-radius: 5px;
   font-size: 11px;
