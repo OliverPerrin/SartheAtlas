@@ -131,7 +131,14 @@ export function useScrollProgress<T extends HTMLElement>(
 /** Counts up to a number the first time it is visible. */
 export function useCountUp(target: number, decimals = 0) {
   const ref = useRef<HTMLElement>(null);
-  const [value, setValue] = useState(target);
+  // Server render and reduced motion show the real figure; animated counters start at 0.
+  const [value, setValue] = useState(() =>
+    typeof window === "undefined" ||
+    reducedMotion() ||
+    typeof IntersectionObserver === "undefined"
+      ? target
+      : 0,
+  );
   useEffect(() => {
     const element = ref.current;
     if (!element || reducedMotion() || typeof IntersectionObserver === "undefined")
@@ -150,7 +157,6 @@ export function useCountUp(target: number, decimals = 0) {
         setValue(target * eased);
         if (t < 1) frame = requestAnimationFrame(tick);
       };
-      setValue(0);
       frame = requestAnimationFrame(tick);
     }, { threshold: 0.4 });
     io.observe(element);

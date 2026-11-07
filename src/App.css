@@ -60,42 +60,6 @@
     box-shadow: 0 0 0 8px rgba(255, 45, 63, 0);
   }
 }
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  height: 46px;
-  padding: 0 20px;
-  border-radius: 999px;
-  font: 700 16px/1 var(--display);
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  text-decoration: none;
-  transition:
-    background 0.15s,
-    transform 0.15s,
-    border-color 0.15s;
-  white-space: nowrap;
-}
-.btn.small {
-  height: 36px;
-  padding: 0 14px;
-  font-size: 14px;
-}
-.btn.primary {
-  background: var(--blue);
-  color: var(--accent-ink);
-}
-.btn.primary:hover {
-  background: #5b90ff;
-}
-.btn.ghost {
-  border: 1px solid var(--line2);
-  background: rgba(255, 255, 255, 0.03);
-}
-.btn.ghost:hover {
-  border-color: var(--text);
-}
 .seg {
   display: inline-flex;
   padding: 3px;

@@ -9,13 +9,16 @@
   --text: #f2f1ec;
   --muted: #a09f99;
   --dim: #7a7974;
-  /* Volt: the timing-screen accent that ties every page together. */
+  /* WEC class colours: Hypercar red leads; LMP2 blue and LMGT3 orange complete
+     the tricolour used for stripes, light trails and section marks. */
   --accent: #ff1f3d;
-  --accent-ink: #0b0d02;
+  --accent-ink: #ffffff;
+  --accent-deep: #c4001f;
   --blue: #ff1f3d;
-  --hyper: #ff2d3f;
+  --hyper: #ff1f3d;
   --lmp2: #2f7bff;
   --gt3: #ff8a1f;
+  --tricolor: linear-gradient(90deg, var(--hyper) 0 33.34%, var(--lmp2) 0 66.67%, var(--gt3) 0);
   --display: "Saira Condensed", "Barlow Condensed", "Arial Narrow", sans-serif;
   --wide: "Saira", "Arial Black", sans-serif;
   --serif: "Instrument Serif", "Times New Roman", serif;
@@ -47,7 +50,8 @@ body {
   background: var(--bg);
 }
 html.menu-open body,
-html.palette-open body {
+html.palette-open body,
+html.intro-lock body {
   overflow: hidden;
 }
 button,

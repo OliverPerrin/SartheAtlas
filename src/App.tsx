@@ -55,6 +55,11 @@ export default function App() {
   useEffect(() => {
     document.title = `${titleFor(page, params)} · Sarthe Atlas`;
   }, [page, params]);
+  // The page underneath stays put until the title sequence lifts.
+  useEffect(() => {
+    document.documentElement.classList.toggle("intro-lock", intro);
+    return () => document.documentElement.classList.remove("intro-lock");
+  }, [intro]);
   useEffect(() => {
     if (!shell.current) return;
     const stopReveals = startReveals(shell.current);
