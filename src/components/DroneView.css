@@ -25,74 +25,57 @@
 .drone-map .maplibregl-canvas {
   outline: none;
 }
-/* Colour grade: warm late-afternoon light by day, sodium and blue by night. */
+/* Colour grade over the map: each hour has its own light. */
 .drone-grade {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  transition: opacity 1.4s var(--ease);
   background:
-    radial-gradient(120% 80% at 50% 110%, transparent 40%, rgba(0, 0, 0, 0.55)),
-    linear-gradient(180deg, rgba(6, 6, 7, 0.75), transparent 30%, transparent 70%, rgba(6, 6, 7, 0.85));
+    radial-gradient(120% 80% at 50% 110%, transparent 40%, rgba(0, 0, 0, 0.5)),
+    linear-gradient(180deg, rgba(6, 6, 7, 0.38), transparent 24%, transparent 72%, rgba(6, 6, 7, 0.85));
 }
 .drone-grade::before,
 .drone-grade::after {
   content: "";
   position: absolute;
   inset: 0;
-  transition: opacity 1.4s var(--ease);
+  opacity: 0;
+  transition: opacity 1.6s var(--ease);
 }
+/* Warm side: afternoon gold, deepening to sunset orange. */
 .drone-grade::before {
   background: linear-gradient(200deg, rgba(255, 170, 70, 0.22), transparent 55%);
   mix-blend-mode: soft-light;
+}
+.drone.day .drone-grade::before {
   opacity: 1;
 }
+.drone.dusk .drone-grade::before {
+  opacity: 1;
+  background: linear-gradient(180deg, rgba(255, 120, 50, 0.4), rgba(150, 60, 90, 0.18) 55%, transparent);
+}
+/* Cold side: night blue, thinning to dawn rose. */
 .drone-grade::after {
   background:
     radial-gradient(60% 50% at 50% 62%, rgba(255, 150, 60, 0.12), transparent 70%),
     linear-gradient(180deg, rgba(40, 60, 140, 0.5), rgba(30, 45, 110, 0.25));
   mix-blend-mode: multiply;
-  opacity: 0;
-}
-.drone.night .drone-grade::before {
-  opacity: 0;
 }
 .drone.night .drone-grade::after {
   opacity: 1;
 }
-
-/* Cars: a glowing body plus a headlight cone that only shows at night. */
-.drone-car {
-  width: 16px;
-  height: 44px;
-  pointer-events: none;
+.drone.dawn .drone-grade::after {
+  opacity: 0.8;
+  background: linear-gradient(180deg, rgba(255, 170, 190, 0.45), rgba(110, 140, 220, 0.3) 55%, rgba(90, 120, 200, 0.15));
+  mix-blend-mode: soft-light;
 }
-.drone-car i {
+.drone-atmosphere {
   position: absolute;
   inset: 0;
-  border-radius: 8px 8px 5px 5px;
-  background:
-    linear-gradient(90deg, transparent 30%, rgba(0, 0, 0, 0.45) 30% 70%, transparent 70%) 50% 34% / 100% 22% no-repeat,
-    linear-gradient(180deg, #fff 0 10%, var(--c) 10% 88%, #222 88%);
-  box-shadow:
-    0 0 0 1.5px rgba(255, 255, 255, 0.9),
-    0 0 18px 4px color-mix(in srgb, var(--c) 80%, transparent);
-}
-.drone-car b {
-  position: absolute;
-  left: 50%;
-  bottom: 100%;
-  width: 90px;
-  height: 150px;
-  translate: -50% 0;
-  background: radial-gradient(50% 100% at 50% 100%, rgba(255, 246, 214, 0.75), transparent 70%);
-  clip-path: polygon(42% 100%, 58% 100%, 100% 0, 0 0);
-  filter: blur(4px);
-  opacity: 0;
-  transition: opacity 1.2s;
-}
-.drone.night .drone-car b {
-  opacity: 1;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  mix-blend-mode: screen;
 }
 
 /* HUD */
@@ -246,6 +229,8 @@
 }
 @media (max-width: 720px) {
   .drone-hud {
+    /* Clear the section heading, which sits over the top of the map. */
+    padding-top: 282px;
     grid-template-columns: 1fr;
     grid-template-rows: auto 1fr auto auto auto;
   }

@@ -3,11 +3,7 @@ import {
   ArrowDown,
   ArrowRight,
   ArrowUpRight,
-  ChevronLeft,
-  ChevronRight,
-  Moon,
   Scan,
-  Sun,
 } from "lucide-react";
 import { carById, cars, classInfo, classOrder } from "../data/cars.ts";
 import type { Car } from "../data/cars.ts";
@@ -16,10 +12,20 @@ import { circuit } from "../data/track.ts";
 import { linkProps } from "../router.ts";
 import { exteriorReferences } from "../data/references.ts";
 import CarPreview from "../components/CarPreview.tsx";
+import StudyImage from "../components/StudyImage.tsx";
 import { useCountUp, useScrollProgress } from "../motion.ts";
-import { photos, photoSrc, photoSrcSet } from "../data/photos.ts";
+import {
+  phasePhotos,
+  photos,
+  photoSrc,
+  photoSrcSet,
+} from "../data/photos.ts";
 import type { Photo } from "../data/photos.ts";
-import { setPhase, usePhase } from "../data/racePhase.ts";
+import { phaseInfo, phases, usePhase } from "../data/racePhase.ts";
+import type { Phase } from "../data/racePhase.ts";
+import Atmosphere from "../components/Atmosphere.tsx";
+import PhaseSwitch from "../components/PhaseSwitch.tsx";
+import { phaseIcon } from "../components/phaseIcon.ts";
 import "./Home.css";
 
 const FeaturedExterior = lazy(
@@ -190,7 +196,11 @@ function Garage() {
               {...linkProps("car", { car: car.id })}
             >
               <div className="garage-media">
-                <CarPreview car={car} sizes="(max-width: 820px) 80vw, 460px" />
+                <StudyImage
+                  car={car.id}
+                  alt={`${car.make} ${car.name} engineering study, three-quarter view`}
+                />
+                <span className="garage-tag">Sarthe Atlas study</span>
               </div>
               <div className="garage-meta">
                 <span className="garage-index">
@@ -269,16 +279,23 @@ function Credit({ photo, className = "" }: { photo: Photo; className?: string })
   );
 }
 
-const chapters: {
+type ChapterData = {
   photo: Photo;
   label: string;
+  phase: Phase;
+  /** Local time at the start of the chapter, in hours since midnight. */
+  clock: number;
   title: [string, string];
   text: string;
   tone: string;
-}[] = [
+};
+
+const chapters: ChapterData[] = [
   {
     photo: photos.bmwNose,
     label: "Close up",
+    phase: "day",
+    clock: 16,
     title: ["Every surface", "is a decision."],
     text: "Intakes, light clusters, splitter edges. At 300 km/h nothing on a prototype is decoration.",
     tone: "#14100c",
@@ -286,6 +303,8 @@ const chapters: {
   {
     photo: photos.fordChicane,
     label: "Afternoon",
+    phase: "day",
+    clock: 17.5,
     title: ["Hot tyres,", "full tanks."],
     text: "The race starts in daylight. Stints run long, brakes run hot, and the Ford Chicane waits at the end of every lap.",
     tone: "#16110a",
@@ -293,13 +312,17 @@ const chapters: {
   {
     photo: photos.bmwSpeed,
     label: "Evening",
+    phase: "dusk",
+    clock: 20.25,
     title: ["The light", "starts to go."],
     text: "Shadows stretch across the Sarthe. Drivers chase the last of the sun before the long night.",
-    tone: "#140a08",
+    tone: "#170b06",
   },
   {
     photo: photos.underLights,
     label: "Night",
+    phase: "night",
+    clock: 22.25,
     title: ["Headlights", "and nerve."],
     text: "Hours of darkness, traffic in three classes, and closing speeds that reward trust in the lights ahead.",
     tone: "#050817",
@@ -307,23 +330,27 @@ const chapters: {
   {
     photo: photos.finish,
     label: "Hour 24",
+    phase: "day",
+    clock: 29.5,
     title: ["The clock", "runs out."],
     text: "Twenty-four hours later the chequered flag falls. Everything in this atlas is about getting there.",
     tone: "#0b0b0d",
   },
 ];
+const RACE_START = 16;
+const RACE_END = 40;
 
 function Chapter({
   chapter,
   index,
 }: {
-  chapter: (typeof chapters)[number];
+  chapter: ChapterData;
   index: number;
 }) {
   const ref = useScrollProgress<HTMLElement>("pinned");
   return (
     <article
-      className="chapter"
+      className={`chapter chapter-${chapter.phase}`}
       ref={ref}
       style={{ "--tone": chapter.tone } as React.CSSProperties}
     >
@@ -343,17 +370,123 @@ function Chapter({
           <p>{chapter.text}</p>
         </div>
         <Credit photo={chapter.photo} className="chapter-credit" />
-        <span className="chapter-count" aria-hidden="true">
-          {pad(index + 1)}
-          <i>/{pad(chapters.length)}</i>
-        </span>
       </div>
     </article>
   );
 }
 
+/**
+ * The five photographs share one sky. As the page scrolls, a race clock runs
+ * from the start to the flag and the light over the pictures follows it:
+ * afternoon sun, sunset, night with headlight trails, dawn mist, day again.
+ */
+function Chapters() {
+  const body = useRef<HTMLDivElement>(null);
+  const rail = useRef<HTMLDivElement>(null);
+  const time = useRef<HTMLElement>(null);
+  const hour = useRef<HTMLElement>(null);
+  const [light, setLight] = useState<Phase>("day");
+  useEffect(() => {
+    const element = body.current;
+    if (!element) return;
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const items = element.querySelectorAll<HTMLElement>(".chapter");
+      const line = innerHeight * 0.3;
+      let index = 0,
+        progress = 0;
+      items.forEach((item, i) => {
+        const box = item.getBoundingClientRect();
+        if (box.top <= line) {
+          index = i;
+          progress = Math.min(1, Math.max(0, (line - box.top) / box.height));
+        }
+      });
+      const from = chapters[index].clock;
+      const to = chapters[index + 1]?.clock ?? RACE_END;
+      const clock = from + (to - from) * progress;
+      // The light follows the clock: mid-June sunset and sunrise at Le Mans.
+      const wallClock = clock % 24;
+      const next: Phase =
+        wallClock >= 20.25 && wallClock < 22.25
+          ? "dusk"
+          : wallClock >= 22.25 || wallClock < 5.5
+            ? "night"
+            : wallClock < 7.5
+              ? "dawn"
+              : "day";
+      setLight((current) => (current === next ? current : next));
+      const wall = ((clock % 24) + 24) % 24;
+      const hh = Math.floor(wall);
+      const mm = Math.floor((wall - hh) * 60);
+      if (time.current)
+        time.current.textContent = `${pad(hh)}:${pad(mm)}`;
+      if (hour.current)
+        hour.current.textContent = pad(
+          Math.min(24, Math.floor(clock - RACE_START)),
+        );
+      rail.current?.style.setProperty(
+        "--t",
+        ((clock - RACE_START) / (RACE_END - RACE_START)).toFixed(4),
+      );
+      const box = element.getBoundingClientRect();
+      rail.current?.classList.toggle(
+        "on",
+        box.top < innerHeight * 0.4 && box.bottom > innerHeight * 0.75,
+      );
+    };
+    const queue = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    update();
+    addEventListener("scroll", queue, { passive: true });
+    addEventListener("resize", queue);
+    return () => {
+      cancelAnimationFrame(frame);
+      removeEventListener("scroll", queue);
+      removeEventListener("resize", queue);
+    };
+  }, []);
+  const Icon = phaseIcon[light];
+  return (
+    <section className="chapters" aria-label="From day into night">
+      <header className="chapters-head">
+        <span className="eyebrow">01 / Day into night</span>
+        <Lines
+          className="block-title"
+          lines={["Twenty-four", <em key="em">hours, up close.</em>]}
+        />
+      </header>
+      <div className={`chapters-body light-${light}`} ref={body}>
+        <div className="chapters-sky" aria-hidden="true">
+          <Atmosphere phase={light} />
+          <div className="race-rail" ref={rail}>
+            <span className="race-rail-phase">
+              <Icon size={14} /> {phaseInfo[light].label}
+            </span>
+            <strong ref={time}>16:00</strong>
+            <span className="race-rail-hour">
+              Hour <b ref={hour}>00</b> / 24
+            </span>
+            <div className="race-rail-track">
+              {phases.map((p) => (
+                <i key={p} className={`seg-${p}`} />
+              ))}
+              <em />
+            </div>
+          </div>
+        </div>
+        {chapters.map((chapter, index) => (
+          <Chapter key={chapter.photo.id} chapter={chapter} index={index} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
 const classPhoto: Record<string, Photo> = {
-  Hypercar: photos.alpine,
+  Hypercar: photos.bmwSide,
   LMP2: photos.prototypes,
   LMGT3: photos.vantage,
 };
@@ -387,14 +520,12 @@ export default function Home() {
     observer.observe(element);
     return () => observer.disconnect();
   }, []);
-  const cycle = (direction: number) => {
-    setActiveModel(null);
-    setI(
-      (current) => (current + direction + featured.length) % featured.length,
-    );
-  };
   const live = activeModel === reference.id;
-  const heroPhoto = phase === "day" ? photos.goldenHour : photos.lightTrails;
+  const heroPhoto = phasePhotos[phase];
+  // Photographs load the first time their light is chosen, then stay mounted
+  // so switching back is instant.
+  const [seen, setSeen] = useState<Phase[]>([phase]);
+  if (!seen.includes(phase)) setSeen([...seen, phase]);
   return (
     <main className={`home phase-${phase}`}>
       {/* ------------------------------------------------ Hero */}
@@ -404,15 +535,18 @@ export default function Home() {
         aria-label="Discover the endurance explorer"
       >
         <div className="hero-media">
-          {(["day", "night"] as const).map((p) => (
-            <div key={p} className={`hero-photo${phase === p ? " on" : ""}`}>
-              <PhotoImg
-                photo={p === "day" ? photos.goldenHour : photos.lightTrails}
-                priority={phase === p}
-              />
-            </div>
-          ))}
+          {phases
+            .filter((p) => seen.includes(p))
+            .map((p) => (
+              <div
+                key={p}
+                className={`hero-photo hero-photo-${p}${phase === p ? " on" : ""}`}
+              >
+                <PhotoImg photo={phasePhotos[p]} priority={p === seen[0]} />
+              </div>
+            ))}
         </div>
+        <Atmosphere phase={phase} className="hero-atmosphere" />
         <div className="hero-shade" aria-hidden="true" />
         <div className="hero-stripes" aria-hidden="true">
           <i />
@@ -449,21 +583,10 @@ export default function Home() {
             </div>
           </div>
           <div className="hero-side">
-            <div
-              className="glass-switch hero-switch"
-              role="group"
-              aria-label="Day or night"
-            >
-              <button aria-pressed={phase === "day"} onClick={() => setPhase("day")}>
-                <Sun size={14} /> Day
-              </button>
-              <button
-                aria-pressed={phase === "night"}
-                onClick={() => setPhase("night")}
-              >
-                <Moon size={14} /> Night
-              </button>
-            </div>
+            <span className="hero-phase-line" aria-live="polite">
+              <b>{phaseInfo[phase].clock}</b> {phaseInfo[phase].line}
+            </span>
+            <PhaseSwitch className="hero-switch" />
             <Credit photo={heroPhoto} className="hero-credit" />
           </div>
         </div>
@@ -509,18 +632,7 @@ export default function Home() {
       </section>
 
       {/* ------------------------------------------------ Day into night */}
-      <section className="chapters" aria-label="From day into night">
-        <header className="chapters-head">
-          <span className="eyebrow">01 / Day into night</span>
-          <Lines
-            className="block-title"
-            lines={["Twenty-four", <em key="em">hours, up close.</em>]}
-          />
-        </header>
-        {chapters.map((chapter, index) => (
-          <Chapter key={chapter.photo.id} chapter={chapter} index={index} />
-        ))}
-      </section>
+      <Chapters />
 
       {/* ------------------------------------------------ Classes */}
       <section className="block classes" aria-labelledby="classes-title">
@@ -603,7 +715,7 @@ export default function Home() {
         </header>
         <div className="studio-stage">
         <div
-          className={`hero-stage${live ? " live" : ""}`}
+          className={`hero-stage${live ? " viewing" : ""}`}
           role="group"
           aria-label={`${car.make} ${car.name} exterior preview`}
         >
@@ -634,11 +746,12 @@ export default function Home() {
               </Suspense>
             ) : (
               <button
-                className="hero-load-model"
+                className="btn primary hero-load-model"
+                data-magnetic
                 onClick={() => setActiveModel(reference.id)}
               >
-                <Scan size={18} />
                 <span>Start 3D viewer</span>
+                <Scan size={16} />
               </button>
             )}
             <i className="corner tl" aria-hidden="true" />
@@ -650,9 +763,6 @@ export default function Home() {
               {live ? "Detailed exterior model" : "Creator exterior preview"}
               <span>{live ? "Drag to rotate" : "Select Start 3D to explore"}</span>
             </div>
-            <a className="hero-turntable" {...linkProps("car", { car: car.id })}>
-              Open full viewer <ArrowUpRight size={13} />
-            </a>
           </div>
         </div>
         <div className="hero-caption">
@@ -690,25 +800,35 @@ export default function Home() {
               {reference.author} <ArrowUpRight size={12} />
             </a>
           </div>
-          <div className="hero-selector">
-            <span className="hero-count">
-              {pad(i + 1)} <i>/ {pad(featured.length)}</i>
-            </span>
-            <span className="hero-ticks" aria-hidden="true">
-              {featured.map((number, index) => (
-                <i key={number} className={index === i ? "on" : ""} />
-              ))}
-            </span>
-            <button
-              aria-label="Previous featured car"
-              onClick={() => cycle(-1)}
-            >
-              <ChevronLeft size={18} />
-            </button>
-            <button aria-label="Next featured car" onClick={() => cycle(1)}>
-              <ChevronRight size={18} />
-            </button>
-          </div>
+          <a className="btn glass small" {...linkProps("car", { car: car.id })}>
+            Open in the explorer <ArrowUpRight size={14} />
+          </a>
+        </div>
+        <div className="studio-rail" role="group" aria-label="Featured cars">
+          {featured.map((number, index) => {
+            const item = entries.find((e) => e.number === number)!;
+            const itemCar = carById(item.carId)!;
+            return (
+              <button
+                key={number}
+                className="studio-pick"
+                aria-pressed={index === i}
+                aria-label={`#${number} ${itemCar.make} ${itemCar.name}`}
+                style={
+                  { "--cls": classInfo[itemCar.category].color } as React.CSSProperties
+                }
+                onClick={() => {
+                  setActiveModel(null);
+                  setI(index);
+                }}
+              >
+                <StudyImage entry={number} alt="" />
+                <span className="studio-pick-name">
+                  <b>#{number}</b> {itemCar.name}
+                </span>
+              </button>
+            );
+          })}
         </div>
         </div>
       </section>

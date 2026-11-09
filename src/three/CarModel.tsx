@@ -1173,19 +1173,39 @@ function Floor({ body }: { body: Body }) {
   const y = gtCar ? 0.085 : 0.05;
   const diffX0 = body.rearX + 0.1,
     diffX1 = -L / 2 + 0.02;
+  const plateFront = L / 2 - 0.1;
+  // The splitter follows the nose in plan: a bowed leading edge with
+  // rounded corners, rather than a square tray.
+  const splitter = useMemo(() => {
+    const back = L / 2 - 0.2,
+      front = L / 2 + (gtCar ? 0.075 : 0.055),
+      half = body.f.outerZ(0.02) * 0.985,
+      r = 0.16;
+    const outline = new THREE.Shape();
+    outline.moveTo(back, -half);
+    outline.lineTo(front - r, -half);
+    outline.quadraticCurveTo(front - 0.01, -half, front, -half + r);
+    outline.quadraticCurveTo(front + 0.035, 0, front, half - r);
+    outline.quadraticCurveTo(front - 0.01, half, front - r, half);
+    outline.lineTo(back, half);
+    outline.closePath();
+    return outline;
+  }, [L, gtCar, body]);
   return (
     <group>
       <Block
-        p={[0.05, y, 0]}
-        s={[L - 0.3, 0.018, Wd * 0.86]}
+        p={[(plateFront + diffX0) / 2, y, 0]}
+        s={[plateFront - diffX0, 0.018, Wd * 0.86]}
         color={CARBON}
         rough={0.7}
       />
-      <Block
-        p={[L / 2 - 0.02, y - 0.01, 0]}
-        s={[0.26, 0.016, Wd * 0.94]}
+      <Extruded
+        shape={splitter}
+        depth={0.018}
         color={CARBON2}
-        rough={0.6}
+        rough={0.55}
+        position={[0, y - 0.006, 0]}
+        rotation={[Math.PI / 2, 0, 0]}
       />
       <Block
         p={[0.1, y - 0.018, 0]}
@@ -1204,19 +1224,20 @@ function Floor({ body }: { body: Body }) {
             color={CARBON}
           />
         ))}
+      {/* The diffuser ramp rises toward the tail, tucked under the body's kick. */}
       {[-0.52, -0.26, 0, 0.26, 0.52].map((z) => (
         <Block
           key={z}
-          p={[(diffX0 + diffX1) / 2, y + 0.12, z * (Wd / 2)]}
-          s={[diffX0 - diffX1, 0.22, 0.012]}
-          r={[0, 0, 0.18]}
+          p={[(diffX0 + diffX1) / 2, y + 0.085, z * (Wd / 2)]}
+          s={[diffX0 - diffX1, 0.15, 0.012]}
+          r={[0, 0, -0.17]}
           color={CARBON2}
         />
       ))}
       <Block
-        p={[(diffX0 + diffX1) / 2, y + 0.1, 0]}
-        s={[diffX0 - diffX1 + 0.05, 0.012, Wd * 0.72]}
-        r={[0, 0, 0.18]}
+        p={[(diffX0 + diffX1) / 2, y + 0.16, 0]}
+        s={[diffX0 - diffX1 + 0.02, 0.012, Wd * 0.76]}
+        r={[0, 0, -0.2]}
         color={CARBON}
       />
     </group>
@@ -1460,9 +1481,14 @@ function WheelAssemblies({
 }
 
 function TailLights({ body, shape }: { body: Body; shape: Shape }) {
-  const x = -body.spec.length / 2 - 0.004;
-  const y = body.topAt(1) - 0.06;
-  const w = body.spec.width;
+  const gtCar = body.spec.kind === "gt";
+  const L = body.spec.length;
+  const x = -L / 2 - 0.006;
+  // The GT bumper domes in at its edges, so its lights stay inboard.
+  const w = body.spec.width * (gtCar ? 0.8 : 1);
+  const floor = body.f.floorY(1) + body.tail(1).kick;
+  const top = body.topAt(1) - body.tail(1).drop;
+  const y = top - (gtCar ? 0.11 : 0.045);
   const red = "#ec1629";
   const view = useView();
   const bars: { p: V3; s: V3; r?: number }[] = [];
@@ -1472,13 +1498,13 @@ function TailLights({ body, shape }: { body: Body; shape: Shape }) {
       break;
     case "split":
       for (const s of [-1, 1])
-        bars.push({ p: [x, y, s * w * 0.3], s: [0.02, 0.03, w * 0.3] });
+        bars.push({ p: [x, y, s * w * 0.29], s: [0.02, 0.03, w * 0.26] });
       break;
     case "claw":
       for (const s of [-1, 1])
         for (let i = 0; i < 3; i++)
           bars.push({
-            p: [x, y - 0.03, s * (w * 0.3 + i * 0.07)],
+            p: [x, y - 0.03, s * (w * 0.28 + i * 0.07)],
             s: [0.02, 0.1, 0.02],
             r: s * 0.5,
           });
@@ -1487,15 +1513,17 @@ function TailLights({ body, shape }: { body: Body; shape: Shape }) {
       for (const s of [-1, 1])
         for (let i = 0; i < 3; i++)
           bars.push({
-            p: [x, y - 0.06, s * (w * 0.28 + i * 0.07)],
+            p: [x, y - 0.05, s * (w * 0.25 + i * 0.07)],
             s: [0.02, 0.14, 0.03],
           });
       break;
     case "vertical":
       for (const s of [-1, 1])
-        bars.push({ p: [x, y - 0.12, s * w * 0.44], s: [0.02, 0.28, 0.025] });
+        bars.push({ p: [x, y - 0.13, s * w * 0.445], s: [0.02, 0.3, 0.025] });
       break;
   }
+  const mid = (floor + top) / 2;
+  const half = body.f.outerZ(1) * body.tail(1).taper;
   return (
     <group>
       {bars.map((b, i) => (
@@ -1516,7 +1544,56 @@ function TailLights({ body, shape }: { body: Body; shape: Shape }) {
           </mesh>
         </group>
       ))}
-      <mesh position={[x, body.spec.kind === "gt" ? 0.35 : 0.3, 0]}>
+      {gtCar ? (
+        <>
+          {/* Dark lower bumper with a vent slot and twin exhausts. */}
+          <Block
+            p={[x + 0.004, floor + 0.11, 0]}
+            s={[0.03, 0.2, half * 1.5]}
+            color={CARBON}
+            rough={0.6}
+          />
+          <Block
+            p={[x - 0.008, mid - 0.03, 0]}
+            s={[0.02, 0.05, half * 1.25]}
+            color="#07090b"
+            rough={0.8}
+          />
+          {[-1, 1].map((s) => (
+            <mesh
+              key={s}
+              position={[x - 0.02, floor + 0.13, s * 0.17]}
+              rotation={[0, 0, Math.PI / 2]}
+            >
+              <cylinderGeometry args={[0.045, 0.045, 0.09, 20, 1, true]} />
+              <Mat color="#3a3d42" metal={0.9} rough={0.3} side={THREE.DoubleSide} />
+            </mesh>
+          ))}
+        </>
+      ) : (
+        <>
+          {/* Inside the open tail: louvres and the crash structure. */}
+          {[0.24, 0.42, 0.6, 0.78].map((k) => (
+            <Block
+              key={k}
+              p={[x + 0.16, floor + (top - floor) * k, 0]}
+              s={[0.05, 0.014, half * 1.56]}
+              r={[0, 0, 0.5]}
+              color="#1b1f24"
+              metal={0.5}
+              rough={0.45}
+            />
+          ))}
+          <Block
+            p={[x + 0.1, mid - 0.04, 0]}
+            s={[0.2, 0.16, 0.2]}
+            color="#14171b"
+            metal={0.4}
+            rough={0.5}
+          />
+        </>
+      )}
+      <mesh position={[x - 0.004, gtCar ? floor + 0.24 : mid - 0.04, 0]}>
         <boxGeometry args={[0.02, 0.05, 0.12]} />
         <Mat
           color={red}
@@ -1524,6 +1601,128 @@ function TailLights({ body, shape }: { body: Body; shape: Shape }) {
           emissiveIntensity={view.night ? 2 : 0.6}
           rough={0.2}
           coat={1}
+        />
+      </mesh>
+    </group>
+  );
+}
+
+function glowTexture(draw: (c: CanvasRenderingContext2D, size: number) => void) {
+  const size = 256;
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = size;
+  draw(canvas.getContext("2d")!, size);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
+const noRaycast = () => null;
+
+/**
+ * At night the lamps actually light the scene: a flare at each headlight, two
+ * beams thrown along the ground ahead, and a red wash behind the tail.
+ */
+function NightLights({ body }: { body: Body }) {
+  const view = useView();
+  const on =
+    view.night &&
+    !view.xray &&
+    !view.bodyRemoved &&
+    !view.inspection &&
+    (view.exploded ?? 0) < 0.02;
+  const textures = useMemo(() => {
+    if (!on) return null;
+    const flare = glowTexture((c, n) => {
+      const g = c.createRadialGradient(n / 2, n / 2, 0, n / 2, n / 2, n / 2);
+      g.addColorStop(0, "rgba(255,255,255,1)");
+      g.addColorStop(0.12, "rgba(225,238,255,0.85)");
+      g.addColorStop(0.4, "rgba(150,190,255,0.16)");
+      g.addColorStop(1, "rgba(120,160,255,0)");
+      c.fillStyle = g;
+      c.fillRect(0, 0, n, n);
+    });
+    // Canvas x runs away from the car; the beam widens and fades with distance.
+    const beam = glowTexture((c, n) => {
+      const g = c.createLinearGradient(0, 0, n, 0);
+      g.addColorStop(0, "rgba(235,242,255,0.9)");
+      g.addColorStop(0.25, "rgba(215,228,255,0.42)");
+      g.addColorStop(1, "rgba(200,220,255,0)");
+      c.fillStyle = g;
+      c.beginPath();
+      c.moveTo(0, n * 0.42);
+      c.lineTo(n, n * 0.04);
+      c.lineTo(n, n * 0.96);
+      c.lineTo(0, n * 0.58);
+      c.closePath();
+      c.filter = "blur(14px)";
+      c.fill();
+    });
+    const wash = glowTexture((c, n) => {
+      const g = c.createRadialGradient(n / 2, n / 2, 0, n / 2, n / 2, n / 2);
+      g.addColorStop(0, "rgba(255,40,60,0.75)");
+      g.addColorStop(0.5, "rgba(255,20,40,0.2)");
+      g.addColorStop(1, "rgba(255,0,30,0)");
+      c.fillStyle = g;
+      c.fillRect(0, 0, n, n);
+    });
+    return { flare, beam, wash };
+  }, [on]);
+  useEffect(
+    () => () => {
+      if (textures) Object.values(textures).forEach((t) => t.dispose());
+    },
+    [textures],
+  );
+  if (!on || !textures) return null;
+  const L = body.spec.length;
+  const reach = 7.5;
+  return (
+    <group>
+      {[1, -1].map((side) => {
+        const lamp = body.surfaceAt(0.068, 0.58, side, 0.03);
+        return (
+          <group key={side}>
+            <sprite position={lamp} scale={[0.62, 0.62, 1]} raycast={noRaycast}>
+              <spriteMaterial
+                map={textures.flare}
+                blending={THREE.AdditiveBlending}
+                depthWrite={false}
+                toneMapped={false}
+                transparent
+              />
+            </sprite>
+            <mesh
+              position={[L / 2 + reach / 2 - 0.35, 0.006, lamp.z * 0.92]}
+              rotation={[-Math.PI / 2, 0, 0]}
+              raycast={noRaycast}
+            >
+              <planeGeometry args={[reach, 3.4]} />
+              <meshBasicMaterial
+                map={textures.beam}
+                blending={THREE.AdditiveBlending}
+                depthWrite={false}
+                toneMapped={false}
+                transparent
+                opacity={0.5}
+              />
+            </mesh>
+          </group>
+        );
+      })}
+      <mesh
+        position={[-L / 2 - 0.9, 0.006, 0]}
+        rotation={[-Math.PI / 2, 0, 0]}
+        raycast={noRaycast}
+      >
+        <planeGeometry args={[3.2, 3]} />
+        <meshBasicMaterial
+          map={textures.wash}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+          toneMapped={false}
+          transparent
+          opacity={0.55}
         />
       </mesh>
     </group>
@@ -1647,6 +1846,7 @@ export function CarModel({
         >
           <HeadLights body={body} shape={shape} />
           <TailLights body={body} shape={shape} />
+          <NightLights body={body} />
           <Callouts system="lights" body={body} shape={shape} />
         </Part>
       )}

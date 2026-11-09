@@ -99,6 +99,12 @@ export type SceneProps = {
   sectioned?: boolean;
   studio?: StudioMode;
   clock?: BuildClock;
+  /** Fixed camera position for the lab and render scripts. */
+  pose?: V3;
+  /** Flat backdrop and floor colour for the lab and render scripts. */
+  backdrop?: string;
+  /** Tone-mapping exposure override for the lab and render scripts. */
+  exposure?: number;
 };
 
 function Rig({
@@ -108,6 +114,7 @@ function Rig({
   compact,
   car,
   studio,
+  pose,
 }: {
   preset: Preset;
   nonce: number;
@@ -115,6 +122,7 @@ function Rig({
   compact: boolean;
   car: Car;
   studio: StudioMode;
+  pose?: V3;
 }) {
   const { body, shape } = useBody(car);
   const { garage } = useTeardown();
@@ -181,6 +189,13 @@ function Rig({
       return;
     }
     setCameraProjection(perspective, 30, 0.1);
+    if (pose) {
+      goal.current = new THREE.Vector3(...pose);
+      camera.position.copy(goal.current);
+      targetGoal.current.set(0, 0.45, 0);
+      invalidate();
+      return;
+    }
     // Keep the whole car in frame on narrow viewports.
     const v = new THREE.Vector3(...presetPos[preset as keyof typeof presetPos]);
     const fov = ((camera as THREE.PerspectiveCamera).fov * Math.PI) / 180;
@@ -236,6 +251,7 @@ function Rig({
     body,
     shape,
     invalidate,
+    pose,
   ]);
   useEffect(() => {
     if (!controls) return;
@@ -323,6 +339,35 @@ function Dimensions({ car }: { car: Car }) {
   );
 }
 
+/** A soft pool of light on the studio floor, for seamless-backdrop renders. */
+function FloorPool() {
+  const texture = useMemo(() => {
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = 256;
+    const c = canvas.getContext("2d")!;
+    const g = c.createRadialGradient(128, 128, 0, 128, 128, 128);
+    g.addColorStop(0, "rgba(255,255,255,0.16)");
+    g.addColorStop(0.45, "rgba(255,255,255,0.06)");
+    g.addColorStop(1, "rgba(255,255,255,0)");
+    c.fillStyle = g;
+    c.fillRect(0, 0, 256, 256);
+    return new THREE.CanvasTexture(canvas);
+  }, []);
+  useEffect(() => () => texture.dispose(), [texture]);
+  return (
+    <mesh rotation-x={-Math.PI / 2} position={[0, -0.011, 0]}>
+      <planeGeometry args={[16, 13]} />
+      <meshBasicMaterial
+        map={texture}
+        transparent
+        depthWrite={false}
+        toneMapped={false}
+        fog={false}
+      />
+    </mesh>
+  );
+}
+
 const Studio = memo(function Studio({
   night,
   under,
@@ -331,7 +376,9 @@ const Studio = memo(function Studio({
   poseRevision,
   wide = false,
   tunnel = false,
+  backdrop,
 }: {
+  backdrop?: string;
   night: boolean;
   under: boolean;
   compact: boolean;
@@ -415,7 +462,8 @@ const Studio = memo(function Studio({
     ),
     [night],
   );
-  const background = tunnel ? "#030508" : night ? "#090c10" : "#161b21";
+  const background =
+    backdrop ?? (tunnel ? "#030508" : night ? "#090c10" : "#161b21");
   return (
     <>
       <color attach="background" args={[background]} />
@@ -454,13 +502,19 @@ const Studio = memo(function Studio({
           receiveShadow
         >
           <circleGeometry args={[40, 64]} />
-          <meshStandardMaterial
-            color={night ? "#030507" : "#050709"}
-            envMapIntensity={0.05}
-            roughness={1}
-            metalness={0}
-          />
+          {backdrop ? (
+            // Render scripts want a seamless sweep: the floor is the backdrop.
+            <meshBasicMaterial color={backdrop} fog={false} toneMapped={false} />
+          ) : (
+            <meshStandardMaterial
+              color={night ? "#030507" : "#050709"}
+              envMapIntensity={0.05}
+              roughness={1}
+              metalness={0}
+            />
+          )}
         </mesh>
+        {backdrop && !night && <FloorPool />}
         <ContactShadows
           visible={!under}
           frames={under ? 0 : settledPose === poseRevision ? 1 : Infinity}
@@ -571,7 +625,7 @@ export function CarScene(p: SceneProps) {
           gl={{
             antialias: true,
             toneMapping: THREE.ACESFilmicToneMapping,
-            toneMappingExposure: p.night ? 0.9 : 1.05,
+            toneMappingExposure: p.exposure ?? (p.night ? 0.9 : 1.05),
           }}
           onCreated={({ gl }) => {
             gl.outputColorSpace = THREE.SRGBColorSpace;
@@ -583,6 +637,7 @@ export function CarScene(p: SceneProps) {
             wide={usesGarage(studio)}
             tunnel={tunnel}
             night={p.night || tunnel}
+            backdrop={p.backdrop}
             under={under}
             compact={!!p.compact}
             lift={p.exploded}
@@ -613,6 +668,7 @@ export function CarScene(p: SceneProps) {
               nonce={p.presetNonce}
               lift={p.exploded}
               compact={!!p.compact}
+              pose={p.pose}
             />
           </TeardownCtx.Provider>
           {p.dims && studio === "cutaway" && <Dimensions car={p.car} />}

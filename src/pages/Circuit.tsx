@@ -8,6 +8,7 @@ import {
   useRef,
   useEffect,
 } from "react";
+import { currentPhase, isDark } from "../data/racePhase.ts";
 import {
   ArrowUpRight,
   Eye,
@@ -159,7 +160,8 @@ export default function Circuit() {
   const [geographic, setGeographic] = useState(true);
   const [focusFraction, setFocusFraction] = useState<number | null>(null);
   const [mode, setMode] = useState<ColorMode>("sections");
-  const [night, setNight] = useState(false);
+  // Start in the light chosen elsewhere on the site.
+  const [night, setNight] = useState(() => isDark(currentPhase()));
   const [playing, setPlaying] = useState(
     () => !window.matchMedia("(prefers-reduced-motion: reduce)").matches,
   );

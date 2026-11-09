@@ -40,12 +40,21 @@ export function fitBody(spec: BodySpec, outline: BodyOutline): BodySpec {
     ).map((key) => [key, monotone(spec[key])]),
   ) as Record<string, (t: number) => number>;
   const ts = outline.top.map((_, i) => i / n);
-  const weight = (t: number) =>
-    clamp(1 - (t - heightUntil) / 0.12, 0, 1) * clamp((1 - t) / 0.03, 0, 1);
-  const raw = ts.map((t, i) => {
-    const current = Math.max(f.spineY(t), f.crestY(t), f.tubY(t));
-    return clamp(outline.top[i] - current, -0.3, 0.3) * weight(t);
-  });
+  const gap = (t: number, i: number) =>
+    clamp(
+      outline.top[i] - Math.max(f.spineY(t), f.crestY(t), f.tubY(t)),
+      -0.3,
+      0.3,
+    );
+  // Past the fitted range the outline shows the wing or canopy, not the body.
+  // Carry the last fitted offset on and fade it out instead of reading those.
+  const last = Math.min(n, Math.floor(heightUntil * n + 1e-9));
+  const held = gap(ts[last], last);
+  const raw = ts.map((t, i) =>
+    i <= last
+      ? gap(t, i)
+      : held * clamp(1 - (t - heightUntil) / 0.14, 0, 1),
+  );
   const delta = raw.map(
     (v, i) => (v * 2 + (raw[i - 1] ?? v) + (raw[i + 1] ?? v)) / 4,
   );

@@ -182,18 +182,22 @@
   overflow: hidden;
   background: #0d0d10;
 }
-.field-page .entry-visual .car-preview {
-  height: auto;
-  aspect-ratio: 16 / 10;
-}
-.field-page .entry-visual img {
-  object-fit: cover !important;
+.field-page .entry-visual img,
+.field-page .model-visual img {
   transition: transform 0.9s var(--ease);
 }
-.field-page .entry-card:hover .entry-visual img {
+.field-page .entry-card:hover .entry-visual img,
+.field-page .model-card:hover .model-visual img {
   transform: scale(1.06);
 }
+.field-page .model-visual {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.field-page .model-visual .car-preview-label,
 .field-page .entry-visual .car-preview-label {
+  position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
@@ -201,6 +205,9 @@
   background: linear-gradient(transparent, rgba(6, 6, 7, 0.75));
   font: 400 9px/1.4 var(--mono);
   letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #d1d7de;
+  pointer-events: none;
 }
 .field-page .entry-body {
   padding: 14px 16px 6px;
@@ -251,18 +258,6 @@
 }
 .field-page .model-card > div:last-child {
   padding: 4px 12px 0;
-}
-.field-page .model-card .car-preview {
-  height: auto;
-  aspect-ratio: 16 / 10;
-  border-radius: 12px;
-}
-.field-page .model-card img {
-  object-fit: cover !important;
-  transition: transform 0.9s var(--ease);
-}
-.field-page .model-card:hover img {
-  transform: scale(1.05);
 }
 .field-page .model-card .cls-tag {
   color: var(--cls);

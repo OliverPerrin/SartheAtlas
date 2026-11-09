@@ -3,6 +3,7 @@ import { ArrowUp, ArrowUpRight, Command, Search, X } from "lucide-react";
 import { linkProps } from "../router.ts";
 import type { Page } from "../router.ts";
 import { finePointer, reducedMotion, useLeMansTime } from "../motion.ts";
+import PhaseSwitch from "./PhaseSwitch.tsx";
 
 const nav: [Page, string][] = [
   ["field", "The field"],
@@ -73,6 +74,7 @@ export function Header({
   page: Page;
   onSearch: () => void;
 }) {
+  const immersive = page === "car" || page === "circuit";
   const navRef = useRef<HTMLElement>(null);
   const [indicator, setIndicator] = useState<{ x: number; w: number } | null>(
     null,
@@ -166,6 +168,7 @@ export function Header({
           ))}
         </nav>
         <div className="header-tools">
+          {!immersive && <PhaseSwitch compact className="header-phase" />}
           <span className="header-clock" aria-label="Local time in Le Mans">
             <i className="live-dot" aria-hidden="true" />
             LE MANS <b>{time ?? "--:--"}</b>

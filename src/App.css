@@ -47,19 +47,6 @@
   text-transform: uppercase;
   color: var(--muted);
 }
-.live {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--hyper);
-  box-shadow: 0 0 0 4px rgba(255, 45, 63, 0.25);
-  animation: pulse 2s infinite;
-}
-@keyframes pulse {
-  50% {
-    box-shadow: 0 0 0 8px rgba(255, 45, 63, 0);
-  }
-}
 .seg {
   display: inline-flex;
   padding: 3px;

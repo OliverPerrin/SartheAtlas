@@ -10,7 +10,7 @@ import type { ClassName } from "../data/cars.ts";
 import { classPanel, entries, surname } from "../data/entries.ts";
 import { platformLabel } from "../data/systems.ts";
 import { linkProps, navigate } from "../router.ts";
-import CarPreview from "../components/CarPreview.tsx";
+import StudyImage from "../components/StudyImage.tsx";
 import { photos, photoSrc, photoSrcSet } from "../data/photos.ts";
 import "./Pages.css";
 
@@ -303,7 +303,13 @@ export default function Field({ params }: { params: URLSearchParams }) {
                     } as React.CSSProperties
                   }
                 >
-                  <CarPreview car={car} label />
+                  <StudyImage
+                    entry={e.number}
+                    alt={`#${e.number} ${e.team} ${car.make} ${car.name} colour study`}
+                  />
+                  <span className="car-preview-label">
+                    Colour study · not official artwork
+                  </span>
                 </div>
                 <div className="entry-body">
                   <span
@@ -362,7 +368,15 @@ export default function Field({ params }: { params: URLSearchParams }) {
                 }
                 {...linkProps("car", { car: c.id })}
               >
-                <CarPreview car={c} label />
+                <div className="model-visual">
+                  <StudyImage
+                    car={c.id}
+                    alt={`${c.make} ${c.name} engineering study`}
+                  />
+                  <span className="car-preview-label">
+                    Sarthe Atlas study
+                  </span>
+                </div>
                 <div>
                   <span className="cls-tag">{c.category}</span>
                   <h2>

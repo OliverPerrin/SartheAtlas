@@ -63,25 +63,76 @@ export class Body extends BodyProfile {
           if (side > 0) idx.push(a, a + 1, b, b, a + 1, b + 1);
           else idx.push(a, b, a + 1, b, b + 1, a + 1);
         }
-      // End caps (fan from the section centroid).
+      // End closures. Each end is a short stack of rings shrunk toward the
+      // section centre, finished with a fan: a flat nose, a painted GT tail (the
+      // profile already domes it), and on prototypes an open tail recessed
+      // behind a rim.
       for (const end of [0, ts.length - 1]) {
         const sec = secs[end];
-        const cy = sec.reduce((acc, p) => acc + p[1], 0) / m;
-        const c = pos.length / 3;
-        pos.push(this.x(ts[end]), cy, 0);
-        const paint = end === 0 || this.spec.tailCap === "paint";
+        const tail = end !== 0;
+        const paint = !tail || this.spec.tailCap === "paint";
         const capUV: [number, number] = paint ? [0.002, 0.75] : [0.002, 0.502];
-        uv.push(...capUV);
-        const start = pos.length / 3;
-        for (const [z, y] of sec) {
-          pos.push(this.x(ts[end]), y, z * side);
-          uv.push(...capUV);
+        const cy = sec.reduce((acc, p) => acc + p[1], 0) / m;
+        const x0 = this.x(ts[end]);
+        // [offset along x, scale about the section centre]
+        const rings: [number, number][] = !tail
+          ? [[0, 1]]
+          : paint
+            ? [[0, 1]]
+            : [
+                [0, 1],
+                [0.004, 0.925],
+                [0.22, 0.86],
+              ];
+        const recessed = tail && !paint;
+        const inside = new THREE.Vector3(x0 + (tail ? 0.8 : -0.8), cy, 0);
+        const behind = new THREE.Vector3(x0 - 2, cy, 0);
+        const at = (i: number) =>
+          new THREE.Vector3(pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2]);
+        // Orient each triangle by where it should face, rather than by a
+        // winding convention that differs per side, end and ring direction.
+        const tri = (a: number, b: number, c: number, towardBehind: boolean) => {
+          const pa = at(a),
+            pb = at(b),
+            pc = at(c);
+          const normal = pb.clone().sub(pa).cross(pc.clone().sub(pa));
+          if (normal.lengthSq() < 1e-14) return;
+          const centre = pa.add(pb).add(pc).multiplyScalar(1 / 3);
+          const facing = towardBehind
+            ? normal.dot(behind.clone().sub(centre))
+            : normal.dot(centre.clone().sub(inside));
+          if (facing >= 0) idx.push(a, b, c);
+          else idx.push(a, c, b);
+        };
+        // A painted tail carries the livery round the corner; its centre takes
+        // the colour of the body side so the bumper never borrows the nose's.
+        const wrap = tail && paint;
+        const skinUV = (v: number): [number, number] =>
+          side < 0 ? [ts[end], 0.5 + v * 0.5] : [1 - ts[end], v * 0.5];
+        const centreUV = wrap ? skinUV(0.32) : capUV;
+        const starts: number[] = [];
+        for (const [dx, scale] of rings) {
+          starts.push(pos.length / 3);
+          for (const [z, y, v] of sec) {
+            pos.push(x0 + dx, cy + (y - cy) * scale, z * scale * side);
+            uv.push(...(wrap ? skinUV(v) : capUV));
+          }
         }
-        for (let j = 0; j < m - 1; j++) {
-          const flip = (end === 0) !== side > 0;
-          if (flip) idx.push(c, start + j, start + j + 1);
-          else idx.push(c, start + j + 1, start + j);
-        }
+        for (let r = 0; r < rings.length - 1; r++)
+          for (let j = 0; j < m - 1; j++) {
+            const a = starts[r] + j,
+              b = starts[r + 1] + j;
+            // The recess walls and back face whoever stands behind the car.
+            const look = recessed && r >= 1;
+            tri(a, a + 1, b, look);
+            tri(b, a + 1, b + 1, look);
+          }
+        const c = pos.length / 3;
+        pos.push(x0 + rings[rings.length - 1][0], cy, 0);
+        uv.push(...centreUV);
+        const start = starts[starts.length - 1];
+        for (let j = 0; j < m - 1; j++)
+          tri(c, start + j, start + j + 1, recessed);
       }
     }
     const g = new THREE.BufferGeometry();
