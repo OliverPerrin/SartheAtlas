@@ -1,19 +1,26 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as maplibregl from "maplibre-gl";
 import mapWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
-import type { GeoJSONSource, Map as GeoMap, Marker } from "maplibre-gl";
-import { Moon, Sun } from "lucide-react";
-import { classInfo, classOrder } from "../data/cars.ts";
+import type { GeoJSONSource, Map as GeoMap } from "maplibre-gl";
+import { carById, classInfo, classOrder } from "../data/cars.ts";
 import type { ClassName } from "../data/cars.ts";
+import { entries } from "../data/entries.ts";
 import { sections } from "../data/track.ts";
 import {
   fractionAtTime,
   pointAt,
   speedModel,
+  unprojectXZ,
   useTrack,
 } from "../data/trackGeo.ts";
 import type { TrackGeo } from "../data/trackGeo.ts";
-import { setPhase, usePhase } from "../data/racePhase.ts";
+import { isDark, usePhase } from "../data/racePhase.ts";
+import type { Phase } from "../data/racePhase.ts";
+import { createDroneCars } from "../three/droneCars.ts";
+import type { DroneCarState } from "../three/droneCars.ts";
+import Atmosphere from "./Atmosphere.tsx";
+import PhaseSwitch from "./PhaseSwitch.tsx";
+import { useFonts } from "./useFonts.ts";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./DroneView.css";
 
@@ -31,12 +38,24 @@ const clock = (seconds: number) => {
   return `${m}:${s.toFixed(1).padStart(4, "0")}`;
 };
 
-const lighting = {
-  day: { brightness: 1, saturation: 0.08, contrast: 0.06 },
-  night: { brightness: 0.46, saturation: -0.55, contrast: 0.25 },
+/** One car per class: the entry whose colour study each 3D model wears. */
+const CAST: Record<ClassName, string> = {
+  Hypercar: "50",
+  LMP2: "22",
+  LMGT3: "92",
 };
-// Haze at the horizon sells the altitude: warm afternoon by day, deep blue by night.
-const skies = {
+
+const lighting: Record<
+  Phase,
+  { brightness: number; saturation: number; contrast: number; hue: number }
+> = {
+  day: { brightness: 1, saturation: 0.1, contrast: 0.06, hue: 0 },
+  dusk: { brightness: 0.74, saturation: 0.05, contrast: 0.2, hue: -8 },
+  night: { brightness: 0.4, saturation: -0.55, contrast: 0.28, hue: 0 },
+  dawn: { brightness: 0.7, saturation: -0.2, contrast: 0.12, hue: 6 },
+};
+// Haze at the horizon sells the altitude, and carries the colour of the hour.
+const skies: Record<Phase, Record<string, string | number>> = {
   day: {
     "sky-color": "#7fa6cf",
     "horizon-color": "#f3d6ae",
@@ -44,6 +63,15 @@ const skies = {
     "sky-horizon-blend": 0.7,
     "horizon-fog-blend": 0.6,
     "fog-ground-blend": 0.82,
+    "atmosphere-blend": 0,
+  },
+  dusk: {
+    "sky-color": "#3b3f78",
+    "horizon-color": "#ff8a3d",
+    "fog-color": "#c96a3c",
+    "sky-horizon-blend": 0.85,
+    "horizon-fog-blend": 0.75,
+    "fog-ground-blend": 0.7,
     "atmosphere-blend": 0,
   },
   night: {
@@ -55,7 +83,17 @@ const skies = {
     "fog-ground-blend": 0.8,
     "atmosphere-blend": 0,
   },
+  dawn: {
+    "sky-color": "#5f79b8",
+    "horizon-color": "#ffb3a6",
+    "fog-color": "#c9a7b4",
+    "sky-horizon-blend": 0.8,
+    "horizon-fog-blend": 0.7,
+    "fog-ground-blend": 0.72,
+    "atmosphere-blend": 0,
+  },
 };
+const smooth = (x: number) => x * x * (3 - 2 * x);
 
 function bearingBetween(track: TrackGeo, fraction: number) {
   const here = pointAt(track, fraction);
@@ -66,7 +104,12 @@ function bearingBetween(track: TrackGeo, fraction: number) {
 function Drone({ track }: { track: TrackGeo }) {
   const host = useRef<HTMLDivElement>(null);
   const map = useRef<GeoMap | null>(null);
-  const markers = useRef<Partial<Record<ClassName, Marker>>>({});
+  const cars = useRef<DroneCarState[]>(
+    classOrder.map(() => ({ x: 0, z: 0, heading: 0, visible: false })),
+  );
+  const origin = useRef<[number, number]>([0, 0]);
+  const carScale = useRef(1.6);
+  const fontsReady = useFonts();
   const hud = {
     speed: useRef<HTMLElement>(null),
     sector: useRef<HTMLElement>(null),
@@ -78,6 +121,10 @@ function Drone({ track }: { track: TrackGeo }) {
   const followRef = useRef(follow);
   const [ready, setReady] = useState(false);
   const phase = usePhase();
+  const phaseRef = useRef(phase);
+  useEffect(() => {
+    phaseRef.current = phase;
+  }, [phase]);
   const models = useMemo(
     () =>
       Object.fromEntries(
@@ -100,10 +147,10 @@ function Drone({ track }: { track: TrackGeo }) {
         interactive: false,
         attributionControl: false,
         center: [start.longitude, start.latitude],
-        zoom: 16.4,
-        pitch: 62,
+        zoom: 18.6,
+        pitch: 66,
         bearing: bearingBetween(track, 0.02),
-        maxPitch: 78,
+        maxPitch: 80,
         fadeDuration: 0,
         pixelRatio: Math.min(window.devicePixelRatio || 1, 1.5),
         style: {
@@ -140,7 +187,8 @@ function Drone({ track }: { track: TrackGeo }) {
       return;
     }
     map.current = m;
-    m.on("load", () => {
+    // "style.load" rather than "load": the lap can start while imagery streams in.
+    m.on("style.load", () => {
       const ring = [...track.lngLat, track.lngLat[0]];
       m.addSource("route", {
         type: "geojson",
@@ -221,19 +269,47 @@ function Drone({ track }: { track: TrackGeo }) {
           ],
         },
       });
-      for (const cls of classOrder) {
-        const element = document.createElement("div");
-        element.className = "drone-car";
-        element.style.setProperty("--c", classInfo[cls].color);
-        element.innerHTML = "<i></i><b></b>";
-        markers.current[cls] = new maplibregl.Marker({
-          element,
-          rotationAlignment: "map",
-          pitchAlignment: "map",
-        })
-          .setLngLat([start.longitude, start.latitude])
-          .addTo(m);
+      // Pools of light along the circuit, switched on after dark.
+      const posts = [];
+      const spacing = 55 / track.length;
+      for (let f = 0; f < 1; f += spacing) {
+        const p = pointAt(track, f);
+        posts.push({
+          type: "Feature" as const,
+          properties: {},
+          geometry: {
+            type: "Point" as const,
+            coordinates: [p.longitude, p.latitude],
+          },
+        });
       }
+      m.addSource("posts", {
+        type: "geojson",
+        data: { type: "FeatureCollection", features: posts },
+      });
+      m.addLayer(
+        {
+          id: "posts",
+          type: "circle",
+          source: "posts",
+          paint: {
+            "circle-pitch-alignment": "map",
+            "circle-color": "#ffb066",
+            "circle-blur": 1,
+            "circle-opacity": 0,
+            "circle-opacity-transition": { duration: 1400, delay: 0 },
+            "circle-radius": [
+              "interpolate",
+              ["exponential", 2],
+              ["zoom"],
+              15, 6,
+              17, 24,
+              19, 96,
+            ],
+          },
+        },
+        "route",
+      );
       setReady(true);
     });
     const observer = new ResizeObserver(() => m.resize());
@@ -242,11 +318,33 @@ function Drone({ track }: { track: TrackGeo }) {
       observer.disconnect();
       m.remove();
       map.current = null;
-      markers.current = {};
     };
   }, [track]);
 
-  // Lighting follows the shared day/night phase.
+  // The 3D cars join once the map and the livery fonts are ready.
+  useEffect(() => {
+    const m = map.current;
+    if (!ready || !m || !fontsReady) return;
+    const cast = classOrder.map((cls) => {
+      const entry = entries.find((e) => e.number === CAST[cls])!;
+      return { car: carById(entry.carId)!, entry };
+    });
+    const layer = createDroneCars(
+      cast,
+      () => cars.current,
+      () => phaseRef.current,
+      () => origin.current,
+      () => carScale.current,
+    );
+    m.addLayer(layer);
+    m.triggerRepaint();
+    return () => {
+      if (m.getLayer(layer.id)) m.removeLayer(layer.id);
+      else layer.dispose();
+    };
+  }, [ready, fontsReady]);
+
+  // Lighting follows the shared time of day.
   useEffect(() => {
     const m = map.current;
     if (!ready || !m) return;
@@ -255,12 +353,16 @@ function Drone({ track }: { track: TrackGeo }) {
     m.setPaintProperty("photo", "raster-brightness-max", look.brightness);
     m.setPaintProperty("photo", "raster-saturation", look.saturation);
     m.setPaintProperty("photo", "raster-contrast", look.contrast);
-    const night = phase === "night";
-    // At night the circuit lights up like a sodium-lit road.
-    m.setPaintProperty("route-glow", "line-opacity", night ? 0.55 : 0.12);
-    m.setPaintProperty("route-glow", "line-color", night ? "#ffb066" : "#ffffff");
-    m.setPaintProperty("route", "line-color", night ? "#ffd29a" : "#ffffff");
-    m.setPaintProperty("route", "line-opacity", night ? 0.85 : 0.45);
+    m.setPaintProperty("photo", "raster-hue-rotate", look.hue);
+    const dark = isDark(phase);
+    const lit = phase === "night" ? 1 : phase === "dusk" ? 0.55 : phase === "dawn" ? 0.3 : 0;
+    // After dark the circuit is a ribbon of sodium light.
+    m.setPaintProperty("posts", "circle-opacity", lit * 0.5);
+    m.setPaintProperty("route-glow", "line-opacity", 0.1 + lit * 0.4);
+    m.setPaintProperty("route-glow", "line-color", dark ? "#ffb066" : "#ffffff");
+    m.setPaintProperty("route", "line-color", dark ? "#ffd29a" : "#ffffff");
+    m.setPaintProperty("route", "line-opacity", 0.4 + lit * 0.4);
+    m.triggerRepaint();
   }, [phase, ready]);
 
   // The drone: smoothed chase camera plus HUD, only while on screen.
@@ -271,6 +373,7 @@ function Drone({ track }: { track: TrackGeo }) {
       previous = 0,
       lastHud = 0,
       t = 40,
+      zoom = m.getZoom(),
       bearing = m.getBearing(),
       visible = false;
     const still = reduced();
@@ -280,40 +383,72 @@ function Drone({ track }: { track: TrackGeo }) {
       previous = now;
       t += dt;
       const followed = followRef.current;
-      let followFraction = 0;
-      for (const cls of classOrder) {
+      const followFraction = fractionAtTime(
+        models[followed],
+        t + GAP[followed],
+        track.length,
+      );
+      const car = pointAt(track, followFraction);
+      origin.current = [car.longitude, car.latitude];
+      classOrder.forEach((cls, i) => {
         const fraction = fractionAtTime(models[cls], t + GAP[cls], track.length);
         const point = pointAt(track, fraction);
-        markers.current[cls]
-          ?.setLngLat([point.longitude, point.latitude])
-          .setRotation(deg(point.heading) + 90);
-        if (cls === followed) followFraction = fraction;
-      }
-      const car = pointAt(track, followFraction);
+        // Aim each car where the road goes next, not along one short segment.
+        const ahead = pointAt(track, fraction + 6 / track.length);
+        const state = cars.current[i];
+        state.x = point.x - car.x;
+        state.z = point.z - car.z;
+        state.heading = Math.atan2(ahead.z - point.z, ahead.x - point.x);
+        state.visible = Math.hypot(state.x, state.z) < 1400;
+      });
+      const model = models[followed];
+      const kmh =
+        model.speeds[
+          Math.min(
+            model.speeds.length - 1,
+            Math.floor((followFraction * track.length) / model.step),
+          )
+        ] * 3.6;
+      // Like a helicopter shot: close in the slow corners, pulled back and
+      // flatter on the straights, where the ground goes by fastest.
+      const pace = smooth(Math.min(1, Math.max(0, (kmh - 110) / 190)));
+      zoom += (19.25 - pace * 1.15 - zoom) * Math.min(1, dt * 0.8);
+      // Cars are drawn a little over scale, more so from further away, so
+      // they stay readable from the air.
+      carScale.current = 1.6 + (19.25 - zoom) * 0.9;
       const target = bearingBetween(track, followFraction);
       const diff = ((target - bearing + 540) % 360) - 180;
-      bearing += diff * Math.min(1, dt * 1.8);
+      bearing += diff * Math.min(1, dt * 1.6);
+      // Frame the car in the lower part of the picture by aiming the camera
+      // at the road ahead of it. (Map padding would do this too, but the sky
+      // is drawn from the unpadded centre and leaves a blank band.)
+      const view = bearing + Math.sin(t / 11) * 14;
+      const tilt = 71 + pace * 4 + Math.sin(t / 13) * 2;
+      const metresPerPixel =
+        (78271.517 * Math.cos((car.latitude * Math.PI) / 180)) / 2 ** zoom;
+      const lead =
+        (host.current!.clientHeight * 0.13 * metresPerPixel) /
+        Math.cos((tilt * Math.PI) / 180);
+      const aim = unprojectXZ(
+        track,
+        car.x + Math.sin((view * Math.PI) / 180) * lead,
+        car.z - Math.cos((view * Math.PI) / 180) * lead,
+      );
       m.jumpTo({
-        center: [car.longitude, car.latitude],
-        bearing,
-        zoom: 16.85 + Math.sin(t / 9) * 0.3,
-        pitch: 70 + Math.sin(t / 13) * 3,
-        padding: { top: host.current!.clientHeight * 0.38, bottom: 0, left: 0, right: 0 },
+        center: aim,
+        bearing: view,
+        zoom: zoom + Math.sin(t / 9) * 0.12,
+        pitch: tilt,
       });
       if (now - lastHud > 90) {
         lastHud = now;
-        const model = models[followed];
-        const index = Math.min(
-          model.speeds.length - 1,
-          Math.floor((followFraction * track.length) / model.step),
-        );
         const sector =
           sections.find((s) => followFraction >= s.from && followFraction < s.to) ??
           sections[sections.length - 1];
         const elapsed =
           (((t + GAP[followed]) % model.lapTime) + model.lapTime) % model.lapTime;
         if (hud.speed.current)
-          hud.speed.current.textContent = String(Math.round(model.speeds[index] * 3.6));
+          hud.speed.current.textContent = String(Math.round(kmh));
         if (hud.sector.current && hud.sector.current.textContent !== sector.name) {
           hud.sector.current.textContent = sector.name;
           hud.sector.current.style.setProperty("--c", sector.color);
@@ -322,7 +457,7 @@ function Drone({ track }: { track: TrackGeo }) {
           hud.km.current.textContent = ((followFraction * track.length) / 1000).toFixed(2);
         if (hud.lap.current) hud.lap.current.textContent = clock(elapsed);
         hud.bar.current?.style.setProperty("--f", followFraction.toFixed(4));
-        const tail = Math.max(0, followFraction - 0.012);
+        const tail = Math.max(0, followFraction - 0.006);
         const steps = 24;
         const coordinates: [number, number][] = [];
         for (let i = 0; i <= steps; i++) {
@@ -363,6 +498,7 @@ function Drone({ track }: { track: TrackGeo }) {
     <div className={`drone ${phase}${ready ? " ready" : ""}`}>
       <div className="drone-map" ref={host} />
       <div className="drone-grade" aria-hidden="true" />
+      <Atmosphere phase={phase} className="drone-atmosphere" layers="sky" />
       <div className="drone-hud">
         <div className="drone-follow" role="group" aria-label="Car to follow">
           {classOrder.map((cls) => (
@@ -395,14 +531,7 @@ function Drone({ track }: { track: TrackGeo }) {
             </span>
           </div>
         </div>
-        <div className="drone-toggle glass-switch" role="group" aria-label="Lighting">
-          <button aria-pressed={phase === "day"} onClick={() => setPhase("day")}>
-            <Sun size={14} /> Day
-          </button>
-          <button aria-pressed={phase === "night"} onClick={() => setPhase("night")}>
-            <Moon size={14} /> Night
-          </button>
-        </div>
+        <PhaseSwitch className="drone-toggle" />
         <div className="drone-bar" ref={hud.bar} aria-hidden="true">
           {sections.map((section) => (
             <i
@@ -419,7 +548,7 @@ function Drone({ track }: { track: TrackGeo }) {
         </div>
         <p className="drone-credit">
           Aerial imagery © IGN BD ORTHO · Track © OpenStreetMap contributors ·
-          Illustrative lap model, not telemetry
+          Illustrative lap model and car studies, not telemetry
         </p>
       </div>
     </div>

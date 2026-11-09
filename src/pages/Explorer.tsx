@@ -7,6 +7,7 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
+import { currentPhase, isDark } from "../data/racePhase.ts";
 import {
   ArrowUpRight,
   Box,
@@ -161,7 +162,8 @@ export default function Explorer({ params }: { params: URLSearchParams }) {
   const [focus, setFocus] = useState(false);
   const [dims, setDims] = useState(false);
   const [spin, setSpin] = useState(false);
-  const [night, setNight] = useState(false);
+  // Start in the light chosen elsewhere on the site.
+  const [night, setNight] = useState(() => isDark(currentPhase()));
   const [preset, setPreset] = useState<Preset>("three");
   const [nonce, setNonce] = useState(0);
   const [paint, setPaint] = useState<PaintMode>("livery");

@@ -2,6 +2,8 @@
 // license and source page; the files in public/photos are resized and
 // recompressed copies (2200 px and 1100 px wide), with no other changes.
 
+import type { Phase } from "./racePhase.ts";
+
 export type Photo = {
   id: string;
   alt: string;
@@ -158,3 +160,11 @@ export const photos = {
 } satisfies Record<string, Photo>;
 
 export const allPhotos = Object.values(photos);
+
+/** The full-screen photograph for each light of the race. */
+export const phasePhotos: Record<Phase, Photo> = {
+  day: photos.alpine,
+  dusk: photos.goldenHour,
+  night: photos.lightTrails,
+  dawn: photos.prototypes,
+};

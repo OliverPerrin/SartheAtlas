@@ -16,6 +16,8 @@ export default function FeaturedExterior({
       poster={reference.poster}
       materialOverrides={materialRecipeFor(reference.id)}
       {...exteriorTuning[reference.id]}
+      // The home stage is wide and shallow, so the car can sit closer.
+      fitScale={(exteriorTuning[reference.id]?.fitScale ?? 1) * 0.66}
       compact
       active
     />

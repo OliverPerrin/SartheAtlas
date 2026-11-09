@@ -72,7 +72,10 @@ The circuit now uses IGN orthorectified aerial imagery, RGE ALTI ground elevatio
 
 ## Experience and rendering
 
-- Editorial homepage with creator posters and an explicit Start 3D viewer control; only the selected model loads.
+- Photo-led homepage whose light follows the race: day, dusk, night and dawn each have their own photograph, colour grade and live effects (sun and dust, headlight trails, stars, mist), and the same switch relights the aerial lap, the studio and the car stills.
+- Aerial lap: a chase camera over IGN imagery follows 3D car studies drawn inside the map, with headlight beams and a lit circuit after dark.
+- Consistent car stills: every car family and race entry is rendered from the built-in studies in the same studio (`scripts/study-renders`), with lamps-on night versions.
+- An explicit Start 3D viewer control for the creator-hosted exteriors; only the selected model loads.
 - Stable exterior camera framing, fullscreen, fit/reset/zoom controls and optional turntable. Local engineering views also offer day/night modes.
 - Detailed exterior geometry and physical lighting with verified model-bound corrections. Standard textures load first; High detail enables HD textures and richer lighting effects. The local cutaway remains a car-specific procedural illustration.
 - Shareable catalog search, class filters, entry/model views and sorting.

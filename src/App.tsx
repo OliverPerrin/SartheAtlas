@@ -5,7 +5,7 @@ import type { Page } from "./router.ts";
 import Home from "./pages/Home.tsx";
 import { Cursor, Footer, Header } from "./components/Chrome.tsx";
 import Intro from "./components/Intro.tsx";
-import { photos, photoSrc } from "./data/photos.ts";
+import { phasePhotos, photoSrc } from "./data/photos.ts";
 import { phaseInLeMans } from "./data/racePhase.ts";
 import { reducedMotion, startPointerEffects, startReveals } from "./motion.ts";
 import "./App.css";
@@ -99,7 +99,7 @@ export default function App() {
       {loader && (
         <Intro
           src={photoSrc(
-            phaseInLeMans() === "day" ? photos.goldenHour : photos.lightTrails,
+            phasePhotos[phaseInLeMans()],
             innerWidth > 1100 ? 2200 : 1100,
           )}
           onLift={endIntro}

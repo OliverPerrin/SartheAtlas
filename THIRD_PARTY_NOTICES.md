@@ -45,6 +45,14 @@ pages are listed in `src/data/photos.ts`, beside each photo on the site and on
 the Sources page. Files derived from CC BY-SA originals stay under the same
 CC BY-SA license.
 
+## Study renders
+
+The stills in `public/studies/` are rendered from Sarthe Atlas's own procedural
+engineering studies by `scripts/study-renders/render.mjs`. They are original
+work under the project's terms, not images of the creator-hosted exterior
+models. Each entry's colours are a study based on its team, not official
+artwork.
+
 ## Fonts and software dependencies
 
 Saira, Saira Condensed, Geist, Geist Mono, Instrument Serif, Barlow Condensed

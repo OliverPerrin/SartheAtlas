@@ -137,11 +137,33 @@ export class BodyProfile {
     }
     return y;
   }
+  /**
+   * Shapes the tail behind the rear wheels: the underside sweeps up into a
+   * diffuser and the plan pulls in over the last few percent of length, so
+   * the body ends in a rounded corner rather than a full-size slab.
+   */
+  tail(t: number) {
+    const { wheelR, archGap, kind } = this.spec;
+    const from = this.t(this.rearX - wheelR - archGap) + 0.012;
+    const rise = Math.min(1, Math.max(0, (t - from) / Math.max(1e-6, 1 - from)));
+    const end = Math.min(1, Math.max(0, (t - 0.95) / 0.05));
+    return {
+      kick: (kind === "proto" ? 0.24 : 0.2) * Math.pow(rise, 1.35),
+      taper: 1 - (kind === "proto" ? 0.03 : 0.075) * end * end,
+      drop: (kind === "proto" ? 0 : 0.035) * end * end,
+      // A GT bumper domes over the last centimetres, inside the body length.
+      round:
+        kind === "proto"
+          ? 1
+          : 1 - 0.13 * Math.pow(Math.min(1, Math.max(0, (t - 0.984) / 0.016)), 2),
+    };
+  }
   controls(t: number): P[] {
     const f = this.f;
     const x = this.x(t);
-    const floor = f.floorY(t);
-    const outer = f.outerZ(t);
+    const tail = this.tail(t);
+    const floor = f.floorY(t) + tail.kick;
+    const outer = f.outerZ(t) * tail.taper;
     const arch = this.archY(x, floor);
     const inner = Math.min(
       outer - 0.05,
@@ -151,7 +173,7 @@ export class BodyProfile {
       f.shoulderY(t),
       arch > floor ? arch + 0.05 : floor + 0.02,
     );
-    const crest = Math.max(f.crestY(t), shoulder + 0.015);
+    const crest = Math.max(f.crestY(t) - tail.drop, shoulder + 0.015);
     const crestZ = Math.min(f.crestZ(t), outer - 0.015);
     const wheelInner = this.wheelZ - this.spec.tyreW / 2;
     // Keep the upper fender continuous through wheel-arch boundaries. Switching
@@ -162,7 +184,7 @@ export class BodyProfile {
     const valley = Math.max(f.valleyY(t), floor + 0.03);
     const tub = Math.max(f.tubY(t), floor + 0.035);
     const spine = Math.max(f.spineY(t), floor + 0.04);
-    return [
+    const points: P[] = [
       [0, floor, CONTROL_V[0]],
       [inner, floor, CONTROL_V[1]],
       [inner, arch, CONTROL_V[2]],
@@ -174,6 +196,13 @@ export class BodyProfile {
       [tubZ, tub, CONTROL_V[8]],
       [0, spine, CONTROL_V[9]],
     ];
+    if (tail.round === 1) return points;
+    const centre = (floor + spine) / 2;
+    return points.map(([z, y, v]) => [
+      z * tail.round,
+      centre + (y - centre) * tail.round,
+      v,
+    ]);
   }
   section(t: number) {
     const cached = this.sections.get(t);
@@ -195,6 +224,9 @@ export class BodyProfile {
       ts.add(this.t(ax + R * 1.004));
       ts.add(this.t(ax - R * 1.004));
     }
+    // Enough rows to resolve the rounded tail.
+    for (const t of [0.955, 0.965, 0.975, 0.986, 0.989, 0.992, 0.995, 0.9975])
+      ts.add(t);
     return [...ts].filter((t) => t >= 0 && t <= 1).sort((a, b) => a - b);
   }
   topAt(t: number) {
