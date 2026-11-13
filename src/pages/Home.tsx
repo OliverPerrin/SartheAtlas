@@ -1,19 +1,13 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
-import {
-  ArrowDown,
-  ArrowRight,
-  ArrowUpRight,
-  Scan,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, Rotate3d } from "lucide-react";
 import { carById, cars, classInfo, classOrder } from "../data/cars.ts";
 import type { Car } from "../data/cars.ts";
 import { entries } from "../data/entries.ts";
-import { circuit } from "../data/track.ts";
 import { linkProps } from "../router.ts";
 import { exteriorReferences } from "../data/references.ts";
 import CarPreview from "../components/CarPreview.tsx";
 import StudyImage from "../components/StudyImage.tsx";
-import { useCountUp, useScrollProgress } from "../motion.ts";
+import { useScrollProgress } from "../motion.ts";
 import {
   phasePhotos,
   photos,
@@ -24,7 +18,6 @@ import type { Photo } from "../data/photos.ts";
 import { phaseInfo, phases, usePhase } from "../data/racePhase.ts";
 import type { Phase } from "../data/racePhase.ts";
 import Atmosphere from "../components/Atmosphere.tsx";
-import PhaseSwitch from "../components/PhaseSwitch.tsx";
 import { phaseIcon } from "../components/phaseIcon.ts";
 import "./Home.css";
 
@@ -37,198 +30,70 @@ const featured = ["50", "7", "12", "15", "93", "009", "22", "91"];
 const pad = (n: number) => String(n).padStart(2, "0");
 const powertrain = (car: Car) =>
   `${car.engine.litres.toFixed(1)} L ${car.engine.config === "F" ? "flat-" : car.engine.config}${car.engine.cylinders}${car.hybrid ? " + hybrid" : ""}`;
-const plateFor = (car: Car) =>
-  car.category === "LMGT3" ? "GT" : car.category === "LMP2" ? "P2" : "H";
 
-/** Two-line headline whose lines rise out of their own masks. */
-function Lines({
-  as: Tag = "h2",
-  lines,
-  className = "",
-}: {
-  as?: "h1" | "h2";
-  lines: React.ReactNode[];
-  className?: string;
-}) {
-  return (
-    <Tag className={`lines ${className}`} data-reveal>
-      {lines.map((line, index) => (
-        <span
-          key={index}
-          className="line"
-          style={{ "--l": index } as React.CSSProperties}
-        >
-          <span>{line}</span>
-        </span>
-      ))}
-    </Tag>
-  );
-}
-
-function Stat({
-  value,
-  decimals = 0,
-  label,
-  note,
-  index,
-}: {
-  value: number;
-  decimals?: number;
-  label: string;
-  note: string;
-  index: number;
-}) {
-  const [ref, shown] = useCountUp(value, decimals);
-  return (
-    <div
-      className="stat"
-      data-reveal
-      style={{ "--d": index } as React.CSSProperties}
-    >
-      <span className="stat-index">{pad(index + 1)}</span>
-      <strong ref={ref as React.RefObject<HTMLElement>}>{shown}</strong>
-      <span className="stat-label">{label}</span>
-      <span className="stat-note">{note}</span>
-    </div>
-  );
-}
-
-function Marquee({
-  items,
-  reverse = false,
-  variant,
-}: {
-  items: string[];
-  reverse?: boolean;
-  variant: "solid" | "outline";
-}) {
-  const run = (
-    <span className="marquee-run">
-      {items.map((item) => (
-        <span key={item}>
-          {item}
-          <i aria-hidden="true">✦</i>
-        </span>
-      ))}
-    </span>
-  );
-  return (
-    <div
-      className={`marquee ${variant}${reverse ? " reverse" : ""}`}
-      aria-hidden="true"
-    >
-      <div className="marquee-track">
-        {run}
-        {run}
-      </div>
-    </div>
-  );
-}
-
-const manifesto =
-  "Sixty-two cars. Three classes. One ribbon of road, two-thirds of it public. Sarthe Atlas takes the machines apart, labels every system and lays the circuit over real aerial imagery, so you can see what twenty-four hours at the limit actually demands.";
-
-function Manifesto() {
-  const ref = useScrollProgress<HTMLParagraphElement>();
-  const words = manifesto.split(" ");
-  return (
-    <p
-      className="manifesto"
-      ref={ref}
-      style={{ "--n": words.length } as React.CSSProperties}
-    >
-      {words.map((word, index) => (
-        <span
-          key={index}
-          style={{ "--i": index } as React.CSSProperties}
-          className={/^(Sixty-two|Three|One|twenty-four)/.test(word) ? "hl" : undefined}
-        >
-          {word}{" "}
-        </span>
-      ))}
-    </p>
-  );
-}
-
+/** Every car design on one rail. It scrolls sideways; the arrows page it. */
 function Garage() {
-  const outer = useScrollProgress<HTMLElement>("pinned");
-  const track = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const section = outer.current;
-    const rail = track.current;
-    if (!section || !rail || typeof ResizeObserver === "undefined") return;
-    const measure = () => {
-      const distance = Math.max(0, rail.scrollWidth - innerWidth);
-      section.style.setProperty("--dist", `${distance}px`);
-      section.style.setProperty("--pin", `${distance}px`);
-    };
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(rail);
-    addEventListener("resize", measure);
-    return () => {
-      observer.disconnect();
-      removeEventListener("resize", measure);
-    };
-  }, [outer]);
+  const rail = useRef<HTMLDivElement>(null);
+  const page = (direction: 1 | -1) =>
+    rail.current?.scrollBy({
+      left: direction * rail.current.clientWidth * 0.8,
+      behavior: "smooth",
+    });
   return (
-    <section className="garage" ref={outer} aria-labelledby="garage-title">
-      <div className="garage-sticky">
-        <div className="garage-head">
-          <span className="eyebrow">04 / The grid</span>
-          <h2 id="garage-title">
-            {cars.length} families. <em>One grid.</em>
-          </h2>
-          <div className="garage-progress" aria-hidden="true">
-            <i />
-          </div>
-          <a className="garage-all" {...linkProps("field", { view: "cars" })}>
-            All car models <ArrowRight size={15} />
+    <section className="block garage" aria-labelledby="garage-title">
+      <header className="block-head">
+        <h2 id="garage-title">All {cars.length} car designs</h2>
+        <p className="block-lead">
+          Pick one to open it in the explorer. The pictures are Sarthe Atlas
+          colour studies, not official artwork.
+        </p>
+        <div className="garage-nav">
+          <a className="text-link" {...linkProps("field", { view: "cars" })}>
+            Compare them all
           </a>
+          <button
+            className="btn icon small"
+            aria-label="Previous cars"
+            onClick={() => page(-1)}
+          >
+            <ChevronLeft size={18} />
+          </button>
+          <button
+            className="btn icon small"
+            aria-label="Next cars"
+            onClick={() => page(1)}
+          >
+            <ChevronRight size={18} />
+          </button>
         </div>
-        <div className="garage-track" ref={track}>
-          {cars.map((car, index) => (
-            <a
-              key={car.id}
-              className="garage-card"
-              data-cursor="Open"
-              style={{ "--cls": classInfo[car.category].color } as React.CSSProperties}
-              {...linkProps("car", { car: car.id })}
-            >
-              <div className="garage-media">
-                <StudyImage
-                  car={car.id}
-                  alt={`${car.make} ${car.name} engineering study, three-quarter view`}
-                />
-                <span className="garage-tag">Sarthe Atlas study</span>
-              </div>
-              <div className="garage-meta">
-                <span className="garage-index">
-                  {pad(index + 1)} / {pad(cars.length)}
-                </span>
-                <span className="cls-tag">{car.category}</span>
-              </div>
-              <h3>
-                <small>{car.make}</small>
-                {car.name}
-              </h3>
-              <p>
-                {car.engine.label}
-                {car.hybrid ? " · hybrid" : ""}
-              </p>
-            </a>
-          ))}
-          <a className="garage-card garage-end" {...linkProps("field")}>
-            <span>See the whole field</span>
-            <strong>{entries.length} entries</strong>
-            <ArrowUpRight size={30} />
+      </header>
+      <div className="garage-rail" ref={rail} tabIndex={0} role="list" aria-label="Car designs">
+        {cars.map((car) => (
+          <a
+            key={car.id}
+            role="listitem"
+            className="garage-card"
+            style={{ "--cls": classInfo[car.category].color } as React.CSSProperties}
+            {...linkProps("car", { car: car.id })}
+          >
+            <StudyImage
+              car={car.id}
+              alt={`${car.make} ${car.name} colour study, three-quarter view`}
+            />
+            <span className="cls-tag">{car.category}</span>
+            <h3>
+              {car.make} {car.name}
+            </h3>
+            <p>
+              {car.engine.label}
+              {car.hybrid ? ", hybrid" : ""}
+            </p>
           </a>
-        </div>
+        ))}
       </div>
     </section>
   );
 }
-
 
 /** A full-bleed photograph with its attribution kept beside it. */
 function PhotoImg({
@@ -262,26 +127,20 @@ function PhotoImg({
 function Credit({ photo, className = "" }: { photo: Photo; className?: string }) {
   return (
     <p className={`credit ${className}`}>
-      <span>
-        {photo.caption} · {photo.place}
-      </span>
-      <span>
-        Photo{" "}
-        <a href={photo.source} target="_blank" rel="noreferrer">
-          {photo.author}
-        </a>{" "}
-        ·{" "}
-        <a href={photo.licenseUrl} target="_blank" rel="noreferrer">
-          {photo.license}
-        </a>
-      </span>
+      {photo.caption}, {photo.place.replace(" · ", ", ")}. Photo by{" "}
+      <a href={photo.source} target="_blank" rel="noreferrer">
+        {photo.author}
+      </a>
+      ,{" "}
+      <a href={photo.licenseUrl} target="_blank" rel="noreferrer">
+        {photo.license}
+      </a>
     </p>
   );
 }
 
 type ChapterData = {
   photo: Photo;
-  label: string;
   phase: Phase;
   /** Local time at the start of the chapter, in hours since midnight. */
   clock: number;
@@ -292,26 +151,15 @@ type ChapterData = {
 
 const chapters: ChapterData[] = [
   {
-    photo: photos.bmwNose,
-    label: "Close up",
+    photo: photos.fordChicane,
     phase: "day",
     clock: 16,
-    title: ["Every surface", "is a decision."],
-    text: "Intakes, light clusters, splitter edges. At 300 km/h nothing on a prototype is decoration.",
-    tone: "#14100c",
-  },
-  {
-    photo: photos.fordChicane,
-    label: "Afternoon",
-    phase: "day",
-    clock: 17.5,
     title: ["Hot tyres,", "full tanks."],
     text: "The race starts in daylight. Stints run long, brakes run hot, and the Ford Chicane waits at the end of every lap.",
     tone: "#16110a",
   },
   {
     photo: photos.bmwSpeed,
-    label: "Evening",
     phase: "dusk",
     clock: 20.25,
     title: ["The light", "starts to go."],
@@ -320,7 +168,6 @@ const chapters: ChapterData[] = [
   },
   {
     photo: photos.underLights,
-    label: "Night",
     phase: "night",
     clock: 22.25,
     title: ["Headlights", "and nerve."],
@@ -328,10 +175,33 @@ const chapters: ChapterData[] = [
     tone: "#050817",
   },
   {
-    photo: photos.finish,
-    label: "Hour 24",
-    phase: "day",
+    photo: photos.pitLaneNight,
+    phase: "night",
+    clock: 24.5,
+    title: ["The pit lane", "stays awake."],
+    text: "Fuel, tyres and a new driver in well under a minute, again and again until morning.",
+    tone: "#070a14",
+  },
+  {
+    photo: photos.brakesNight,
+    phase: "night",
+    clock: 27,
+    title: ["Brake discs", "glow orange."],
+    text: "From over 330 km/h to a hundred for each chicane. After dark you can see the carbon brakes working.",
+    tone: "#0a0606",
+  },
+  {
+    photo: photos.dawnWheel,
+    phase: "dawn",
     clock: 29.5,
+    title: ["First light,", "ten hours left."],
+    text: "The sky pales over the grandstands. Tired crews and cold tyres make dawn the hour for mistakes.",
+    tone: "#0d0f18",
+  },
+  {
+    photo: photos.finish,
+    phase: "day",
+    clock: 38,
     title: ["The clock", "runs out."],
     text: "Twenty-four hours later the chequered flag falls. Everything in this atlas is about getting there.",
     tone: "#0b0b0d",
@@ -340,13 +210,7 @@ const chapters: ChapterData[] = [
 const RACE_START = 16;
 const RACE_END = 40;
 
-function Chapter({
-  chapter,
-  index,
-}: {
-  chapter: ChapterData;
-  index: number;
-}) {
+function Chapter({ chapter }: { chapter: ChapterData }) {
   const ref = useScrollProgress<HTMLElement>("pinned");
   return (
     <article
@@ -359,13 +223,10 @@ function Chapter({
           <PhotoImg photo={chapter.photo} />
         </figure>
         <div className="chapter-copy">
-          <span className="chapter-label">
-            {pad(index + 1)} — {chapter.label}
-          </span>
           <h3>
             {chapter.title[0]}
             <br />
-            <em>{chapter.title[1]}</em>
+            {chapter.title[1]}
           </h3>
           <p>{chapter.text}</p>
         </div>
@@ -376,7 +237,7 @@ function Chapter({
 }
 
 /**
- * The five photographs share one sky. As the page scrolls, a race clock runs
+ * The photographs share one sky. As the page scrolls, a race clock runs
  * from the start to the flag and the light over the pictures follows it:
  * afternoon sun, sunset, night with headlight trails, dawn mist, day again.
  */
@@ -405,7 +266,8 @@ function Chapters() {
       });
       const from = chapters[index].clock;
       const to = chapters[index + 1]?.clock ?? RACE_END;
-      const clock = from + (to - from) * progress;
+      // The clock lingers on each photograph's hour, then runs on to the next.
+      const clock = from + (to - from) * progress ** 2;
       // The light follows the clock: mid-June sunset and sunrise at Le Mans.
       const wallClock = clock % 24;
       const next: Phase =
@@ -423,7 +285,7 @@ function Chapters() {
       if (time.current)
         time.current.textContent = `${pad(hh)}:${pad(mm)}`;
       if (hour.current)
-        hour.current.textContent = pad(
+        hour.current.textContent = String(
           Math.min(24, Math.floor(clock - RACE_START)),
         );
       rail.current?.style.setProperty(
@@ -451,23 +313,21 @@ function Chapters() {
   const Icon = phaseIcon[light];
   return (
     <section className="chapters" aria-label="From day into night">
-      <header className="chapters-head">
-        <span className="eyebrow">01 / Day into night</span>
-        <Lines
-          className="block-title"
-          lines={["Twenty-four", <em key="em">hours, up close.</em>]}
-        />
+      <header className="block-head chapters-head">
+        <h2>Twenty-four hours in seven photographs</h2>
+        <p className="block-lead">
+          The race starts at four in the afternoon and ends at four the next
+          day. Scroll to run the clock.
+        </p>
       </header>
       <div className={`chapters-body light-${light}`} ref={body}>
         <div className="chapters-sky" aria-hidden="true">
           <Atmosphere phase={light} />
           <div className="race-rail" ref={rail}>
-            <span className="race-rail-phase">
-              <Icon size={14} /> {phaseInfo[light].label}
-            </span>
             <strong ref={time}>16:00</strong>
-            <span className="race-rail-hour">
-              Hour <b ref={hour}>00</b> / 24
+            <span className="race-rail-phase">
+              <Icon size={15} /> {phaseInfo[light].label}, hour{" "}
+              <b ref={hour}>0</b> of 24
             </span>
             <div className="race-rail-track">
               {phases.map((p) => (
@@ -477,8 +337,8 @@ function Chapters() {
             </div>
           </div>
         </div>
-        {chapters.map((chapter, index) => (
-          <Chapter key={chapter.photo.id} chapter={chapter} index={index} />
+        {chapters.map((chapter) => (
+          <Chapter key={chapter.photo.id} chapter={chapter} />
         ))}
       </div>
     </section>
@@ -529,11 +389,7 @@ export default function Home() {
   return (
     <main className={`home phase-${phase}`}>
       {/* ------------------------------------------------ Hero */}
-      <section
-        className="hero"
-        ref={heroRef}
-        aria-label="Discover the endurance explorer"
-      >
+      <section className="hero" ref={heroRef} aria-labelledby="hero-title">
         <div className="hero-media">
           {phases
             .filter((p) => seen.includes(p))
@@ -548,139 +404,69 @@ export default function Home() {
         </div>
         <Atmosphere phase={phase} className="hero-atmosphere" />
         <div className="hero-shade" aria-hidden="true" />
-        <div className="hero-stripes" aria-hidden="true">
-          <i />
-          <i />
-          <i />
-        </div>
-        <div className="hero-meta">
-          <span className="eyebrow">The endurance explorer</span>
-          <span className="hero-meta-mid">24 Hours of Le Mans · Season 2026</span>
-          <span className="hero-meta-end">47°56′ N / 0°14′ E</span>
-        </div>
-        <Lines
-          as="h1"
-          className="hero-title"
-          lines={["Built for", <em key="em">24 hours.</em>]}
-        />
-        <div className="hero-foot">
-          <div className="hero-intro">
-            <p>
-              The machines. The engineering. The legendary circuit. Get closer
-              to the world of Le Mans, one detail at a time.
-            </p>
-            <div className="hero-cta">
-              <a
-                className="btn primary"
-                data-magnetic
-                {...linkProps("car", { car: car.id, entry: entry.number })}
-              >
-                Explore the cars <ArrowUpRight size={16} />
-              </a>
-              <a className="btn glass" href="#drone" data-magnetic>
-                Ride a lap <ArrowDown size={16} />
-              </a>
-            </div>
+        <div className="hero-copy">
+          <h1 id="hero-title">The 24 Hours of Le Mans, taken apart.</h1>
+          <p>
+            Open up all {cars.length} car designs in 3D, find any of the{" "}
+            {entries.length} entries, and follow a lap of the 13.6 km circuit
+            from the air.
+          </p>
+          <div className="hero-cta">
+            <a
+              className="btn primary"
+              {...linkProps("car", { car: car.id, entry: entry.number })}
+            >
+              Explore the cars
+            </a>
+            <a className="btn secondary" href="#drone">
+              Watch a lap
+            </a>
           </div>
-          <div className="hero-side">
-            <span className="hero-phase-line" aria-live="polite">
-              <b>{phaseInfo[phase].clock}</b> {phaseInfo[phase].line}
+        </div>
+        <div className="hero-light">
+          <p className="hero-clock" aria-live="polite">
+            <strong>{phaseInfo[phase].clock}</strong>
+            <span>
+              {phaseInfo[phase].label}. {phaseInfo[phase].line}.
             </span>
-            <PhaseSwitch className="hero-switch" />
-            <Credit photo={heroPhoto} className="hero-credit" />
-          </div>
-        </div>
-        <span className="hero-scroll" aria-hidden="true">
-          <i /> Scroll
-        </span>
-      </section>
-
-      {/* ------------------------------------------------ Marquee */}
-      <section className="marquees" aria-label="The race at a glance">
-        <Marquee
-          variant="solid"
-          items={[
-            "Hypercar",
-            "LMP2",
-            "LMGT3",
-            `${entries.length} entries`,
-            `${circuit.length.toFixed(3)} km`,
-            `${circuit.corners} corners`,
-            "24 hours",
-            "Day into night",
-          ]}
-        />
-        <Marquee
-          variant="outline"
-          reverse
-          items={cars.map((model) => `${model.make} ${model.name}`)}
-        />
-      </section>
-
-      {/* ------------------------------------------------ Manifesto + numbers */}
-      <section className="statement">
-        <span className="eyebrow">The race in numbers</span>
-        <Manifesto />
-        <div className="stats">
-          <Stat index={0} value={entries.length} label="Race entries" note="Provisional list, 5 May 2026" />
-          <Stat index={1} value={cars.length} label="Car families" note="Each one in 3D" />
-          <Stat index={2} value={3} label="Racing classes" note="Hypercar · LMP2 · LMGT3" />
-          <Stat index={3} value={circuit.length} decimals={3} label="Kilometres per lap" note="Circuit de la Sarthe" />
-          <Stat index={4} value={circuit.corners} label="Corners" note="From the track-atlas data" />
-          <Stat index={5} value={24} label="Hours of racing" note="Day, dusk, night, dawn" />
+          </p>
+          <Credit photo={heroPhoto} className="hero-credit" />
         </div>
       </section>
-
-      {/* ------------------------------------------------ Day into night */}
-      <Chapters />
 
       {/* ------------------------------------------------ Classes */}
       <section className="block classes" aria-labelledby="classes-title">
         <header className="block-head">
-          <span className="eyebrow">02 / The machines</span>
-          <Lines
-            className="block-title"
-            lines={["Different machines.", <em key="em">The same obsession.</em>]}
-          />
-          <p className="block-lead" data-reveal>
-            Three classes share one ribbon of tarmac. Learn what sets them
-            apart, then find your car in the {entries.length}-entry provisional
-            field.
+          <h2 id="classes-title">Three classes share one track</h2>
+          <p className="block-lead">
+            Prototypes lap the GT cars all day and all night. Each class
+            carries its own colour on the number panel, and this site uses the
+            same three colours throughout.
           </p>
         </header>
-        <div className="class-panels" id="classes-title">
-          {classOrder.map((category, index) => {
+        <div className="class-panels">
+          {classOrder.map((category) => {
             const info = classInfo[category];
             const count = entries.filter(
               (e) => carById(e.carId)?.category === category,
             ).length;
+            const photo = classPhoto[category];
             return (
               <a
                 key={category}
                 className="class-panel"
-                data-reveal
-                data-spotlight
-                data-cursor="Explore"
-                style={{ "--cls": info.color, "--d": index } as React.CSSProperties}
+                style={{ "--cls": info.color } as React.CSSProperties}
                 {...linkProps("field", { class: category })}
               >
                 <div className="class-panel-media">
-                  <PhotoImg
-                    photo={classPhoto[category]}
-                    sizes="(max-width: 900px) 100vw, 60vw"
-                  />
-                  <span className="class-photo-credit">
-                    {classPhoto[category].caption} · {classPhoto[category].author} ·{" "}
-                    {classPhoto[category].license}
-                  </span>
-                </div>
-                <div className="class-panel-top">
-                  <span className="class-no">{pad(index + 1)}</span>
-                  <span className="class-count">{count} entries</span>
+                  <PhotoImg photo={photo} sizes="(max-width: 900px) 100vw, 34vw" />
                 </div>
                 <div className="class-panel-body">
-                  <span className="cls-tag">{category}</span>
-                  <h3>{info.tagline}</h3>
+                  <div className="class-panel-top">
+                    <h3>{category}</h3>
+                    <span>{count} entries</span>
+                  </div>
+                  <p className="class-panel-tagline">{info.tagline}</p>
                   <p>{info.text}</p>
                   <dl>
                     {info.facts.map(([key, value]) => (
@@ -690,9 +476,10 @@ export default function Home() {
                       </div>
                     ))}
                   </dl>
-                  <span className="card-link">
-                    Explore {category} <ArrowUpRight size={16} />
-                  </span>
+                  <span className="text-link">See the {category} entries</span>
+                  <small className="class-photo-credit">
+                    Photo: {photo.caption}, by {photo.author}, {photo.license}
+                  </small>
                 </div>
               </a>
             );
@@ -700,271 +487,199 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ------------------------------------------------ All the cars */}
+      <Garage />
+
       {/* ------------------------------------------------ Studio */}
-      <section className="studio" aria-labelledby="studio-title">
+      <section className="block studio" aria-labelledby="studio-title">
         <header className="block-head">
-          <span className="eyebrow">03 / In the studio</span>
-          <Lines
-            className="block-title"
-            lines={["Turn it over.", <em key="em">Every angle.</em>]}
-          />
-          <p className="block-lead" id="studio-title" data-reveal>
-            Detailed creator-hosted exteriors, each with its own livery. Start the
-            3D viewer and drag to orbit the car.
+          <h2 id="studio-title">Turn a car around</h2>
+          <p className="block-lead">
+            Eight cars from the entry list as detailed 3D exteriors. Start the
+            viewer, then drag to see it from any side.
           </p>
         </header>
         <div className="studio-stage">
-        <div
-          className={`hero-stage${live ? " viewing" : ""}`}
-          role="group"
-          aria-label={`${car.make} ${car.name} exterior preview`}
-        >
-          <span className="hero-ghost" aria-hidden="true">
-            {entry.number}
-          </span>
-          <div className="hero-frame">
-            <CarPreview
-              key={car.id}
-              car={car}
-              className="hero-poster"
-              sizes="(max-width: 900px) 100vw, 1200px"
-            />
-            {live ? (
-              <Suspense
-                fallback={
-                  <div className="hero-model-loading">
-                    <Scan size={25} />
-                    <span>Preparing the studio</span>
-                  </div>
-                }
-              >
-                <FeaturedExterior
-                  key={reference.id}
-                  reference={reference}
-                  title={`${car.make} ${car.name} detailed exterior`}
-                />
-              </Suspense>
-            ) : (
-              <button
-                className="btn primary hero-load-model"
-                data-magnetic
-                onClick={() => setActiveModel(reference.id)}
-              >
-                <span>Start 3D viewer</span>
-                <Scan size={16} />
-              </button>
-            )}
-            <i className="corner tl" aria-hidden="true" />
-            <i className="corner tr" aria-hidden="true" />
-            <i className="corner bl" aria-hidden="true" />
-            <i className="corner br" aria-hidden="true" />
-            <div className="hero-view-label">
-              <span className="rec" aria-hidden="true" />
-              {live ? "Detailed exterior model" : "Creator exterior preview"}
-              <span>{live ? "Drag to rotate" : "Select Start 3D to explore"}</span>
+          <div
+            className={`hero-stage${live ? " viewing" : ""}`}
+            role="group"
+            aria-label={`${car.make} ${car.name} exterior`}
+          >
+            <div className="hero-frame">
+              <CarPreview
+                key={car.id}
+                car={car}
+                className="hero-poster"
+                sizes="(max-width: 900px) 100vw, 1200px"
+              />
+              {live ? (
+                <Suspense
+                  fallback={
+                    <div className="hero-model-loading">Loading the 3D model…</div>
+                  }
+                >
+                  <FeaturedExterior
+                    key={reference.id}
+                    reference={reference}
+                    title={`${car.make} ${car.name} detailed exterior`}
+                  />
+                </Suspense>
+              ) : (
+                <button
+                  className="btn primary hero-load-model"
+                  onClick={() => setActiveModel(reference.id)}
+                >
+                  <Rotate3d size={18} />
+                  Start 3D viewer
+                </button>
+              )}
             </div>
           </div>
-        </div>
-        <div className="hero-caption">
-          <div className="hero-car-identity">
-            <span
-              className="plate"
-              style={{ background: classInfo[car.category].color }}
-            >
-              {plateFor(car)}
-            </span>
-            <div>
-              <span className="hero-car-category">
-                {car.category} / {car.platform}
+          <div className="studio-caption">
+            <div className="studio-car">
+              <span
+                className="plate"
+                style={{ "--cls": classInfo[car.category].color } as React.CSSProperties}
+              >
+                {entry.number}
               </span>
-              <strong>
-                {car.make} {car.name}
-              </strong>
-              <span>Exterior reference with its own livery</span>
+              <div>
+                <strong>
+                  {car.make} {car.name}
+                </strong>
+                <span>
+                  {car.category}, {car.platform}
+                </span>
+              </div>
             </div>
-          </div>
-          <div className="hero-car-spec">
-            <span>Powertrain</span>
-            <strong>{powertrain(car)}</strong>
-          </div>
-          <div className="hero-car-spec">
-            <span>Model hosted by</span>
-            <a
-              href={
-                reference.sourceUrl ??
-                `https://sketchfab.com/models/${reference.id}`
-              }
-              target="_blank"
-              rel="noreferrer"
-            >
-              {reference.author} <ArrowUpRight size={12} />
+            <dl className="readouts">
+              <div>
+                <dt>Powertrain</dt>
+                <dd>{powertrain(car)}</dd>
+              </div>
+              <div>
+                <dt>3D model by</dt>
+                <dd>
+                  <a
+                    href={
+                      reference.sourceUrl ??
+                      `https://sketchfab.com/models/${reference.id}`
+                    }
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {reference.author}
+                  </a>
+                </dd>
+              </div>
+            </dl>
+            <a className="btn secondary" {...linkProps("car", { car: car.id })}>
+              Open in the explorer
             </a>
           </div>
-          <a className="btn glass small" {...linkProps("car", { car: car.id })}>
-            Open in the explorer <ArrowUpRight size={14} />
-          </a>
-        </div>
-        <div className="studio-rail" role="group" aria-label="Featured cars">
-          {featured.map((number, index) => {
-            const item = entries.find((e) => e.number === number)!;
-            const itemCar = carById(item.carId)!;
-            return (
-              <button
-                key={number}
-                className="studio-pick"
-                aria-pressed={index === i}
-                aria-label={`#${number} ${itemCar.make} ${itemCar.name}`}
-                style={
-                  { "--cls": classInfo[itemCar.category].color } as React.CSSProperties
-                }
-                onClick={() => {
-                  setActiveModel(null);
-                  setI(index);
-                }}
-              >
-                <StudyImage entry={number} alt="" />
-                <span className="studio-pick-name">
-                  <b>#{number}</b> {itemCar.name}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+          <div className="studio-rail" role="group" aria-label="Choose a car">
+            {featured.map((number, index) => {
+              const item = entries.find((e) => e.number === number)!;
+              const itemCar = carById(item.carId)!;
+              return (
+                <button
+                  key={number}
+                  className="studio-pick"
+                  aria-pressed={index === i}
+                  aria-label={`Number ${number}, ${itemCar.make} ${itemCar.name}`}
+                  style={
+                    { "--cls": classInfo[itemCar.category].color } as React.CSSProperties
+                  }
+                  onClick={() => {
+                    setActiveModel(null);
+                    setI(index);
+                  }}
+                >
+                  <StudyImage entry={number} alt="" />
+                  <span className="studio-pick-name">
+                    <span className="plate small">{number}</span>
+                    {itemCar.name}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </section>
 
-      {/* ------------------------------------------------ Engineering bento */}
+      {/* ------------------------------------------------ Engineering */}
       <section className="block engineering" aria-labelledby="eng-title">
         <header className="block-head">
-          <span className="eyebrow">05 / Under the skin</span>
-          <Lines
-            className="block-title"
-            lines={["Beautiful outside.", <em key="em">Fascinating inside.</em>]}
-          />
-          <p className="block-lead" data-reveal id="eng-title">
-            Go beyond the silhouette. Peel back the bodywork and discover how an
-            endurance car is built to survive a day and a night at the limit.
+          <h2 id="eng-title">Then take it apart</h2>
+          <p className="block-lead">
+            Every car design has an engineering study you can open up: remove
+            the bodywork, separate the assemblies and read what each part does.
           </p>
         </header>
-        <div className="bento">
+        <div className="eng-grid">
           <a
-            className="tile tile-feature"
-            data-reveal
-            data-spotlight
-            data-cursor="Inside"
+            className="eng-feature"
             {...linkProps("car", { car: "ferrari", entry: "50", x: "1" })}
           >
-            <CarPreview car={carById("ferrari")!} sizes="(max-width: 820px) 100vw, 820px" />
-            <div className="tile-hud" aria-hidden="true">
-              <span>Study · 499P</span>
-              <span>Exploded view · x 1.00</span>
-            </div>
-            <div className="tile-copy">
-              <span className="eyebrow">Featured study</span>
+            <CarPreview car={carById("ferrari")!} sizes="(max-width: 900px) 100vw, 820px" />
+            <div className="eng-feature-copy">
               <h3>Inside the Ferrari 499P</h3>
               <p>
-                3.0 L twin-turbo V6, front-axle hybrid and a carbon tub, opened
-                up layer by layer.
+                A 3.0 L twin-turbo V6, a front-axle hybrid and a carbon tub,
+                opened up layer by layer.
               </p>
-              <span className="tile-go">
-                Open the study <ArrowUpRight size={16} />
-              </span>
+              <span className="btn primary">Open the study</span>
             </div>
           </a>
-          <div className="tile tile-systems" data-reveal data-spotlight style={{ "--d": 1 } as React.CSSProperties}>
-            <span className="tile-label">Engineering assemblies</span>
-            <strong className="tile-big">14</strong>
-            <ul>
-              {[
-                ["Aerodynamics", 4],
-                ["Powertrain", 3],
-                ["Chassis", 3],
-                ["Driver & systems", 3],
-                ["Structure", 1],
-              ].map(([group, n]) => (
-                <li key={group}>
-                  <span>{group}</span>
-                  <i style={{ "--w": Number(n) / 4 } as React.CSSProperties} />
-                  <b>{n}</b>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="tile tile-explode" data-reveal data-spotlight style={{ "--d": 2 } as React.CSSProperties}>
-            <svg viewBox="0 0 200 120" aria-hidden="true" className="explode-art">
-              <g className="layer l1">
-                <path d="M20 78 C50 50 150 50 182 76 L182 84 L20 84 Z" />
-              </g>
-              <g className="layer l2">
-                <rect x="60" y="66" width="70" height="14" rx="3" />
-              </g>
-              <g className="layer l3">
-                <circle cx="52" cy="88" r="12" />
-                <circle cx="150" cy="88" r="12" />
-              </g>
-              <g className="layer l4">
-                <path d="M30 92 L172 92" />
-              </g>
-            </svg>
-            <span className="tile-label">Take it apart</span>
-            <p>Exploded systems and transparent or removable bodywork.</p>
-          </div>
-          <div className="tile tile-studio" data-reveal data-spotlight style={{ "--d": 1 } as React.CSSProperties}>
-            <svg className="streams" viewBox="0 0 400 160" preserveAspectRatio="none" aria-hidden="true">
-              {[18, 38, 58, 78, 98, 118, 138].map((y, index) => (
-                <path
-                  key={y}
-                  d={`M-20 ${y} C 90 ${y}, 140 ${y - 26 + index * 4}, 220 ${y - 18 + index * 3} S 360 ${y}, 420 ${y}`}
-                  style={{ "--s": index } as React.CSSProperties}
-                />
-              ))}
-            </svg>
-            <span className="tile-label">Teardown studio</span>
-            <h3>Garage, build sequence, wind tunnel.</h3>
-            <div className="studio-links">
-              {(
+          <ul className="eng-list">
+            {(
+              [
                 [
-                  ["garage", "Garage"],
-                  ["build", "Build"],
-                  ["tunnel", "Wind tunnel"],
-                ] as const
-              ).map(([view, label]) => (
-                <a key={view} {...linkProps("car", { car: "ferrari", view })}>
-                  {label} <ArrowUpRight size={13} />
+                  "Exploded view",
+                  "Pull the car apart into its 14 assemblies, from the splitter to the gearbox.",
+                  { car: "ferrari", entry: "50", x: "1" },
+                ],
+                [
+                  "Garage",
+                  "Take assemblies off one at a time and put them back.",
+                  { car: "ferrari", view: "garage" },
+                ],
+                [
+                  "Build sequence",
+                  "Watch the car go together in order, from the tub outwards.",
+                  { car: "ferrari", view: "build" },
+                ],
+                [
+                  "Wind tunnel",
+                  "See how air moves around the finished car.",
+                  { car: "ferrari", view: "tunnel" },
+                ],
+              ] as const
+            ).map(([title, text, params]) => (
+              <li key={title}>
+                <a {...linkProps("car", params)}>
+                  <strong>{title}</strong>
+                  <span>{text}</span>
+                  <ChevronRight size={18} aria-hidden="true" />
                 </a>
-              ))}
-            </div>
-          </div>
-          <div className="tile tile-views" data-reveal data-spotlight style={{ "--d": 2 } as React.CSSProperties}>
-            <span className="tile-label">Look closer</span>
-            <div className="viewfinder" aria-hidden="true">
-              <i />
-              <span>06</span>
-            </div>
-            <p>Six camera views, dimensions and component notes.</p>
-          </div>
-          <a
-            className="tile tile-sources"
-            data-reveal
-            data-spotlight
-            style={{ "--d": 3 } as React.CSSProperties}
-            {...linkProps("about")}
-          >
-            <span className="tile-label">Know what you’re seeing</span>
-            <strong className="tile-big">28</strong>
-            <p>
-              Primary sources behind the engineering notes, with conceptual
-              geometry clearly labelled.
-            </p>
-            <span className="tile-go">
-              Sources & accuracy <ArrowUpRight size={14} />
-            </span>
-          </a>
+              </li>
+            ))}
+            <li>
+              <a {...linkProps("about")}>
+                <strong>Sources and accuracy</strong>
+                <span>
+                  What is measured, what is modelled, and the 28 sources behind
+                  the engineering notes.
+                </span>
+                <ChevronRight size={18} aria-hidden="true" />
+              </a>
+            </li>
+          </ul>
         </div>
       </section>
 
-      {/* ------------------------------------------------ Horizontal garage */}
-      <Garage />
+      {/* ------------------------------------------------ Day into night */}
+      <Chapters />
 
       {/* ------------------------------------------------ Drone lap */}
       <section className="drone-section" id="drone" aria-labelledby="drone-title">
@@ -976,14 +691,9 @@ export default function Home() {
           )}
         </div>
         <div className="drone-head">
-          <span className="eyebrow">06 / Circuit de la Sarthe</span>
-          <h2 id="drone-title">
-            Ride the lap.
-            <br />
-            <em>From the air.</em>
-          </h2>
-          <a className="btn primary" data-magnetic {...linkProps("circuit")}>
-            Explore the circuit <ArrowUpRight size={16} />
+          <h2 id="drone-title">A lap from the air</h2>
+          <a className="btn secondary" {...linkProps("circuit")}>
+            Open the circuit map
           </a>
         </div>
       </section>

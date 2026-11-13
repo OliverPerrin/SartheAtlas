@@ -16,6 +16,7 @@ import {
   Environment,
   Lightformer,
   Line,
+  MeshReflectorMaterial,
   OrbitControls,
 } from "@react-three/drei";
 import * as THREE from "three";
@@ -491,6 +492,14 @@ const Studio = memo(function Studio({
         intensity={night ? 0.7 : 1.4}
         color="#d9e8ff"
       />
+      {night && (
+        <>
+          {/* After dark: a cold rim from behind picks out the roof and wing
+              edges, and a low sodium kicker warms the far flank. */}
+          <directionalLight position={[-6, 2.2, -1.5]} intensity={2.6} color="#7fa2ff" />
+          <directionalLight position={[-1, 1.2, -7]} intensity={1.5} color="#ffb47a" />
+        </>
+      )}
       <Environment resolution={256} frames={1}>
         {environmentLights}
       </Environment>
@@ -502,7 +511,23 @@ const Studio = memo(function Studio({
           receiveShadow
         >
           <circleGeometry args={[40, 64]} />
-          {backdrop ? (
+          {backdrop && night ? (
+            // Night stills stand on wet tarmac: a dim, blurred reflection.
+            <MeshReflectorMaterial
+              color="#020203"
+              resolution={1024}
+              mirror={0.8}
+              mixStrength={9}
+              mixBlur={1}
+              blur={[360, 90]}
+              roughness={1}
+              metalness={0.92}
+              envMapIntensity={0}
+              depthScale={0.6}
+              minDepthThreshold={0.4}
+              maxDepthThreshold={1.2}
+            />
+          ) : backdrop ? (
             // Render scripts want a seamless sweep: the floor is the backdrop.
             <meshBasicMaterial color={backdrop} fog={false} toneMapped={false} />
           ) : (

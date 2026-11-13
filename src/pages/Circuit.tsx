@@ -8,17 +8,17 @@ import {
   useRef,
   useEffect,
 } from "react";
-import { currentPhase, isDark } from "../data/racePhase.ts";
+import { isDark, usePhase } from "../data/racePhase.ts";
 import {
   ArrowUpRight,
-  Eye,
+  Box,
+  Gauge,
   Map as MapIcon,
-  Moon,
   Pause,
   Play,
-  Sun,
-  Video,
   RotateCcw,
+  Video,
+  X,
 } from "lucide-react";
 import { classOrder } from "../data/cars.ts";
 import type { ClassName } from "../data/cars.ts";
@@ -47,7 +47,16 @@ function fmt(s: number) {
   return `${m}:${r.toFixed(1).padStart(4, "0")}`;
 }
 
-function LapReadout({ store, follow }: { store: LapStore; follow: ClassName }) {
+function LapReadout({
+  store,
+  follow,
+  length,
+}: {
+  store: LapStore;
+  follow: ClassName;
+  /** Lap length in metres, once the circuit has loaded. */
+  length?: number;
+}) {
   const tick = useSyncExternalStore(store.subscribe, store.getSnapshot);
   const section = tick
     ? sections.find((s) => tick.fraction >= s.from && tick.fraction < s.to)
@@ -55,10 +64,8 @@ function LapReadout({ store, follow }: { store: LapStore; follow: ClassName }) {
   return (
     <>
       <div className="hud-speed">
-        <strong>{tick ? Math.round(tick.speed) : "—"}</strong>
-        <span>
-          km/h<small>Modelled speed</small>
-        </span>
+        <strong>{tick ? Math.round(tick.speed) : "0"}</strong>
+        <span>km/h, modelled</span>
       </div>
       <div className="hud-bar">
         <i
@@ -68,16 +75,30 @@ function LapReadout({ store, follow }: { store: LapStore; follow: ClassName }) {
           }}
         />
       </div>
-      <div className="hud-row">
-        <span>
-          Lap <strong>{tick ? fmt(tick.elapsed) : "0:00.0"}</strong>
-        </span>
-        <span>
-          Model lap <strong>{tick ? fmt(tick.lap) : "—"}</strong>
-        </span>
-      </div>
-      <div className="hud-section" style={{ color: section?.color }}>
-        {section?.name ?? "—"}
+      <dl className="hud-rows">
+        <div>
+          <dt>Lap time</dt>
+          <dd>{tick ? fmt(tick.elapsed) : "0:00.0"}</dd>
+        </div>
+        <div>
+          <dt>Full lap</dt>
+          <dd>{tick ? fmt(tick.lap) : fmt(lapTargets[follow].lap)}</dd>
+        </div>
+        <div>
+          <dt>Distance</dt>
+          <dd>
+            {tick && length
+              ? ((tick.fraction * length) / 1000).toFixed(2)
+              : "0.00"}{" "}
+            of {length ? (length / 1000).toFixed(2) : circuit.length} km
+          </dd>
+        </div>
+      </dl>
+      <div
+        className="hud-section"
+        style={{ "--sec": section?.color } as React.CSSProperties}
+      >
+        {section?.name ?? "Start and finish"}
       </div>
     </>
   );
@@ -160,12 +181,13 @@ export default function Circuit() {
   const [geographic, setGeographic] = useState(true);
   const [focusFraction, setFocusFraction] = useState<number | null>(null);
   const [mode, setMode] = useState<ColorMode>("sections");
-  // Start in the light chosen elsewhere on the site.
-  const [night, setNight] = useState(() => isDark(currentPhase()));
+  // The header's time-of-day control lights this page too.
+  const night = isDark(usePhase());
   const [playing, setPlaying] = useState(
     () => !window.matchMedia("(prefers-reduced-motion: reduce)").matches,
   );
-  const [timeScale, setTimeScale] = useState(4);
+  // Real time: one second of lap per second on screen.
+  const [timeScale, setTimeScale] = useState(1);
   const [cameraReset, setCameraReset] = useState(0);
   const [cam, setCam] = useState<CamMode>("overview");
   const [follow, setFollow] = useState<ClassName>("Hypercar");
@@ -232,7 +254,9 @@ export default function Circuit() {
 
   return (
     <main className="circuit">
-      <section className="circuit-stage">
+      <section
+        className={`circuit-stage${cam === "follow" ? " chasing" : ""}${geographic ? "" : " study"}`}
+      >
         {error && (
           <div className="scene-error" role="alert">
             The circuit data could not load.
@@ -292,109 +316,95 @@ export default function Circuit() {
           </Suspense>
         )}
         <div className="circuit-title">
-          <span className="kicker">
-            {circuit.location} · {geographic ? "Geographic atlas" : "Lap study"}
-          </span>
-          <h1>
-            Circuit de la <em>Sarthe</em>
-          </h1>
-          <div className="circuit-stats">
-            <span>
-              <strong>{circuit.length}</strong> km
-            </span>
-            <span>
-              <strong>{circuit.corners}</strong> corners
-            </span>
-            <span>
-              <strong>≈⅔</strong> public roads
-            </span>
+          <h1>Circuit de la Sarthe</h1>
+          <p>
+            {circuit.length} km, {circuit.corners} corners, two-thirds public
+            road
+          </p>
+          <div className="seg small" role="group" aria-label="Circuit view">
+            <button
+              aria-pressed={geographic}
+              onClick={() => {
+                setGeographic(true);
+                setPitFocused(false);
+                setCam("overview");
+              }}
+            >
+              <MapIcon size={14} /> Aerial map
+            </button>
+            <button
+              aria-pressed={!geographic}
+              onClick={() => {
+                setGeographic(false);
+                setPitFocused(false);
+                setCam("overview");
+              }}
+            >
+              <Box size={14} /> 3D track
+            </button>
           </div>
         </div>
 
-        <div
-          className="circuit-presentation"
-          role="group"
-          aria-label="Circuit presentation"
-        >
-          <button
-            aria-pressed={geographic}
-            className={geographic ? "on" : ""}
-            onClick={() => {
-              setGeographic(true);
-              setPitFocused(false);
-              setCam("overview");
-            }}
-          >
-            <MapIcon size={13} /> Aerial atlas
-          </button>
-          <button
-            aria-pressed={!geographic}
-            className={!geographic ? "on" : ""}
-            onClick={() => {
-              setGeographic(false);
-              setPitFocused(false);
-              setCam("overview");
-            }}
-          >
-            <Video size={13} /> Driving study
-          </button>
-        </div>
-
         <div className="hud" aria-live="off">
-          <span className="hud-caption">Lap simulation · follow a class</span>
-          <div className="hud-class" role="group" aria-label="Follow class">
+          <div className="hud-head">
+            <span className="label">Follow a class</span>
+            <span className="label">On track</span>
+          </div>
+          <ul className="hud-class">
             {classOrder.map((c) => (
-              <div
+              <li
                 key={c}
-                className="hud-class-control"
+                className={follow === c ? "on" : ""}
                 style={{ "--cls": lapTargets[c].color } as React.CSSProperties}
               >
                 <button
                   aria-pressed={follow === c}
-                  className={follow === c ? "on" : ""}
                   onClick={() => chooseClass(c)}
                 >
                   <i className="dot" />
                   {c}
                 </button>
-                <label title={`Show or hide ${c} car`}>
-                  <input
-                    type="checkbox"
-                    aria-label={`Show ${c} car`}
-                    checked={visible[c]}
-                    onChange={(e) =>
-                      setVisible((current) => ({
-                        ...current,
-                        [c]: e.target.checked,
-                      }))
-                    }
-                  />
-                </label>
-              </div>
+                <input
+                  type="checkbox"
+                  className="check"
+                  aria-label={`Show the ${c} car`}
+                  checked={visible[c]}
+                  onChange={(e) =>
+                    setVisible((current) => ({
+                      ...current,
+                      [c]: e.target.checked,
+                    }))
+                  }
+                />
+              </li>
             ))}
-          </div>
-          <LapReadout store={telemetry} follow={follow} />
+          </ul>
+          <LapReadout
+            store={telemetry}
+            follow={follow}
+            length={track?.length}
+          />
         </div>
 
         <div
           className="circuit-tools"
           role="toolbar"
-          aria-label="Circuit view options"
+          aria-label="Lap playback and view"
         >
           <button
-            className={`tool ${playing ? "on" : ""}`}
+            className="btn small"
             onClick={() => setPlaying(!playing)}
-            aria-pressed={playing}
+            aria-label={playing ? "Pause the lap" : "Play the lap"}
           >
             {playing ? <Pause size={16} /> : <Play size={16} />}
-            <span>{playing ? "Pause" : "Play"}</span>
+            {playing ? "Pause" : "Play"}
           </button>
-          <div className="seg small" role="group" aria-label="Speed">
+          <div className="seg small" role="group" aria-label="Playback speed">
             {[1, 4, 16].map((s) => (
               <button
                 key={s}
                 aria-pressed={timeScale === s}
-                className={timeScale === s ? "on" : ""}
+                aria-label={s === 1 ? "Real time" : `${s} times real time`}
                 onClick={() => setTimeScale(s)}
               >
                 {s}×
@@ -402,78 +412,52 @@ export default function Circuit() {
             ))}
           </div>
           <button
-            className={`tool ${cam === "follow" ? "on" : ""}`}
+            className="btn small"
             onClick={() => {
               setPitFocused(false);
               setCam(cam === "follow" ? "overview" : "follow");
             }}
             aria-pressed={cam === "follow"}
           >
-            {cam === "follow" ? <MapIcon size={16} /> : <Video size={16} />}
-            <span>{cam === "follow" ? "Overview" : "Chase cam"}</span>
+            <Video size={16} />
+            Follow the car
           </button>
           <button
-            className={`tool ${mode === "speed" ? "on" : ""}`}
+            className="btn small"
             onClick={() => setMode(mode === "speed" ? "sections" : "speed")}
             aria-pressed={mode === "speed"}
           >
-            <Eye size={16} />
-            <span>{mode === "speed" ? "Speed map" : "Sections"}</span>
+            <Gauge size={16} />
+            Colour by speed
           </button>
           <button
-            className="tool"
-            aria-label="Reset to circuit overview"
-            title="Reset camera"
+            className="btn small icon"
+            aria-label="Reset the view"
+            title="Reset the view"
             onClick={resetView}
           >
             <RotateCcw size={16} />
-            <span>Reset view</span>
-          </button>
-          <button
-            className={`tool ${night ? "on" : ""}`}
-            onClick={() => setNight(!night)}
-            aria-pressed={night}
-            aria-label={
-              geographic
-                ? night
-                  ? "Brighten aerial imagery"
-                  : "Dim aerial imagery"
-                : night
-                  ? "Switch to day lighting"
-                  : "Switch to night lighting"
-            }
-          >
-            {night ? <Moon size={16} /> : <Sun size={16} />}
-            <span>
-              {geographic
-                ? night
-                  ? "Dimmed"
-                  : "Day image"
-                : night
-                  ? "Night"
-                  : "Day"}
-            </span>
           </button>
         </div>
 
         {mode === "speed" && (
           <div className="speed-legend" aria-label="Speed colours">
-            <span>80 km/h</span>
+            <span>80</span>
             <i />
-            <span>330 km/h</span>
+            <span>340 km/h</span>
           </div>
         )}
 
         <p className="circuit-hint" hidden={Boolean(cornerData)}>
           {cam === "follow"
-            ? `Following ${follow} · switch to Overview to explore`
+            ? `Following the ${follow} car. Turn off Follow the car to explore the map.`
             : geographic
               ? touch
-                ? "Drag to pan · two-finger drag to tilt · tap a corner"
-                : "Drag to pan · right-drag to tilt · select a corner"
+                ? "Drag to pan, drag with two fingers to tilt, tap a corner."
+                : "Drag to pan, right-drag to tilt, select a corner."
               : touch
-                ? "Drag to orbit · pinch to zoom · tap a corner"
-                : "Drag to orbit · scroll to zoom · select a corner"}
+                ? "Drag to orbit, pinch to zoom, tap a corner."
+                : "Drag to orbit, scroll to zoom, select a corner."}
         </p>
         {cornerData && (
           <div
@@ -482,14 +466,14 @@ export default function Circuit() {
             aria-label={`${cornerData.name} corner guide`}
           >
             <button
-              className="close"
-              aria-label="Close corner"
+              className="btn ghost small icon close"
+              aria-label="Close the corner guide"
               onClick={() => pickCorner(null)}
             >
-              ×
+              <X size={16} />
             </button>
-            <span className="kicker">
-              Turn {cornerData.number} · {cornerData.direction}-hander
+            <span className="label">
+              Turn {cornerData.number}, {cornerData.direction}-hander
             </span>
             <h2>{cornerData.name}</h2>
             {cornerData.official && cornerData.official !== cornerData.name && (
@@ -521,13 +505,11 @@ export default function Circuit() {
 
       <section className="circuit-guide">
         <div className="guide-map">
-          <span className="kicker">Lap guide</span>
           <h2>Six parts of one lap</h2>
           <p className="guide-intro">
             From the first braking zone to the final chicane. Select a numbered
-            corner to explore its place in the lap. The dashed gold route shows
-            the pit entry, lane and exit; use Pit lane in the atlas to inspect
-            it.
+            corner to see where it sits in the lap. The dashed gold line is the
+            pit lane; choose Pit lane on the aerial map to look at it closely.
           </p>
           {track && (
             <LiveTrackMap
@@ -539,11 +521,13 @@ export default function Circuit() {
             />
           )}
           <p className="muted">
-            Corner positions: OpenStreetMap via track-atlas. The car animation
-            is a braking and acceleration model calibrated to typical lap times
-            for each class (
+            Corner positions: OpenStreetMap via track-atlas. The cars follow an
+            illustrative driving line kept within about three metres of the
+            mapped centreline. Their speed comes from a lap model of grip,
+            downforce, power, drag and braking for each class, trimmed to a
+            typical race lap (
             {classOrder.map((c) => `${c} ${fmt(lapTargets[c].lap)}`).join(", ")}
-            ), not telemetry. The aerial atlas uses IGN orthophotography,
+            ). It is not telemetry. The aerial atlas uses IGN orthophotography,
             sourced terrain and mapped building footprints.{" "}
             <a
               href="https://www.openstreetmap.org/copyright"
@@ -561,7 +545,7 @@ export default function Circuit() {
               className={sectionId === s.id ? "on" : ""}
               style={{ "--sec": s.color } as React.CSSProperties}
             >
-              <span className="sec-no">{String(i + 1).padStart(2, "0")}</span>
+              <span className="sec-no">{i + 1}</span>
               <div>
                 <h3>{s.name}</h3>
                 <p>{s.text}</p>
@@ -573,7 +557,6 @@ export default function Circuit() {
             {cornerList.map((c) => (
               <button
                 key={c.number}
-                className={corner === c.name ? "on" : ""}
                 aria-pressed={corner === c.name}
                 onClick={() => pickCorner(c.name)}
               >

@@ -18,7 +18,6 @@ import type {
 import {
   Building2,
   Layers,
-  Map as MapIcon,
   Mountain,
   Navigation,
   RotateCcw,
@@ -28,11 +27,24 @@ import {
 import { classOrder } from "../data/cars.ts";
 import type { ClassName } from "../data/cars.ts";
 import { lapTargets, sections } from "../data/track.ts";
-import { fractionAtTime, pointAt, speedModel } from "../data/trackGeo.ts";
+import { speedAt } from "../data/lapModel.ts";
+import { pointAt } from "../data/trackGeo.ts";
 import type { TrackGeo } from "../data/trackGeo.ts";
+import { usePhase } from "../data/racePhase.ts";
+import type { Phase } from "../data/racePhase.ts";
 import { usePitLane } from "../data/pitLane.ts";
 import type { CamMode, ColorMode, Tick } from "../three/TrackScene.tsx";
 import { namedCorners } from "./TrackMap.tsx";
+import Atmosphere from "./Atmosphere.tsx";
+import {
+  createDroneRig,
+  droneCast,
+  droneLit,
+  droneSkies,
+  groundWidth,
+  lightDroneMap,
+} from "./droneRig.ts";
+import { useFonts } from "./useFonts.ts";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./CircuitGeoMap.css";
 
@@ -86,6 +98,8 @@ const PHOTO = imageryTile("HR.ORTHOIMAGERY.ORTHOPHOTOS");
 const PLAN =
   "https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2&STYLE=normal&FORMAT=image/png&TILEMATRIXSET=PM&TILEMATRIX={z}&TILECOL={x}&TILEROW={y}";
 const EMPTY: FeatureCollection = { type: "FeatureCollection", features: [] };
+// Spread the three cars around the lap at the start, as the driving study does.
+const OFFSETS: Record<ClassName, number> = { Hypercar: 70, LMP2: 35, LMGT3: 0 };
 
 function geoAt(track: TrackGeo, fraction: number): [number, number] {
   const p = pointAt(track, fraction);
@@ -134,13 +148,23 @@ export default function CircuitGeoMap(props: Props) {
   const carMarkers = useRef<Partial<Record<ClassName, Marker>>>({});
   const cornerMarkers = useRef<Map<string, Marker>>(new Map());
   const clock = useRef(0);
-  const models = useMemo(
-    () =>
-      Object.fromEntries(
-        classOrder.map((cls) => [cls, speedModel(props.track, cls)]),
-      ),
+  const rig = useMemo(
+    () => createDroneRig(props.track, OFFSETS),
     [props.track],
   );
+  const models = rig.models;
+  const fontsReady = useFonts();
+  // The chase cam is the same drone as the home page lap.
+  const chasing = props.cam === "follow";
+  const [droneReady, setDroneReady] = useState(false);
+  const sitePhase = usePhase();
+  const phase: Phase = sitePhase;
+  const phaseRef = useRef(phase);
+  const drone = useRef(false);
+  useLayoutEffect(() => {
+    phaseRef.current = phase;
+    drone.current = droneReady;
+  }, [phase, droneReady]);
   const bounds = useMemo(() => {
     const coords = props.track.lngLat;
     return new maplibregl.LngLatBounds(
@@ -167,14 +191,7 @@ export default function CircuitGeoMap(props: Props) {
         sections.find(
           (section) => fraction >= section.from && fraction < section.to,
         ) ?? sections[0];
-      const model = models[props.follow];
-      const speed =
-        model.speeds[
-          Math.min(
-            model.speeds.length - 1,
-            Math.floor((fraction * props.track.length) / model.step),
-          )
-        ] * 3.6;
+      const speed = speedAt(models[props.follow], fraction) * 3.6;
       features.push({
         type: "Feature",
         geometry: {
@@ -279,7 +296,7 @@ export default function CircuitGeoMap(props: Props) {
         zoom: 13,
         pitch: 48,
         bearing: -14,
-        maxPitch: 75,
+        maxPitch: 80,
         pixelRatio: Math.min(window.devicePixelRatio || 1, 1.5),
         minZoom: 10,
         maxZoom: 21,
@@ -314,7 +331,12 @@ export default function CircuitGeoMap(props: Props) {
               id: "photography",
               type: "raster",
               source: "orthophoto",
-              paint: { "raster-fade-duration": 180 },
+              paint: {
+                "raster-fade-duration": 180,
+                "raster-brightness-max-transition": { duration: 900, delay: 0 },
+                "raster-saturation-transition": { duration: 900, delay: 0 },
+                "raster-contrast-transition": { duration: 900, delay: 0 },
+              },
             },
             {
               id: "plan",
@@ -421,6 +443,73 @@ export default function CircuitGeoMap(props: Props) {
         source: "route",
         paint: { "line-color": ["get", "section"], "line-width": 2.5 },
         layout: { "line-join": "round", "line-cap": "round" },
+      });
+      // The drone's own layers: the lit circuit after dark and the trail the
+      // followed car leaves. Both stay invisible outside the chase.
+      m.addSource("ring", {
+        type: "geojson",
+        data: {
+          type: "Feature",
+          properties: {},
+          geometry: {
+            type: "LineString",
+            coordinates: [...props.track.lngLat, props.track.lngLat[0]],
+          },
+        },
+      });
+      m.addSource("trail", { type: "geojson", lineMetrics: true, data: EMPTY });
+      m.addLayer(
+        {
+          id: "chase-glow",
+          type: "line",
+          source: "ring",
+          layout: { "line-join": "round", "line-cap": "round" },
+          paint: {
+            "line-color": "#ffc98f",
+            "line-width": groundWidth(26) as never,
+            "line-blur": groundWidth(18) as never,
+            "line-opacity": 0,
+            "line-opacity-transition": { duration: 900, delay: 0 },
+          },
+        },
+        "route-halo",
+      );
+      m.addLayer({
+        id: "trail-glow",
+        type: "line",
+        source: "trail",
+        layout: { "line-join": "round", "line-cap": "round" },
+        paint: {
+          "line-width": 16,
+          "line-blur": 10,
+          "line-gradient": [
+            "interpolate",
+            ["linear"],
+            ["line-progress"],
+            0,
+            "rgba(255,30,60,0)",
+            1,
+            "rgba(255,30,60,0.75)",
+          ],
+        },
+      });
+      m.addLayer({
+        id: "trail",
+        type: "line",
+        source: "trail",
+        layout: { "line-join": "round", "line-cap": "round" },
+        paint: {
+          "line-width": 3.5,
+          "line-gradient": [
+            "interpolate",
+            ["linear"],
+            ["line-progress"],
+            0,
+            "rgba(255,255,255,0)",
+            1,
+            "rgba(255,240,240,0.95)",
+          ],
+        },
       });
       m.addSource("pit-lane", { type: "geojson", data: EMPTY });
       m.addLayer({
@@ -658,12 +747,81 @@ export default function CircuitGeoMap(props: Props) {
       photography ? "visible" : "none",
     );
     m.setLayoutProperty("plan", "visibility", photography ? "none" : "visible");
+    if (chasing) lightDroneMap(m, "photography", phase);
+    else {
+      m.setSky(droneSkies[phase]);
+      m.setPaintProperty(
+        "photography",
+        "raster-brightness-max",
+        props.night ? 0.52 : 1,
+      );
+      m.setPaintProperty("photography", "raster-saturation", 0);
+      m.setPaintProperty("photography", "raster-contrast", 0);
+      m.setPaintProperty("photography", "raster-hue-rotate", 0);
+    }
+    // In the chase the mapped centreline steps back: the cars drive their own
+    // line, and a coloured stripe down the middle reads as a road marking.
+    m.setPaintProperty("route", "line-opacity", chasing ? 0.3 : 1);
+    m.setPaintProperty("route-halo", "line-opacity", chasing ? 0 : 0.75);
     m.setPaintProperty(
-      "photography",
-      "raster-brightness-max",
-      props.night ? 0.52 : 1,
+      "chase-glow",
+      "line-opacity",
+      chasing ? droneLit(phase) * 0.2 : 0,
     );
-  }, [photography, ready, props.night]);
+    m.triggerRepaint();
+  }, [photography, ready, props.night, chasing, phase]);
+  // The drone flies over the flat photograph, as on the home page: the 3D cars
+  // are placed at ground level, which terrain relief would lift away from.
+  useEffect(() => {
+    const m = map.current;
+    if (!ready || !m) return;
+    if (chasing) {
+      if (m.getTerrain()) m.setTerrain(null);
+    } else if (terrainReady && m.getTerrain()?.exaggeration !== exaggeration)
+      m.setTerrain({ source: "elevation", exaggeration });
+  }, [ready, chasing, terrainReady, exaggeration]);
+  useEffect(() => {
+    const m = map.current;
+    if (!ready || !m || !chasing) return;
+    rig.cut();
+    return () => {
+      (m.getSource("trail") as GeoJSONSource | undefined)?.setData(EMPTY);
+      const p = latest.current;
+      if (!p.activeCorner && p.focusFraction == null && !pitInspection.current)
+        fit.current();
+    };
+  }, [ready, chasing, rig]);
+  useEffect(() => {
+    rig.cut();
+  }, [rig, props.follow]);
+  // The 3D cars load only when the chase is first asked for.
+  useEffect(() => {
+    const m = map.current;
+    if (!ready || !m || !chasing || !fontsReady) return;
+    let live = true;
+    let layer: (maplibregl.CustomLayerInterface & { dispose(): void }) | null =
+      null;
+    import("../three/droneCars.ts").then(({ createDroneCars }) => {
+      if (!live || map.current !== m) return;
+      layer = createDroneCars(
+        droneCast(),
+        rig.states,
+        () => phaseRef.current,
+        rig.origin,
+        rig.scale,
+      );
+      m.addLayer(layer);
+      m.triggerRepaint();
+      setDroneReady(true);
+    });
+    return () => {
+      live = false;
+      setDroneReady(false);
+      if (!layer || map.current !== m) return;
+      if (m.getLayer(layer.id)) m.removeLayer(layer.id);
+      else layer.dispose();
+    };
+  }, [ready, chasing, fontsReady, rig]);
   useEffect(() => {
     const m = map.current;
     if (!ready || !m) return;
@@ -678,11 +836,12 @@ export default function CircuitGeoMap(props: Props) {
       buildingsVisible ? "visible" : "none",
     );
     const targetPitch = tilted ? 48 : 0;
-    if (Math.abs(m.getPitch() - targetPitch) > 0.05)
+    if (
+      latest.current.cam !== "follow" &&
+      Math.abs(m.getPitch() - targetPitch) > 0.05
+    )
       m.easeTo({ pitch: targetPitch, duration: 700 });
-    if (terrainReady && m.getTerrain()?.exaggeration !== exaggeration)
-      m.setTerrain({ source: "elevation", exaggeration });
-  }, [ready, tilted, buildingsVisible, exaggeration, terrainReady]);
+  }, [ready, tilted, buildingsVisible]);
   useEffect(() => {
     if (ready) fit.current();
   }, [props.cameraReset, ready]);
@@ -716,14 +875,8 @@ export default function CircuitGeoMap(props: Props) {
     if (!ready || !host.current) return;
     let frame = 0,
       previous = 0,
-      lastTick = -Infinity,
-      lastFollow = -Infinity;
+      lastTick = -Infinity;
     let inView = false;
-    const offsets: Record<ClassName, number> = {
-      Hypercar: 70,
-      LMP2: 35,
-      LMGT3: 0,
-    };
     const animate = (now: number) => {
       frame = 0;
       if (document.hidden || !inView) return;
@@ -731,45 +884,43 @@ export default function CircuitGeoMap(props: Props) {
       previous = now;
       const p = latest.current;
       if (p.playing) clock.current += dt * p.timeScale;
-      if (now - lastTick > 100) {
-        for (const cls of classOrder) {
-          const marker = carMarkers.current[cls];
-          if (!marker) continue;
-          marker.getElement().style.display = p.visible[cls] ? "" : "none";
-          const model = models[cls],
-            time = clock.current + offsets[cls];
-          const fraction = fractionAtTime(model, time, p.track.length);
-          const point = pointAt(p.track, fraction);
-          if (p.visible[cls])
-            marker
-              .setLngLat([point.longitude, point.latitude])
-              .setRotation(90 + (point.heading * 180) / Math.PI);
-          if (cls === p.follow) {
-            const index = Math.min(
-              model.speeds.length - 1,
-              Math.floor((fraction * p.track.length) / model.step),
-            );
-            p.onTick({
-              cls,
-              fraction,
-              speed: model.speeds[index] * 3.6,
-              lap: model.lapTime,
-              elapsed: ((time % model.lapTime) + model.lapTime) % model.lapTime,
+      const chase = p.cam === "follow";
+      const due = now - lastTick > 100;
+      if (chase || due) {
+        const car = rig.place(clock.current, p.follow, p.visible);
+        if (chase && map.current && host.current) {
+          rig.chase(map.current, car, dt, host.current.clientHeight);
+          if (due)
+            (
+              map.current.getSource("trail") as GeoJSONSource | undefined
+            )?.setData({
+              type: "Feature",
+              properties: {},
+              geometry: { type: "LineString", coordinates: rig.trail(car) },
             });
-            if (p.cam === "follow" && now - lastFollow > 250) {
-              map.current?.easeTo({
-                center: [point.longitude, point.latitude],
-                bearing: 90 + (point.heading * 180) / Math.PI,
-                zoom: 17.2,
-                pitch: 58,
-                duration: 280,
-                essential: true,
-              });
-              lastFollow = now;
-            }
-          }
         }
-        lastTick = now;
+        if (due) {
+          const points = rig.points();
+          classOrder.forEach((cls, i) => {
+            const marker = carMarkers.current[cls];
+            if (!marker) return;
+            // Once the 3D cars are in, the flat markers step aside.
+            const shown = p.visible[cls] && !(chase && drone.current);
+            marker.getElement().style.display = shown ? "" : "none";
+            if (shown)
+              marker
+                .setLngLat([points[i].longitude, points[i].latitude])
+                .setRotation(90 + (points[i].heading * 180) / Math.PI);
+          });
+          p.onTick({
+            cls: car.cls,
+            fraction: car.fraction,
+            speed: car.kmh,
+            lap: car.lap,
+            elapsed: car.elapsed,
+          });
+          lastTick = now;
+        }
       }
       if (p.playing) frame = requestAnimationFrame(animate);
     };
@@ -779,6 +930,16 @@ export default function CircuitGeoMap(props: Props) {
       lastTick = -Infinity;
       if (!document.hidden && inView) frame = requestAnimationFrame(animate);
     };
+    // Development only: jump the lap to a fraction and reach the map, for
+    // checking corners and the driving line against the imagery.
+    if (import.meta.env.DEV)
+      Object.assign(window, {
+        __geoMap: map.current,
+        __lapSeek: (fraction: number) => {
+          clock.current = rig.timeAt(latest.current.follow, fraction);
+          rig.cut();
+        },
+      });
     // Intersection callbacks replace a layout read on every animation frame.
     const observer = new IntersectionObserver(([entry]) => {
       inView = entry.isIntersecting;
@@ -791,7 +952,15 @@ export default function CircuitGeoMap(props: Props) {
       observer.disconnect();
       document.removeEventListener("visibilitychange", wake);
     };
-  }, [ready, models, props.playing, props.follow, props.visible, props.cam]);
+  }, [
+    ready,
+    rig,
+    props.playing,
+    props.follow,
+    props.visible,
+    props.cam,
+    droneReady,
+  ]);
 
   return (
     <div
@@ -799,12 +968,17 @@ export default function CircuitGeoMap(props: Props) {
       data-map-ready={ready}
       data-terrain-ready={terrainReady}
       data-pit-focused={pitFocused}
+      data-chasing={chasing}
+      data-drone-ready={droneReady}
     >
       <div
         className="geo-map-canvas"
         ref={host}
         aria-label="Georeferenced aerial map of Circuit de la Sarthe"
       />
+      {chasing && (
+        <Atmosphere phase={phase} className="geo-atmosphere" layers="sky" />
+      )}
       {!ready && !error && (
         <div className="geo-map-loading">Loading IGN aerial imagery…</div>
       )}
@@ -822,31 +996,37 @@ export default function CircuitGeoMap(props: Props) {
         aria-label="Geographic map layers"
       >
         <button
+          className="btn small"
           aria-pressed={photography}
           onClick={() => setPhotography(!photography)}
         >
-          {photography ? <Layers size={15} /> : <MapIcon size={15} />}
-          <span>{photography ? "Aerial photography" : "IGN map"}</span>
-        </button>
-        <button aria-pressed={tilted} onClick={() => setTilted(!tilted)}>
-          <Navigation size={15} />
-          <span>{tilted ? "3D view" : "Overhead"}</span>
+          <Layers size={15} />
+          <span>Photo</span>
         </button>
         <button
+          className="btn small"
+          aria-pressed={tilted}
+          onClick={() => setTilted(!tilted)}
+        >
+          <Navigation size={15} />
+          <span>Tilt</span>
+        </button>
+        <button
+          className="btn small"
+          title={
+            buildingsCount > 0
+              ? `${buildingsCount.toLocaleString()} mapped buildings`
+              : undefined
+          }
           aria-pressed={buildingsVisible}
           disabled={!buildingsCount}
           onClick={() => setBuildingsVisible(!buildingsVisible)}
         >
           <Building2 size={15} />
-          <span>
-            Buildings
-            {buildingsCount > 0 && (
-              <small> · {buildingsCount.toLocaleString()}</small>
-            )}
-          </span>
+          <span>Buildings</span>
         </button>
         <button
-          className="geo-pit-button"
+          className="btn small geo-pit-button"
           disabled={!pitLane}
           aria-pressed={pitFocused}
           aria-label="Inspect pit lane"
@@ -861,15 +1041,20 @@ export default function CircuitGeoMap(props: Props) {
           <span>Pit lane</span>
         </button>
         <button
-          className="geo-relief-button"
+          className="btn small geo-relief-button"
           disabled={!terrainReady}
           aria-pressed={exaggeration !== 1}
           onClick={() => setExaggeration(exaggeration === 1 ? 3 : 1)}
         >
           <Mountain size={15} />
-          <span>Relief {exaggeration}×</span>
+          <span>Relief ×3</span>
         </button>
-        <button aria-label="Fit geographic circuit" onClick={props.onOverview}>
+        <button
+          className="btn small icon"
+          aria-label="Fit the whole circuit"
+          title="Fit the whole circuit"
+          onClick={props.onOverview}
+        >
           <RotateCcw size={15} />
         </button>
       </div>
@@ -880,31 +1065,37 @@ export default function CircuitGeoMap(props: Props) {
           aria-label="Pit lane guide"
         >
           <button
-            className="geo-pit-close"
+            className="btn ghost small icon geo-pit-close"
             aria-label="Close pit lane guide"
             onClick={props.onPitLaneClose}
           >
             <X size={15} />
           </button>
-          <span className="kicker">Pit entry · service lane · pit exit</span>
-          <h2>The pit lane</h2>
+                    <h2>The pit lane</h2>
           <p>
-            <i /> Mapped route · ≈ {(pitLane.lengthMetres / 1000).toFixed(2)} km
+            <i /> Mapped route, about {(pitLane.lengthMetres / 1000).toFixed(2)} km
           </p>
           <div
             className="geo-pit-views"
             role="group"
             aria-label="Pit lane close-ups"
           >
-            <button onClick={() => inspectPitDetail("entry")}>Entry</button>
+            <button className="btn small" onClick={() => inspectPitDetail("entry")}>
+              Entry
+            </button>
             <button
+              className="btn small"
               disabled={!pitLane.serviceCentre}
               onClick={() => inspectPitDetail("lane")}
             >
               Lane
             </button>
-            <button onClick={() => inspectPitDetail("exit")}>Exit</button>
-            <button onClick={inspectPitLane}>Full route</button>
+            <button className="btn small" onClick={() => inspectPitDetail("exit")}>
+              Exit
+            </button>
+            <button className="btn small" onClick={inspectPitLane}>
+              Whole lane
+            </button>
           </div>
           <p className="geo-pit-description">
             Follow the lane past the garages, through the mapped underpass and
@@ -919,23 +1110,17 @@ export default function CircuitGeoMap(props: Props) {
           </a>
         </div>
       )}
-      <div className="geo-source-caption">
-        <span>
-          {photography
-            ? "IGN orthophotography · 20 cm imagery"
-            : "IGN cartographic basemap"}
-        </span>
-        <span>
-          {terrainReady
-            ? `RGE ALTI terrain · ${exaggeration}× vertical scale`
+      <p className="geo-source-caption">
+        {photography ? "IGN aerial photography, 20 cm." : "IGN map."}{" "}
+        {chasing
+          ? "Flat photograph with a modelled driving line."
+          : terrainReady
+            ? `IGN terrain${exaggeration === 1 ? "" : `, heights ×${exaggeration}`}.`
             : contextFailed
-              ? "Terrain source unavailable"
-              : "Terrain source loading"}
-        </span>
-        {buildingsVisible && (
-          <span>IGN mapped footprints · sourced heights where available</span>
-        )}
-      </div>
+              ? "Terrain could not load."
+              : "Loading terrain…"}
+        {buildingsVisible && " Mapped building footprints."}
+      </p>
     </div>
   );
 }

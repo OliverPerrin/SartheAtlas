@@ -1,33 +1,52 @@
 :root {
-  /* Night-race surfaces: neutral carbon blacks, not navy. */
+  /* Surfaces: neutral carbon, never navy. */
   --bg: #060607;
   --bg2: #0b0b0d;
   --panel: #111114;
   --panel2: #18181c;
-  --line: rgba(255, 255, 255, 0.09);
-  --line2: rgba(255, 255, 255, 0.18);
+  --line: rgba(255, 255, 255, 0.1);
+  --line2: rgba(255, 255, 255, 0.2);
   --text: #f2f1ec;
-  --muted: #a09f99;
-  --dim: #7a7974;
-  /* WEC class colours: Hypercar red leads; LMP2 blue and LMGT3 orange complete
-     the tricolour used for stripes, light trails and section marks. */
-  --accent: #ff1f3d;
-  --accent-ink: #ffffff;
-  --accent-deep: #c4001f;
-  --blue: #ff1f3d;
+  --muted: #aeada6;
+  --dim: #85847e;
+  /* The three WEC class colours. Red is also the one action colour;
+     blue and orange only ever identify a class. */
   --hyper: #ff1f3d;
   --lmp2: #2f7bff;
   --gt3: #ff8a1f;
+  --accent: var(--hyper);
+  --accent-ink: #ffffff;
+  --accent-deep: #d90f2c;
+  --blue: var(--hyper);
   --tricolor: linear-gradient(90deg, var(--hyper) 0 33.34%, var(--lmp2) 0 66.67%, var(--gt3) 0);
-  --display: "Saira Condensed", "Barlow Condensed", "Arial Narrow", sans-serif;
-  --wide: "Saira", "Arial Black", sans-serif;
-  --serif: "Instrument Serif", "Times New Roman", serif;
-  --mono: "Geist Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
-  --sans: "Geist", "DM Sans", system-ui, sans-serif;
-  --radius: 14px;
+  /* Two typefaces: Saira for display, data and controls (its condensed cut
+     for dense names and numbers), Geist for reading. The serif and mono
+     tokens remain as aliases for older rules. */
+  --wide: "Saira", "Arial Black", system-ui, sans-serif;
+  --display: "Saira Condensed", "Saira", "Arial Narrow", sans-serif;
+  --sans: "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --serif: var(--wide);
+  --mono: var(--sans);
+  /* Type scale. */
+  --t-xs: 12.5px;
+  --t-sm: 14px;
+  --t-base: 16px;
+  --t-lg: 18px;
+  --t-xl: 21px;
+  --t-2xl: 28px;
+  --t-h3: clamp(22px, 2vw, 28px);
+  --t-h2: clamp(32px, 4.4vw, 64px);
+  --t-h1: clamp(44px, 7vw, 112px);
+  /* Controls. */
+  --ctl: 44px;
+  --ctl-sm: 34px;
+  --r-ctl: 6px;
+  --r-plate: 4px;
+  --radius: 10px;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in-out: cubic-bezier(0.76, 0, 0.24, 1);
   --gutter: clamp(16px, 3.4vw, 56px);
+  --header: 64px;
   font-family: var(--sans);
   color: var(--text);
   background: var(--bg);
@@ -78,9 +97,8 @@ p {
   margin: 0;
 }
 :focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 3px;
-  border-radius: 4px;
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
 }
 ::selection {
   background: var(--accent);
@@ -94,13 +112,10 @@ kbd {
   display: inline-flex;
   align-items: center;
   gap: 1px;
-  font:
-    500 10.5px/1 var(--mono);
+  font: 500 11px/1 ui-monospace, "SFMono-Regular", Menlo, monospace;
   padding: 3px 5px;
   border: 1px solid var(--line2);
-  border-bottom-width: 2px;
-  border-radius: 5px;
-  background: var(--panel2);
+  border-radius: 4px;
   color: var(--muted);
 }
 @media (prefers-reduced-motion: reduce) {

@@ -17,7 +17,7 @@
   display: grid;
   grid-template-rows: auto 1fr auto;
   overflow: hidden;
-  border-radius: 18px;
+  border-radius: var(--radius);
   border: 1px solid var(--line2);
   background: rgba(17, 17, 20, 0.92);
   box-shadow:
@@ -47,18 +47,6 @@
 .cmdp-input input::placeholder {
   color: var(--dim);
 }
-.cmdp-close {
-  display: grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
-  color: var(--muted);
-}
-.cmdp-close:hover {
-  background: var(--panel2);
-  color: var(--text);
-}
 .cmdp ul {
   list-style: none;
   margin: 0;
@@ -69,9 +57,7 @@
 .cmdp-group {
   display: block;
   padding: 12px 10px 6px;
-  font: 400 10.5px/1 var(--mono);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  font: 600 var(--t-xs) / 1 var(--wide);
   color: var(--dim);
 }
 .cmdp-item {
@@ -80,7 +66,7 @@
   align-items: center;
   gap: 14px;
   padding: 10px 12px;
-  border-radius: 10px;
+  border-radius: var(--r-ctl);
   cursor: pointer;
   color: var(--dim);
 }
@@ -95,7 +81,7 @@
   min-width: 0;
 }
 .cmdp-item strong {
-  font: 500 14.5px/1.2 var(--sans);
+  font: 600 14.5px/1.2 var(--wide);
   color: var(--text);
 }
 .cmdp-item small {
@@ -106,8 +92,8 @@
   color: var(--muted);
 }
 .cmdp-item[aria-selected="true"] {
-  background: rgba(255, 255, 255, 0.07);
-  color: var(--accent);
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text);
 }
 .cmdp-empty {
   padding: 34px 12px;
@@ -121,7 +107,7 @@
   gap: 16px;
   padding: 10px 16px;
   border-top: 1px solid var(--line);
-  font: 400 11px/1 var(--mono);
+  font: 400 12.5px/1 var(--sans);
   color: var(--dim);
 }
 .cmdp-foot span {

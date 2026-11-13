@@ -44,9 +44,9 @@ test("the first home render provides its poster and activation control without s
     assert.match(html, /fetchPriority="high"/i);
     assert.doesNotMatch(
       html,
-      /<iframe|Preparing the studio|Map of the Circuit de la Sarthe/,
+      /<iframe|Loading the 3D model|Map of the Circuit de la Sarthe/,
     );
-    assert.match(html, /Built for/);
+    assert.match(html, /taken apart/);
   } finally {
     await server.close();
     await rm(cacheDir, { recursive: true, force: true });

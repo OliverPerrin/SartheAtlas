@@ -8,9 +8,7 @@
 .drone-fallback {
   display: grid;
   place-items: center;
-  font: 400 12px/1 var(--mono);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  font: 500 var(--t-sm) / 1 var(--wide);
   color: var(--muted);
 }
 .drone-map {
@@ -83,65 +81,34 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  padding: clamp(84px, 9vw, 120px) var(--gutter) 26px;
+  padding: calc(var(--header) + clamp(20px, 3vw, 44px)) var(--gutter) 20px;
   display: grid;
   grid-template-columns: 1fr auto;
-  grid-template-rows: auto 1fr auto auto;
-  gap: 16px;
+  grid-template-rows: auto 1fr auto auto auto;
+  gap: 14px 16px;
 }
 .drone-hud > * {
   pointer-events: auto;
 }
+.drone-follow,
+.drone-toggle {
+  background: rgba(10, 10, 12, 0.72);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
 .drone-follow {
   grid-column: 2;
   justify-self: end;
-  display: flex;
-  gap: 4px;
-  padding: 4px;
-  border-radius: 999px;
-  background: rgba(10, 10, 12, 0.45);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  backdrop-filter: blur(16px) saturate(1.5);
-  -webkit-backdrop-filter: blur(16px) saturate(1.5);
-}
-.drone-follow button {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  height: 32px;
-  padding: 0 13px;
-  border-radius: 999px;
-  font: 500 12.5px/1 var(--sans);
-  color: rgba(255, 255, 255, 0.72);
-  transition:
-    background 0.25s,
-    color 0.25s;
-}
-.drone-follow button i {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--c);
-  box-shadow: 0 0 8px var(--c);
-}
-.drone-follow button[aria-pressed="true"] {
-  background: rgba(255, 255, 255, 0.92);
-  color: #0b0b0d;
+  align-self: start;
 }
 .drone-readout {
   grid-column: 1;
   grid-row: 3;
   align-self: end;
   display: grid;
-  gap: 8px;
+  gap: 12px;
   justify-items: start;
   text-shadow: 0 2px 20px rgba(0, 0, 0, 0.6);
-}
-.drone-label {
-  font: 400 11px/1 var(--mono);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.7);
 }
 .drone-readout strong {
   display: flex;
@@ -149,42 +116,43 @@
   gap: 10px;
 }
 .drone-readout strong b {
-  font: 800 clamp(64px, 9vw, 150px) / 0.8 var(--wide);
-  font-stretch: semi-expanded;
-  letter-spacing: -0.05em;
+  font: 700 clamp(64px, 9vw, 136px) / 0.8 var(--wide);
+  font-stretch: 110%;
+  letter-spacing: -0.04em;
   font-variant-numeric: tabular-nums;
 }
 .drone-readout strong small {
-  font: 400 14px/1 var(--mono);
-  color: rgba(255, 255, 255, 0.7);
+  font: 500 var(--t-sm) / 1 var(--wide);
+  color: rgba(255, 255, 255, 0.78);
 }
 .drone-sector {
   --c: var(--accent);
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  font: 700 clamp(20px, 2vw, 30px) / 1 var(--display);
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
+  font: 700 clamp(19px, 1.8vw, 26px) / 1 var(--wide);
 }
 .drone-sector::before {
   content: "";
-  width: 22px;
-  height: 4px;
-  border-radius: 2px;
+  width: 5px;
+  height: 1em;
+  border-radius: 1px;
   background: var(--c);
-  box-shadow: 0 0 12px var(--c);
 }
 .drone-meta {
   display: flex;
-  gap: 22px;
-  font: 400 12px/1 var(--mono);
+  gap: 28px;
+  margin: 0;
+}
+.drone-meta dt {
+  font: 600 var(--t-xs) / 1.3 var(--wide);
   color: rgba(255, 255, 255, 0.72);
 }
-.drone-meta b {
-  color: #fff;
-  font-weight: 500;
+.drone-meta dd {
+  margin: 3px 0 0;
+  font: 600 var(--t-base) / 1.2 var(--wide);
   font-variant-numeric: tabular-nums;
+  color: #fff;
 }
 .drone-toggle {
   grid-column: 2;
@@ -202,37 +170,33 @@
   height: 4px;
 }
 .drone-bar i {
-  border-radius: 2px;
-  background: color-mix(in srgb, var(--c) 70%, transparent);
+  border-radius: 1px;
+  background: color-mix(in srgb, var(--c) 75%, transparent);
 }
 .drone-bar em {
   position: absolute;
-  top: 50%;
+  top: -4px;
   left: calc(var(--f) * 100%);
-  width: 12px;
+  width: 3px;
   height: 12px;
-  margin: -6px 0 0 -6px;
-  border-radius: 50%;
+  margin-left: -1.5px;
+  border-radius: 1px;
   background: #fff;
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.25), 0 0 14px #fff;
 }
 .drone-credit {
-  position: absolute;
-  right: var(--gutter);
-  top: clamp(132px, 13vw, 172px);
-  font: 400 10px/1.3 var(--mono);
-  letter-spacing: 0.04em;
-  color: rgba(255, 255, 255, 0.55);
-  text-align: right;
-  max-width: 420px;
-  pointer-events: none;
+  grid-column: 1 / -1;
+  grid-row: 5;
+  font: 400 var(--t-xs) / 1.4 var(--sans);
+  color: rgba(255, 255, 255, 0.62);
+  max-width: 78ch;
 }
 @media (max-width: 720px) {
   .drone-hud {
     /* Clear the section heading, which sits over the top of the map. */
-    padding-top: 282px;
+    padding-top: 232px;
     grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr auto auto auto;
+    grid-template-rows: auto 1fr auto auto auto auto;
+    gap: 12px;
   }
   .drone-follow,
   .drone-toggle {
@@ -246,29 +210,18 @@
     grid-row: 5;
   }
   .drone-credit {
-    position: static;
     grid-row: 6;
-    text-align: left;
   }
-  .drone-follow button {
-    padding: 0 10px;
-    font-size: 11.5px;
+  .drone-meta {
+    gap: 20px;
   }
 }
 .drone:not(.ready)::after {
-  content: "Launching the drone…";
+  content: "Loading the aerial view…";
   position: absolute;
   inset: 0;
   display: grid;
   place-items: center;
-  font: 400 12px/1 var(--mono);
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.55);
-  animation: drone-wait 1.4s ease-in-out infinite alternate;
-}
-@keyframes drone-wait {
-  to {
-    color: rgba(255, 255, 255, 0.2);
-  }
+  font: 500 var(--t-sm) / 1 var(--wide);
+  color: rgba(255, 255, 255, 0.6);
 }

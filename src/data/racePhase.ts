@@ -10,7 +10,7 @@ export const phaseInfo: Record<
   { label: string; clock: string; hour: number; line: string }
 > = {
   day: { label: "Day", clock: "16:00", hour: 0, line: "Lights out, full sun" },
-  dusk: { label: "Dusk", clock: "21:40", hour: 6, line: "Golden hour on the Sarthe" },
+  dusk: { label: "Dusk", clock: "21:40", hour: 6, line: "Golden hour, lights on" },
   night: { label: "Night", clock: "02:30", hour: 11, line: "Headlights and nerve" },
   dawn: { label: "Dawn", clock: "06:10", hour: 14, line: "First light, eight hours left" },
 };

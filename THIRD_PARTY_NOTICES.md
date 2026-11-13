@@ -55,8 +55,7 @@ artwork.
 
 ## Fonts and software dependencies
 
-Saira, Saira Condensed, Geist, Geist Mono, Instrument Serif, Barlow Condensed
-and DM Sans are requested from Google Fonts. Their upstream
+Saira, Saira Condensed, Geist, Barlow Condensed and DM Sans are requested from Google Fonts. Their upstream
 font distributions carry the SIL Open Font License; preserve the supplied
 license if self-hosting them. JavaScript and Rust dependencies retain their own
 licenses. `package-lock.json` and `tools/circuit-mesh/Cargo.lock` record versions;

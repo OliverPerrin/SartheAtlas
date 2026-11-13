@@ -1,6 +1,4 @@
 import { useEffect, useState } from "react";
-import { lapTargets } from "./track.ts";
-import type { ClassName } from "./cars.ts";
 
 type Feature = {
   geometry: { type: string; coordinates: number[] | number[][] };
@@ -384,71 +382,6 @@ export function pointAt(
     longitude,
     latitude,
   };
-}
-
-// Illustrative apex speeds (km/h) for each corner severity in the source data (1 = slowest).
-const apex: Record<number, number> = {
-  1: 95,
-  2: 105,
-  3: 115,
-  4: 175,
-  5: 230,
-  6: 290,
-};
-
-export type SpeedModel = {
-  speeds: Float32Array;
-  step: number;
-  lapTime: number;
-  times: Float32Array;
-};
-
-// Builds a braking/acceleration-limited speed trace, then scales it to a typical class lap time.
-export function speedModel(track: TrackGeo, cls: ClassName): SpeedModel {
-  const step = 10;
-  const n = Math.ceil(track.length / step);
-  const target = lapTargets[cls];
-  const vmax = target.top / 3.6;
-  const brake = 3.4 * 9.81,
-    accel = 0.75 * 9.81;
-  const limit = new Float32Array(n).fill(vmax);
-  for (const c of track.corners) {
-    const v = Math.min(vmax, (apex[c.scale] ?? 180) / 3.6);
-    const i0 = Math.round((c.fraction * track.length) / step);
-    for (let i = 0; i < n; i++) {
-      const di = (i - i0 + n) % n; // distance after the apex
-      const bi = (i0 - i + n) % n; // distance before the apex
-      const after = Math.sqrt(v * v + 2 * accel * di * step);
-      const before = Math.sqrt(v * v + 2 * brake * bi * step);
-      limit[i] = Math.min(limit[i], after, before);
-    }
-  }
-  let k = 1;
-  for (let it = 0; it < 6; it++) {
-    let time = 0;
-    for (let i = 0; i < n; i++) time += step / Math.min(vmax, limit[i] * k);
-    k *= time / target.lap;
-  }
-  const speeds = new Float32Array(n);
-  const times = new Float32Array(n + 1);
-  for (let i = 0; i < n; i++) {
-    speeds[i] = Math.min(vmax, limit[i] * k);
-    times[i + 1] = times[i] + step / speeds[i];
-  }
-  return { speeds, step, lapTime: times[n], times };
-}
-
-export function fractionAtTime(m: SpeedModel, t: number, length: number) {
-  const tt = ((t % m.lapTime) + m.lapTime) % m.lapTime;
-  let lo = 0,
-    hi = m.times.length - 1;
-  while (hi - lo > 1) {
-    const mid = (lo + hi) >> 1;
-    if (m.times[mid] <= tt) lo = mid;
-    else hi = mid;
-  }
-  const u = (tt - m.times[lo]) / (m.times[lo + 1] - m.times[lo]);
-  return Math.min(1, ((lo + u) * m.step) / length);
 }
 
 export type TrackLoadOptions = { context?: boolean };

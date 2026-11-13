@@ -90,9 +90,11 @@ export const cornerNotes: Record<string, string> = {
     "Two slow chicanes before the finish line. Rhythm and kerb use matter, and the pit entry is on the right just after them.",
 };
 
-// Illustrative class lap targets, used only to calibrate the animation. These are not timing data.
+// Typical race-pace laps and Hunaudières top speeds for each class. The lap
+// model is trimmed to the lap time; top speed is what its power and drag give,
+// and the figure here is for labels. These are not timing data.
 export const lapTargets = {
   Hypercar: { lap: 207, top: 340, color: "#e4002b" },
-  LMP2: { lap: 216, top: 320, color: "#1d6bff" },
-  LMGT3: { lap: 235, top: 300, color: "#ff7a00" },
+  LMP2: { lap: 216, top: 325, color: "#1d6bff" },
+  LMGT3: { lap: 235, top: 295, color: "#ff7a00" },
 } as const;

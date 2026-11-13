@@ -13,14 +13,13 @@ import type {
   PreparedMeshSection,
   PreparedMeshMetadata,
 } from "../data/preparedBuildings.ts";
+import { fractionAtTime, speedModel } from "../data/lapModel.ts";
+import type { SpeedModel } from "../data/lapModel.ts";
 import {
-  fractionAtTime,
   pointAt,
-  speedModel,
   projectLngLat,
   terrainElevationAt,
 } from "../data/trackGeo.ts";
-import type { SpeedModel } from "../data/trackGeo.ts";
 import { SceneBoundary } from "./CarScene.tsx";
 import { Label, ViewCtx } from "./primitives.tsx";
 import type { ViewState } from "./primitives.tsx";

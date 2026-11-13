@@ -291,7 +291,42 @@ function pattern(s: Side, l: Livery, shape: Shape, gtCar: boolean) {
     default:
       break;
   }
-  if (gtCar) s.rect(0, 0.2, 1, 0.245, "#15171b");
+  if (gtCar) {
+    s.rect(0, 0.2, 1, 0.245, "#15171b");
+    // Carbon lower bumpers: the chin under the nose and the diffuser surround.
+    const rear = shape.body.frontAxle + shape.body.wheelbase / shape.body.length;
+    s.poly(
+      [
+        [rear + 0.105, 0.2],
+        [1, 0.2],
+        [1, 0.37],
+        [rear + 0.13, 0.33],
+      ],
+      "#14161a",
+    );
+    // Radiator exit in the bonnet, with its louvres.
+    const tf = shape.body.frontAxle;
+    s.poly(
+      [
+        [tf - 0.02, 0.915],
+        [tf + 0.05, 0.9],
+        [tf + 0.062, 1.01],
+        [tf - 0.02, 1.01],
+      ],
+      "#0c0e11",
+    );
+    for (let i = 0; i < 4; i++)
+      s.rect(tf - 0.008 + i * 0.016, 0.925, tf - 0.002 + i * 0.016, 1.01, "#2a2e35");
+    s.poly(
+      [
+        [0, 0.2],
+        [shape.body.frontAxle - 0.105, 0.2],
+        [shape.body.frontAxle - 0.115, 0.27],
+        [0, 0.31],
+      ],
+      "#14161a",
+    );
+  }
 }
 
 function windows(s: Side, shape: Shape) {

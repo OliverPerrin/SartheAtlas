@@ -22,6 +22,8 @@ export type DroneCarState = {
   /** Direction of travel, radians, measured from east toward south. */
   heading: number;
   visible: boolean;
+  /** 0 to 1: how hard the car is braking, for the tail lights. */
+  brake?: number;
 };
 
 type Rig = {
@@ -162,21 +164,20 @@ export function createDroneCars(
 
   const rigs: Rig[] = cast.map(({ car, entry }) => {
     const shape = shapes[car.id];
-    const body = new Body(shape.body);
+    const body = new Body(shape.body, "light");
     const { length: L, width: W, wheelR, tyreW } = body.spec;
     const group = new THREE.Group();
     const canvases = paintLivery(car, shape, entry, "livery");
     const map = keep(toTexture(canvases.map));
     const emissive = keep(toTexture(canvases.emissive));
-    const openings = keep(toTexture(canvases.openings, false));
+    // From the air the glass reads as dark tint painted on the shell, so the
+    // body stays one closed mesh with nothing to draw behind it.
     const paint = keep(
       new THREE.MeshLambertMaterial({
         map,
         emissiveMap: emissive,
         emissive: 0xffffff,
         emissiveIntensity: 0.6,
-        alphaMap: openings,
-        alphaTest: 0.5,
         side: THREE.DoubleSide,
       }),
     );
@@ -184,23 +185,6 @@ export function createDroneCars(
 
     const dark = keep(new THREE.MeshLambertMaterial({ color: 0x0c0d10 }));
     const carbon = keep(new THREE.MeshLambertMaterial({ color: 0x1a1c20 }));
-    // Something dark behind the window openings.
-    const cabin = new THREE.Mesh(
-      keep(
-        new THREE.BoxGeometry(
-          (shape.cockpit.to - shape.cockpit.from) * L * 0.92,
-          body.topAt(shape.cockpit.roof) - 0.32,
-          0.62,
-        ),
-      ),
-      dark,
-    );
-    cabin.position.set(
-      body.x((shape.cockpit.from + shape.cockpit.to) / 2),
-      0.2 + (body.topAt(shape.cockpit.roof) - 0.32) / 2,
-      0,
-    );
-    group.add(cabin);
     const tyre = keep(new THREE.CylinderGeometry(wheelR, wheelR, tyreW, 20));
     tyre.rotateX(Math.PI / 2);
     const rim = keep(new THREE.CylinderGeometry(wheelR * 0.62, wheelR * 0.62, tyreW + 0.012, 16));
@@ -278,7 +262,11 @@ export function createDroneCars(
       beam.position.set(L / 2 + 12.6, 0.05, at.z * 0.9);
       beam.renderOrder = 2;
       const tail = new THREE.Mesh(unit, additive(textures.tail));
-      tail.position.set(-L / 2 - 0.05, body.topAt(1) - 0.12, side * W * 0.34);
+      tail.position.set(
+        -L / 2 - 0.05,
+        body.topAt(1) - 0.12,
+        side * Math.min(W * 0.34, body.halfWidthAt(1) * 0.8),
+      );
       tail.scale.setScalar(0.75);
       tail.renderOrder = 3;
       lamps.push(lamp);
@@ -360,11 +348,21 @@ export function createDroneCars(
         rig.body.emissiveIntensity = look.panels;
         for (const beam of rig.beams)
           (beam.material as THREE.MeshBasicMaterial).opacity = look.beams * 0.55;
-        (rig.wash.material as THREE.MeshBasicMaterial).opacity = look.beams * 0.5;
+        // Brake lights: brighter and larger lamps, and more red on the road.
+        const brake = Math.min(1, Math.max(0, state.brake ?? 0));
+        (rig.wash.material as THREE.MeshBasicMaterial).opacity = Math.min(
+          1,
+          look.beams * 0.5 + brake * (0.25 + look.beams * 0.45),
+        );
         for (const lamp of rig.lamps)
           (lamp.material as THREE.MeshBasicMaterial).opacity = look.glow;
-        for (const tail of rig.tails)
-          (tail.material as THREE.MeshBasicMaterial).opacity = look.glow * 0.9;
+        for (const tail of rig.tails) {
+          (tail.material as THREE.MeshBasicMaterial).opacity = Math.min(
+            1,
+            look.glow * 0.9 * (0.55 + brake * 0.6) + brake * 0.3,
+          );
+          tail.scale.setScalar(0.75 + brake * 0.75);
+        }
         const shadow = rig.group.children.find((child) => child.renderOrder === -1);
         if (shadow)
           ((shadow as THREE.Mesh).material as THREE.MeshBasicMaterial).opacity = look.shadow;

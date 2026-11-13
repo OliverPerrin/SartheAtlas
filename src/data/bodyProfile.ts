@@ -21,10 +21,19 @@ export type BodySpec = {
   tubZ: Keys;
   spineY: Keys;
   tailCap: "paint" | "dark";
+  /** Plan corner radius at the nose and tail, metres (GT bumpers). */
+  noseRound?: number;
+  tailRound?: number;
+  /** How far the sill tucks under the doors between the arches, metres. */
+  tuck?: number;
 };
 
 // v coordinate of each section control point: floor → wheel well → side → fender crest → valley → cockpit → spine.
 const CONTROL_V = [0, 0.08, 0.14, 0.2, 0.45, 0.62, 0.67, 0.72, 0.85, 1];
+const smooth = (a: number, b: number, x: number) => {
+  const k = Math.min(1, Math.max(0, (x - a) / (b - a)));
+  return k * k * (3 - 2 * k);
+};
 export const V = {
   side: [0.2, 0.45] as const,
   crest: [0.45, 0.62] as const,
@@ -101,8 +110,11 @@ export class BodyProfile {
   rearX: number;
   wheelZ: number;
   private sections = new Map<number, P[]>();
-  constructor(spec: BodySpec) {
+  /** "light" halves the mesh density, for cars seen from the air. */
+  detail: "full" | "light";
+  constructor(spec: BodySpec, detail: "full" | "light" = "full") {
     this.spec = spec;
+    this.detail = detail;
     this.f = {};
     for (const key of [
       "floorY",
@@ -149,7 +161,7 @@ export class BodyProfile {
     const end = Math.min(1, Math.max(0, (t - 0.95) / 0.05));
     return {
       kick: (kind === "proto" ? 0.24 : 0.2) * Math.pow(rise, 1.35),
-      taper: 1 - (kind === "proto" ? 0.03 : 0.075) * end * end,
+      taper: kind === "proto" ? (1 - 0.03 * end * end) * this.plan(t) : this.plan(t),
       drop: (kind === "proto" ? 0 : 0.035) * end * end,
       // A GT bumper domes over the last centimetres, inside the body length.
       round:
@@ -158,7 +170,108 @@ export class BodyProfile {
           : 1 - 0.13 * Math.pow(Math.min(1, Math.max(0, (t - 0.984) / 0.016)), 2),
     };
   }
+  /**
+   * GT bumpers turn the corner in plan: a quarter circle of the given radius
+   * at each end. Returns the factor that scales the section's width there.
+   */
+  plan(t: number) {
+    const { length, noseRound = 0, tailRound = 0 } = this.spec;
+    const outer = Math.max(0.2, this.f.outerZ(t));
+    let k = 1;
+    for (const [r, s] of [
+      [noseRound, t * length],
+      [tailRound, (1 - t) * length],
+    ]) {
+      if (r <= 0 || s >= r) continue;
+      const radius = Math.min(r, outer * 0.6);
+      const d = Math.max(0, radius - s);
+      k = Math.min(
+        k,
+        (outer - radius + Math.sqrt(Math.max(0, radius * radius - d * d))) /
+          outer,
+      );
+    }
+    return k;
+  }
+  /** Half-width of the body in plan at a station, after the corner rounding. */
+  halfWidthAt(t: number) {
+    return this.f.outerZ(t) * (this.spec.kind === "gt" ? this.plan(t) : this.tail(t).taper);
+  }
+  /**
+   * A GT section: sill tucked under the door, a belly at full width, a
+   * rounded shoulder, then the greenhouse standing close to the body side.
+   * Control points keep the same v bands as the prototype section, so paint,
+   * glazing and details share one coordinate system.
+   */
+  private gtControls(t: number): P[] {
+    const f = this.f,
+      spec = this.spec;
+    const x = this.x(t);
+    const tail = this.tail(t);
+    const floor = f.floorY(t) + tail.kick;
+    const outer = f.outerZ(t);
+    const arch = this.archY(x, floor);
+    const inArch = arch > floor + 1e-6;
+    const R = spec.wheelR + spec.archGap;
+    const clear = Math.min(
+      ...[this.frontX, this.rearX].map((ax) => Math.max(0, Math.abs(x - ax) - R)),
+    );
+    const inner = Math.min(outer - 0.05, this.wheelZ - spec.tyreW / 2 - 0.035);
+    const low = outer - (spec.tuck ?? 0.04) * smooth(0, 0.3, clear);
+    const shoulder = Math.max(
+      f.shoulderY(t),
+      inArch ? arch + 0.012 : floor + 0.1,
+    );
+    // Over a wheel the fender rolls inboard from a low lip to its crest.
+    const crest = Math.max(
+      f.crestY(t) - tail.drop,
+      shoulder + (inArch ? 0.03 : 0.014),
+    );
+    const crestZ = Math.min(f.crestZ(t), outer - 0.02);
+    const valleyZ = Math.min(f.valleyZ(t), crestZ - 0.035);
+    let valley = Math.max(f.valleyY(t), floor + 0.06);
+    // Over a wheel the skin may only dip inboard of the well.
+    if (inArch)
+      valley = Math.max(valley, arch + 0.005 - Math.max(0, inner - valleyZ) * 0.6);
+    const finZ = crestZ - Math.min(0.05, (crestZ - valleyZ) * 0.45);
+    const fin =
+      valley < crest
+        ? crest - Math.min(0.012, (crest - valley) * 0.5)
+        : crest + (valley - crest) * 0.45;
+    const tubZ = Math.min(f.tubZ(t), valleyZ - 0.02);
+    const tub = Math.max(f.tubY(t), floor + 0.07);
+    const spine = Math.max(f.spineY(t), floor + 0.08);
+    const base = inArch ? arch : floor;
+    const points: P[] = [
+      [0, floor, 0],
+      [inner, floor, 0.08],
+      [inner, arch, 0.14],
+      [low, arch, 0.2],
+      [outer, base + (shoulder - base) * 0.5, 0.32],
+      [outer - 0.008, shoulder, 0.45],
+      [crestZ, crest, 0.62],
+      [finZ, fin, 0.67],
+      [valleyZ, valley, 0.72],
+      [tubZ, tub, 0.85],
+      [tubZ * 0.5, spine - (spine - tub) * 0.24, 0.93],
+      [0, spine, 1],
+    ];
+    const plan = this.plan(t);
+    // The bumpers dome over their last centimetres, inside the body length.
+    const lip = Math.max(
+      Math.pow(Math.min(1, Math.max(0, (t - 0.984) / 0.016)), 2) * 0.13,
+      Math.pow(Math.min(1, Math.max(0, (0.014 - t) / 0.014)), 2) * 0.11,
+    );
+    if (plan === 1 && lip === 0) return points;
+    const centre = (floor + spine) / 2;
+    return points.map(([z, y, v]) => [
+      z * plan * (1 - lip * 0.5),
+      centre + (y - centre) * (1 - lip),
+      v,
+    ]);
+  }
   controls(t: number): P[] {
+    if (this.spec.kind === "gt") return this.gtControls(t);
     const f = this.f;
     const x = this.x(t);
     const tail = this.tail(t);
@@ -207,18 +320,20 @@ export class BodyProfile {
   section(t: number) {
     const cached = this.sections.get(t);
     if (cached) return cached;
-    const section = chaikin(this.controls(t), 2);
+    const section = chaikin(this.controls(t), this.detail === "light" ? 1 : 2);
     if (this.sections.size < 8192) this.sections.set(t, section);
     return section;
   }
   samples() {
     const ts = new Set<number>();
-    const N = 150;
+    const light = this.detail === "light";
+    const N = light ? 64 : 150;
     for (let i = 0; i <= N; i++) ts.add(i / N);
     const R = this.spec.wheelR + this.spec.archGap;
+    const steps = light ? 10 : 24;
     for (const ax of [this.frontX, this.rearX]) {
-      for (let i = 0; i <= 24; i++) {
-        const dx = R * Math.cos((i / 24) * Math.PI);
+      for (let i = 0; i <= steps; i++) {
+        const dx = R * Math.cos((i / steps) * Math.PI);
         ts.add(this.t(ax + dx * 0.999));
       }
       ts.add(this.t(ax + R * 1.004));
@@ -227,6 +342,18 @@ export class BodyProfile {
     // Enough rows to resolve the rounded tail.
     for (const t of [0.955, 0.965, 0.975, 0.986, 0.989, 0.992, 0.995, 0.9975])
       ts.add(t);
+    // And the quarter-circle corners of a GT bumper, densest where they turn in.
+    const L = this.spec.length;
+    for (const [r, at] of [
+      [this.spec.noseRound ?? 0, (s: number) => s / L],
+      [this.spec.tailRound ?? 0, (s: number) => 1 - s / L],
+    ] as const)
+      if (r > 0) {
+        const turns = light ? 6 : 12;
+        for (let i = 1; i <= turns; i++) ts.add(at(r * Math.pow(i / turns, 2)));
+      }
+    if (this.spec.kind === "gt")
+      for (const t of [0.002, 0.005, 0.009]) ts.add(t);
     return [...ts].filter((t) => t >= 0 && t <= 1).sort((a, b) => a - b);
   }
   topAt(t: number) {
