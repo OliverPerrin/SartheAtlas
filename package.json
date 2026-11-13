@@ -12,7 +12,8 @@
     "mesh:build": "node scripts/build-circuit-mesh.mjs",
     "mesh:check": "node scripts/build-circuit-mesh.mjs --check",
     "mesh:test": "cargo test --locked --manifest-path tools/circuit-mesh/Cargo.toml",
-    "lap:table": "node scripts/lap-table.mjs"
+    "lap:table": "node scripts/lap-table.mjs",
+    "models:build": "node tools/blender/build.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",
@@ -29,6 +30,7 @@
     "@types/react-dom": "^19.2.7",
     "@types/three": "^0.186.0",
     "@vitejs/plugin-react": "^6.1.1",
+    "meshoptimizer": "^1.1.1",
     "oxlint": "^1.81.0",
     "prettier": "^3.9.9",
     "typescript": "~6.0.2",

@@ -363,15 +363,15 @@ function gtGlass(
 
 const protoCockpit = (tc = 0.47) => ({ from: tc - 0.16, to: tc + 0.1, roof: tc });
 
-const gt296: GtOpts = { L: 4.6, wb: 2.6, nose: 0.47, hood: 0.69, tail: 0.9, cowl: [0.26, 0.75], header: [0.42, 1.07], peak: [0.47, 1.09], back: [0.6, 1.085], deck: [0.73, 0.96], fender: 0.76, belt: 0.85, haunch: 0.93, cabin: 0.68, roofW: 0.52, hoodW: 0.5, waist: 0.87, noseR: 0.32, tailR: 0.28, lift: 0.05 };
-const gtCorvette: GtOpts = { L: 4.7, wb: 2.72, nose: 0.47, hood: 0.68, tail: 0.85, cowl: [0.265, 0.75], header: [0.44, 1.08], peak: [0.47, 1.1], back: [0.57, 1.095], deck: [0.82, 0.87], fender: 0.74, belt: 0.86, haunch: 0.92, cabin: 0.68, roofW: 0.52, hoodW: 0.52, waist: 0.92, noseR: 0.3, tailR: 0.25, lift: 0.06 };
-const gtMclaren: GtOpts = { L: 4.6, wb: 2.67, nose: 0.5, hood: 0.7, tail: 0.86, cowl: [0.205, 0.77], header: [0.375, 1.11], peak: [0.42, 1.12], back: [0.52, 1.115], deck: [0.72, 0.88], fender: 0.76, belt: 0.84, haunch: 0.9, cabin: 0.66, roofW: 0.5, hoodW: 0.5, waist: 0.94, noseR: 0.34, tailR: 0.3, lift: 0.05 };
-const gtVantage: GtOpts = { L: 4.55, wb: 2.7, nose: 0.5, hood: 0.76, tail: 0.86, cowl: [0.31, 0.8], header: [0.5, 1.11], peak: [0.55, 1.12], back: [0.62, 1.115], deck: [0.84, 0.87], fender: 0.77, belt: 0.87, haunch: 0.93, cabin: 0.68, roofW: 0.52, hoodW: 0.6, waist: 0.88, noseR: 0.36, tailR: 0.28, lift: 0.08 };
-const gtM4: GtOpts = { L: 4.9, W: 2.05, wb: 2.92, nose: 0.59, hood: 0.87, tail: 1.1, cowl: [0.28, 0.94], header: [0.47, 1.33], peak: [0.55, 1.36], back: [0.66, 1.355], deck: [0.83, 1.13], fender: 0.86, belt: 0.98, haunch: 1.02, cabin: 0.72, roofW: 0.58, hoodW: 0.66, waist: 0.94, noseR: 0.25, tailR: 0.22 };
-const gtMercedes: GtOpts = { L: 4.75, wb: 2.63, fa: 0.2, nose: 0.55, hood: 0.76, tail: 0.86, cowl: [0.37, 0.8], header: [0.52, 1.14], peak: [0.55, 1.15], back: [0.61, 1.145], deck: [0.79, 0.89], fender: 0.77, belt: 0.88, haunch: 0.92, cabin: 0.66, roofW: 0.5, hoodW: 0.62, waist: 0.89, noseR: 0.3, tailR: 0.3, lift: 0.07 };
-const gtFord: GtOpts = { L: 4.85, wb: 2.75, nose: 0.64, hood: 0.88, tail: 1.02, cowl: [0.305, 0.91], header: [0.5, 1.25], peak: [0.52, 1.26], back: [0.6, 1.25], deck: [0.77, 1.07], fender: 0.86, belt: 0.96, haunch: 1.02, cabin: 0.7, roofW: 0.56, hoodW: 0.66, waist: 0.93, noseR: 0.22, tailR: 0.22, lift: 0.04 };
-const gtLexus: GtOpts = { L: 4.75, wb: 2.73, nose: 0.65, hood: 0.89, tail: 0.98, cowl: [0.28, 0.93], header: [0.47, 1.29], peak: [0.52, 1.32], back: [0.62, 1.32], deck: [0.86, 1.01], fender: 0.88, belt: 0.97, haunch: 1.02, cabin: 0.72, roofW: 0.57, hoodW: 0.66, waist: 0.97, noseR: 0.25, tailR: 0.25 };
-const gtPorsche: GtOpts = { L: 4.62, W: 2.05, wb: 2.46, fa: 0.2, nose: 0.5, hood: 0.72, tail: 0.82, cowl: [0.225, 0.8], header: [0.415, 1.17], peak: [0.47, 1.19], back: [0.56, 1.18], deck: [0.86, 0.87], fender: 0.8, belt: 0.83, haunch: 0.93, cabin: 0.7, roofW: 0.54, hoodW: 0.52, waist: 0.9, noseR: 0.36, tailR: 0.32, lift: 0.07 };
+const gt296: GtOpts = { L: 4.6, W: 2.04, wb: 2.6, fa: 0.19, nose: 0.47, hood: 0.69, tail: 0.88, cowl: [0.261, 0.76], header: [0.42, 1.13], peak: [0.489, 1.17], back: [0.591, 1.14], deck: [0.739, 0.97], fender: 0.78, belt: 0.84, haunch: 0.95, cabin: 0.73, roofW: 0.54, hoodW: 0.55, waist: 0.88, noseR: 0.34, tailR: 0.28 };
+const gtCorvette: GtOpts = { L: 4.7, W: 2.04, wb: 2.72, fa: 0.19, nose: 0.47, hood: 0.71, tail: 0.87, cowl: [0.255, 0.79], header: [0.415, 1.13], peak: [0.489, 1.16], back: [0.574, 1.13], deck: [0.83, 0.92], fender: 0.78, belt: 0.86, haunch: 0.94, cabin: 0.73, roofW: 0.55, hoodW: 0.58, waist: 0.94, noseR: 0.34, tailR: 0.28 };
+const gtMclaren: GtOpts = { L: 4.6, W: 2.04, wb: 2.67, fa: 0.19, nose: 0.5, hood: 0.72, tail: 0.86, cowl: [0.228, 0.77], header: [0.38, 1.12], peak: [0.457, 1.17], back: [0.554, 1.14], deck: [0.728, 0.92], fender: 0.78, belt: 0.84, haunch: 0.92, cabin: 0.7, roofW: 0.52, hoodW: 0.56, waist: 0.95, noseR: 0.34, tailR: 0.28 };
+const gtVantage: GtOpts = { L: 4.55, W: 2.04, wb: 2.7, fa: 0.19, nose: 0.52, hood: 0.77, tail: 0.9, cowl: [0.352, 0.83], header: [0.512, 1.17], peak: [0.571, 1.2], back: [0.655, 1.16], deck: [0.835, 0.95], fender: 0.8, belt: 0.89, haunch: 0.93, cabin: 0.73, roofW: 0.55, hoodW: 0.6, waist: 0.93, noseR: 0.34, tailR: 0.28 };
+const gtM4: GtOpts = { L: 4.9, W: 2.05, wb: 2.92, fa: 0.19, nose: 0.6, hood: 0.88, tail: 1.08, cowl: [0.306, 0.95], header: [0.469, 1.31], peak: [0.561, 1.36], back: [0.663, 1.34], deck: [0.827, 1.12], fender: 0.88, belt: 0.98, haunch: 1.02, cabin: 0.77, roofW: 0.59, hoodW: 0.68, waist: 0.94, noseR: 0.34, tailR: 0.28 };
+const gtMercedes: GtOpts = { L: 4.75, W: 2.04, wb: 2.63, fa: 0.2, nose: 0.56, hood: 0.78, tail: 0.84, cowl: [0.371, 0.82], header: [0.516, 1.17], peak: [0.558, 1.22], back: [0.632, 1.18], deck: [0.789, 0.94], fender: 0.8, belt: 0.9, haunch: 0.93, cabin: 0.73, roofW: 0.54, hoodW: 0.62, waist: 0.93, noseR: 0.34, tailR: 0.28 };
+const gtFord: GtOpts = { L: 4.85, W: 2.04, wb: 2.75, fa: 0.19, nose: 0.66, hood: 0.89, tail: 1.01, cowl: [0.309, 0.94], header: [0.485, 1.26], peak: [0.536, 1.3], back: [0.623, 1.27], deck: [0.814, 1.06], fender: 0.88, belt: 0.98, haunch: 1.03, cabin: 0.76, roofW: 0.57, hoodW: 0.68, waist: 0.94, noseR: 0.34, tailR: 0.28 };
+const gtLexus: GtOpts = { L: 4.75, W: 2.04, wb: 2.73, fa: 0.19, nose: 0.66, hood: 0.9, tail: 0.97, cowl: [0.305, 0.95], header: [0.474, 1.26], peak: [0.526, 1.3], back: [0.627, 1.27], deck: [0.853, 1.03], fender: 0.89, belt: 0.98, haunch: 1.0, cabin: 0.76, roofW: 0.57, hoodW: 0.68, waist: 0.95, noseR: 0.34, tailR: 0.28 };
+const gtPorsche: GtOpts = { L: 4.62, W: 2.05, wb: 2.507, fa: 0.2279, nose: 0.53, hood: 0.79, tail: 0.8, cowl: [0.34, 0.9], header: [0.476, 1.22], peak: [0.541, 1.27], back: [0.667, 1.22], deck: [0.909, 0.9], fender: 0.85, belt: 0.93, haunch: 0.94, cabin: 0.75, roofW: 0.56, hoodW: 0.52, waist: 0.9, noseR: 0.34, tailR: 0.28 };
 
 export const shapes: Record<string, Shape> = {
   ferrari: {
@@ -503,7 +503,7 @@ export const shapes: Record<string, Shape> = {
     wing: { style: "swan", t: 0.93, y: 1.26, chord: 0.36, span: 1.84, plate: 0.3 },
     fin: false,
     grille: "wide",
-    ...gtGlass(gt296, 0.5, 0.7),
+    ...gtGlass(gt296, 0.543, 0.717),
     rim: "#1c1d20",
     splitter: 0.14,
   },
@@ -514,7 +514,7 @@ export const shapes: Record<string, Shape> = {
     wing: { style: "swan", t: 0.93, y: 1.27, chord: 0.36, span: 1.86, plate: 0.3 },
     fin: false,
     grille: "wide",
-    ...gtGlass(gtCorvette, 0.49, 0.7),
+    ...gtGlass(gtCorvette, 0.543, 0.766),
     rim: "#2a2c30",
     splitter: 0.14,
   },
@@ -525,7 +525,7 @@ export const shapes: Record<string, Shape> = {
     wing: { style: "swan", t: 0.93, y: 1.24, chord: 0.36, span: 1.84, plate: 0.3 },
     fin: false,
     grille: "low",
-    ...gtGlass(gtMclaren, 0.44, 0.68),
+    ...gtGlass(gtMclaren, 0.511, 0.696),
     rim: "#1a1b1e",
     splitter: 0.14,
   },
@@ -536,7 +536,7 @@ export const shapes: Record<string, Shape> = {
     wing: { style: "swan", t: 0.94, y: 1.25, chord: 0.36, span: 1.86, plate: 0.3 },
     fin: false,
     grille: "aston",
-    ...gtGlass(gtVantage, 0.57, 0.76),
+    ...gtGlass(gtVantage, 0.624, 0.813),
     rim: "#1c1d20",
     splitter: 0.14,
   },
@@ -547,7 +547,7 @@ export const shapes: Record<string, Shape> = {
     wing: { style: "swan", t: 0.94, y: 1.3, chord: 0.38, span: 1.9, plate: 0.3 },
     fin: false,
     grille: "kidney",
-    ...gtGlass(gtM4, 0.56, 0.8),
+    ...gtGlass(gtM4, 0.612, 0.816),
     rim: "#23262b",
     splitter: 0.14,
   },
@@ -558,7 +558,7 @@ export const shapes: Record<string, Shape> = {
     wing: { style: "swan", t: 0.94, y: 1.26, chord: 0.36, span: 1.86, plate: 0.3 },
     fin: false,
     grille: "slats",
-    ...gtGlass(gtMercedes, 0.585, 0.74),
+    ...gtGlass(gtMercedes, 0.611, 0.768),
     rim: "#1c1d20",
     splitter: 0.14,
   },
@@ -569,7 +569,7 @@ export const shapes: Record<string, Shape> = {
     wing: { style: "swan", t: 0.94, y: 1.3, chord: 0.38, span: 1.9, plate: 0.3 },
     fin: false,
     grille: "mustang",
-    ...gtGlass(gtFord, 0.55, 0.74),
+    ...gtGlass(gtFord, 0.604, 0.794),
     rim: "#23262b",
     splitter: 0.14,
   },
@@ -580,7 +580,7 @@ export const shapes: Record<string, Shape> = {
     wing: { style: "swan", t: 0.94, y: 1.29, chord: 0.38, span: 1.9, plate: 0.3 },
     fin: false,
     grille: "spindle",
-    ...gtGlass(gtLexus, 0.53, 0.78),
+    ...gtGlass(gtLexus, 0.606, 0.821),
     rim: "#1c1d20",
     splitter: 0.14,
   },
@@ -591,7 +591,7 @@ export const shapes: Record<string, Shape> = {
     wing: { style: "swan", t: 0.93, y: 1.3, chord: 0.4, span: 1.9, plate: 0.32 },
     fin: false,
     grille: "low",
-    ...gtGlass(gtPorsche, 0.5, 0.72),
+    ...gtGlass(gtPorsche, 0.6, 0.792),
     rim: "#1a1b1e",
     splitter: 0.14,
   },

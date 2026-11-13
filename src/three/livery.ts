@@ -115,7 +115,7 @@ class Side {
   }
 }
 
-function pattern(s: Side, l: Livery, shape: Shape, gtCar: boolean) {
+function pattern(s: Side, l: Livery, shape: Shape, gtCar: boolean, modelled = false) {
   const { second, accent } = l;
   const tc = shape.cockpit.roof;
   switch (l.pattern) {
@@ -291,7 +291,8 @@ function pattern(s: Side, l: Livery, shape: Shape, gtCar: boolean) {
     default:
       break;
   }
-  if (gtCar) {
+  if (gtCar && modelled) s.rect(0, 0.2, 1, 0.245, "#15171b");
+  else if (gtCar) {
     s.rect(0, 0.2, 1, 0.245, "#15171b");
     // Carbon lower bumpers: the chin under the nose and the diffuser surround.
     const rear = shape.body.frontAxle + shape.body.wheelbase / shape.body.length;
@@ -407,11 +408,16 @@ export type LiveryCanvases = {
   openings: HTMLCanvasElement;
 };
 
+/**
+ * `modelled` paints for a mesh from tools/blender: its glass, vents and lower
+ * bumpers are real geometry, so nothing is painted or cut out for them.
+ */
 export function paintLivery(
   car: Car,
   shape: Shape,
   entry: Entry,
   mode: PaintMode,
+  modelled = false,
 ): LiveryCanvases {
   const map = document.createElement("canvas");
   map.width = W;
@@ -427,7 +433,8 @@ export function paintLivery(
   actx.fillRect(0, 0, W, H);
   for (const side of [-1, 1] as const) {
     const aperture = new Side(actx, side);
-    for (const panel of glazingPanels(shape)) aperture.poly(panel, "#000000");
+    if (!modelled)
+      for (const panel of glazingPanels(shape)) aperture.poly(panel, "#000000");
   }
   const rough = document.createElement("canvas");
   rough.width = W / 4;
@@ -479,11 +486,11 @@ export function paintLivery(
       ctx.fillStyle = weave;
       ctx.fillRect(0, s.top, W, BH);
     }
-    if (mode === "livery") pattern(s, entry.livery, shape, gtCar);
+    if (mode === "livery") pattern(s, entry.livery, shape, gtCar, modelled);
     // Floor, wheel wells and lower sill.
     s.rect(0, -0.01, 1, 0.2, "#14161a");
     s.rect(0, 0.2, 1, gtCar ? 0.215 : 0.235, "#1b1e23");
-    windows(s, shape);
+    if (!modelled) windows(s, shape);
     if (mode === "livery") {
       numberPanels(s, entry, car, shape, gtCar);
       lettering(s, entry, car, shape, gtCar, base);

@@ -20,6 +20,9 @@ import { shapes } from "./shapes.ts";
 import type { Shape } from "./shapes.ts";
 import { glazingPanels } from "./glazing.ts";
 import { archLipGeometry } from "./bodyParts.ts";
+import { readCarMesh } from "./carGlb.ts";
+import type { CarMesh } from "./carGlb.ts";
+import { hasModel, modelUrl } from "../data/carModels.ts";
 import type { SkinPoint } from "./glazing.ts";
 import { slickTyreGeometry } from "./tyre.ts";
 import { CabinOverview, BrakeOverview } from "./DetailPreview.tsx";
@@ -212,6 +215,7 @@ function BodyShell({
   entry,
   paint,
   fontsReady,
+  mesh,
 }: {
   body: Body;
   shape: Shape;
@@ -219,21 +223,29 @@ function BodyShell({
   entry: Entry;
   paint: PaintMode;
   fontsReady: boolean;
+  /** A modelled exterior replaces the procedural shell; its geometry is shared. */
+  mesh: CarMesh | null;
 }) {
   const view = useView();
   const { rule, selected, hovered, ghost } = usePartLook("body");
-  const geometry = useMemo(() => body.geometry(), [body]);
-  useEffect(() => () => geometry.dispose(), [geometry]);
+  const modelled = !!mesh;
+  const geometry = useMemo(() => mesh?.shell ?? body.geometry(), [body, mesh]);
+  useEffect(
+    () => () => {
+      if (!mesh) geometry.dispose();
+    },
+    [geometry, mesh],
+  );
   const tex = useMemo(() => {
     void fontsReady;
-    const c = paintLivery(car, shape, entry, paint);
+    const c = paintLivery(car, shape, entry, paint, modelled);
     return {
       map: toTexture(c.map),
       emissive: toTexture(c.emissive),
       rough: toTexture(c.rough, false),
       openings: toTexture(c.openings, false),
     };
-  }, [car, shape, entry, paint, fontsReady]);
+  }, [car, shape, entry, paint, fontsReady, modelled]);
   useEffect(
     () => () => {
       tex.map.dispose();
@@ -252,12 +264,12 @@ function BodyShell({
       raycast={see ? () => null : undefined}
     >
       <meshPhysicalMaterial
-        key={rule ? "rule" : "paint"}
+        key={`${rule ? "rule" : "paint"}${modelled ? "-mesh" : ""}`}
         color={rule ?? "#ffffff"}
         map={rule ? null : tex.map}
         roughnessMap={rule ? null : tex.rough}
-        alphaMap={tex.openings}
-        alphaTest={see ? 0.01 : 0.5}
+        alphaMap={modelled ? null : tex.openings}
+        alphaTest={modelled ? 0 : see ? 0.01 : 0.5}
         emissiveMap={tex.emissive}
         emissive={selected ? "#3d7bff" : hovered ? "#6f9bff" : "#ffffff"}
         emissiveIntensity={
@@ -273,6 +285,127 @@ function BodyShell({
         side={THREE.DoubleSide}
       />
     </mesh>
+  );
+}
+
+/** Where a modelled car's lamps are, for the glow drawn after dark. */
+function lampAnchors(mesh: CarMesh) {
+  const centre = (geometry: THREE.BufferGeometry | undefined, rear: boolean) => {
+    if (!geometry) return null;
+    const p = geometry.getAttribute("position");
+    const box = new THREE.Box3();
+    const point = new THREE.Vector3();
+    for (let i = 0; i < p.count; i++)
+      if (p.getZ(i) > 0.02) box.expandByPoint(point.fromBufferAttribute(p, i));
+    if (box.isEmpty()) return null;
+    const at = box.getCenter(new THREE.Vector3());
+    // A light bar spans the tail: glow from its outer third, not its middle.
+    if (rear) at.z = box.max.z * 0.7;
+    return at;
+  };
+  return {
+    front: centre(mesh.lamp_front ?? mesh.lens, false),
+    rear: centre(mesh.lamp_rear, true),
+  };
+}
+
+/** The pieces of a modelled exterior other than the painted shell. */
+function ModelParts({
+  mesh,
+  group,
+  color,
+}: {
+  mesh: CarMesh;
+  group: "body" | "lights";
+  color: string;
+}) {
+  const view = useView();
+  const { rule, selected, hovered, ghost } = usePartLook("body");
+  const see = ghost || view.xray;
+  if (group === "lights")
+    return (
+      <group>
+        {mesh.lens && (
+          <mesh geometry={mesh.lens}>
+            <Mat color="#09131c" metal={0.35} rough={0.14} coat={1} side={THREE.DoubleSide} />
+          </mesh>
+        )}
+        {mesh.lamp_front && (
+          <mesh geometry={mesh.lamp_front}>
+            <Mat
+              color="#e2f1ff"
+              emissive="#c9e5ff"
+              emissiveIntensity={view.night ? 5 : 1.8}
+              rough={0.14}
+              side={THREE.DoubleSide}
+            />
+          </mesh>
+        )}
+        {mesh.lamp_rear && (
+          <mesh geometry={mesh.lamp_rear}>
+            <Mat
+              color="#ec1629"
+              emissive="#ec1629"
+              emissiveIntensity={view.night ? 2.6 : 0.7}
+              rough={0.2}
+              coat={1}
+              side={THREE.DoubleSide}
+            />
+          </mesh>
+        )}
+        {mesh.amber && (
+          <mesh geometry={mesh.amber}>
+            <Mat color="#f08a12" emissive="#f08a12" emissiveIntensity={view.night ? 1.6 : 0.4} rough={0.3} side={THREE.DoubleSide} />
+          </mesh>
+        )}
+      </group>
+    );
+  if (view.xray) return null;
+  return (
+    <group>
+      {mesh.glass && (
+        <mesh geometry={mesh.glass} raycast={see ? () => null : undefined}>
+          <meshPhysicalMaterial
+            color={rule ?? "#34474f"}
+            metalness={0}
+            roughness={rule ? 0.5 : 0.07}
+            ior={1.5}
+            envMapIntensity={0.85}
+            emissive={selected ? "#3d7bff" : hovered ? "#6f9bff" : "#000000"}
+            emissiveIntensity={selected ? 0.4 : 0.2}
+            transparent
+            opacity={see ? 0.06 : rule ? 0.85 : 0.62}
+            depthWrite={false}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+      )}
+      {mesh.paint && (
+        <mesh geometry={mesh.paint} castShadow>
+          <Mat color={color} metal={0.08} rough={0.34} coat={1} />
+        </mesh>
+      )}
+      {mesh.trim && (
+        <mesh geometry={mesh.trim} castShadow>
+          <Mat color="#101215" rough={0.55} side={THREE.DoubleSide} />
+        </mesh>
+      )}
+      {mesh.dark && (
+        <mesh geometry={mesh.dark}>
+          <Mat color="#060709" rough={0.85} side={THREE.DoubleSide} />
+        </mesh>
+      )}
+      {mesh.mesh && (
+        <mesh geometry={mesh.mesh}>
+          <Mat color="#0b0d10" metal={0.3} rough={0.62} side={THREE.DoubleSide} />
+        </mesh>
+      )}
+      {mesh.chrome && (
+        <mesh geometry={mesh.chrome}>
+          <Mat color="#b9bfc7" metal={0.95} rough={0.25} side={THREE.DoubleSide} />
+        </mesh>
+      )}
+    </group>
   );
 }
 
@@ -1655,7 +1788,8 @@ const noRaycast = () => null;
  * At night the lamps actually light the scene: a flare at each headlight, two
  * beams thrown along the ground ahead, and a red wash behind the tail.
  */
-function NightLights({ body }: { body: Body }) {
+function NightLights({ body, mesh }: { body: Body; mesh: CarMesh | null }) {
+  const anchors = useMemo(() => (mesh ? lampAnchors(mesh) : null), [mesh]);
   const view = useView();
   const on =
     view.night &&
@@ -1712,7 +1846,9 @@ function NightLights({ body }: { body: Body }) {
   return (
     <group>
       {[1, -1].map((side) => {
-        const lamp = body.surfaceAt(0.068, 0.58, side, 0.03);
+        const lamp =
+          anchors?.front?.clone().multiply(new THREE.Vector3(1, 1, side)).add(new THREE.Vector3(0.03, 0, 0)) ??
+          body.surfaceAt(0.068, 0.58, side, 0.03);
         return (
           <group key={side}>
             <sprite position={lamp} scale={[0.62, 0.62, 1]} raycast={noRaycast}>
@@ -1745,11 +1881,15 @@ function NightLights({ body }: { body: Body }) {
       {[1, -1].map((side) => (
         <sprite
           key={side}
-          position={[
-            -L / 2 - 0.03,
-            body.topAt(1) - 0.1,
-            side * Math.min(body.spec.width * 0.34, body.halfWidthAt(1) * 0.8),
-          ]}
+          position={
+            anchors?.rear
+              ? [-L / 2 - 0.03, anchors.rear.y, side * anchors.rear.z]
+              : [
+                  -L / 2 - 0.03,
+                  body.topAt(1) - 0.1,
+                  side * Math.min(body.spec.width * 0.34, body.halfWidthAt(1) * 0.8),
+                ]
+          }
           scale={[0.5, 0.5, 1]}
           raycast={noRaycast}
         >
@@ -1805,6 +1945,8 @@ export function CarModel({
   onDetailReady,
 }: ModelProps) {
   const { shape, body } = useBody(car);
+  // Suspends until the modelled exterior has loaded; null means none exists.
+  const mesh = hasModel(car.id) ? readCarMesh(modelUrl(car.id)) : null;
   const view = useView();
   const teardown = useTeardown();
   const detail = studyDetailPolicy(
@@ -1862,13 +2004,20 @@ export function CarModel({
             entry={entry}
             paint={paint}
             fontsReady={fontsReady}
+            mesh={mesh}
           />
           {shape.fin && <Fin body={body} shape={shape} color={exterior} />}
-          <Glazing body={body} shape={shape} />
-          <SkinDetails body={body} shape={shape} car={car} />
-          <Mirrors body={body} shape={shape} color={exterior} />
-          {!proto && <ArchLips body={body} />}
-          <Grille body={body} shape={shape} />
+          {mesh ? (
+            <ModelParts mesh={mesh} group="body" color={exterior} />
+          ) : (
+            <>
+              <Glazing body={body} shape={shape} />
+              <SkinDetails body={body} shape={shape} car={car} />
+              <Mirrors body={body} shape={shape} color={exterior} />
+              {!proto && <ArchLips body={body} />}
+              <Grille body={body} shape={shape} />
+            </>
+          )}
           <Callouts system="body" body={body} shape={shape} />
         </Part>
       )}
@@ -1897,9 +2046,15 @@ export function CarModel({
           riseLayer="cooling"
           {...common}
         >
-          <HeadLights body={body} shape={shape} />
-          <TailLights body={body} shape={shape} />
-          <NightLights body={body} />
+          {mesh ? (
+            <ModelParts mesh={mesh} group="lights" color={exterior} />
+          ) : (
+            <>
+              <HeadLights body={body} shape={shape} />
+              <TailLights body={body} shape={shape} />
+            </>
+          )}
+          <NightLights body={body} mesh={mesh} />
           <Callouts system="lights" body={body} shape={shape} />
         </Part>
       )}

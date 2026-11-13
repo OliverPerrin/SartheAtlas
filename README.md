@@ -76,6 +76,7 @@ The circuit now uses IGN orthorectified aerial imagery, RGE ALTI ground elevatio
 - Photo-led homepage whose light follows the race: day, dusk, night and dawn each have their own photograph, colour grade and live effects (sun and dust, headlight trails, stars, mist), and the same switch relights the aerial lap, the studio and the car stills.
 - Aerial lap: a chase camera over IGN imagery follows 3D car studies drawn inside the map at real speed from the start line, with brake lights, headlight beams and a lit circuit after dark.
 - One interface system across every page: Saira and Geist, class-coloured number plates, one set of buttons and toggles, and red as the only action colour.
+- Modelled LMGT3 exteriors: the nine GT cars draw a subdivision-surface body authored by scripts run headless in Blender (`tools/blender`, `npm run models:build`), loaded as a compressed mesh on demand. Hypercars and the Oreca still use the procedural study body.
 - Consistent car stills: every car family and race entry is rendered from the built-in studies in the same studio (`scripts/study-renders`), with lamps-on night versions.
 - An explicit Start 3D viewer control for the creator-hosted exteriors; only the selected model loads.
 - Stable exterior camera framing, fullscreen, fit/reset/zoom controls and optional turntable. Local engineering views also offer day/night modes.
