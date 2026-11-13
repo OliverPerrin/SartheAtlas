@@ -220,6 +220,7 @@ export function createDroneRig(
     /** Forget the camera's momentum, e.g. when the chase starts or jumps. */
     cut() {
       zoom = null;
+      drift = 0;
     },
     /**
      * Fly the chase camera for one frame. `dt` is real seconds, so the camera
