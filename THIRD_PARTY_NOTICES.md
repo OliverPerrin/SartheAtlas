@@ -66,3 +66,11 @@ consult each distribution's license when redistributing dependencies.
 Vehicle, manufacturer, team, championship and circuit names identify the
 subjects. No trademark rights or endorsement are granted. Sarthe Atlas is not
 affiliated with the ACO, FIA, FIA WEC, IMSA, manufacturers or teams.
+
+## Modelled car exteriors
+
+The meshes in `public/models` are authored by the scripts in `tools/blender`
+and released under this repository's MIT licence. Blender (GPL) is the
+authoring tool only; nothing from it is redistributed. Reference photographs
+were consulted while writing the scripts. None is stored in the repository and
+nothing was traced from them beyond overall dimensions.

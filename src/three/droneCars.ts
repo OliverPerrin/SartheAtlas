@@ -4,6 +4,8 @@ import type { CustomLayerInterface, Map as GeoMap } from "maplibre-gl";
 import { Body } from "./body.ts";
 import { shapes } from "./shapes.ts";
 import { paintLivery, toTexture } from "./livery.ts";
+import { loadCarMesh } from "./carGlb.ts";
+import { hasModel, modelUrl } from "../data/carModels.ts";
 import type { Car } from "../data/cars.ts";
 import type { Entry } from "../data/entries.ts";
 import type { Phase } from "../data/racePhase.ts";
@@ -161,13 +163,19 @@ export function createDroneCars(
       }),
     );
   const unit = keep(new THREE.PlaneGeometry(1, 1));
+  const darkPart = keep(
+    new THREE.MeshLambertMaterial({ color: 0x0c0d10, side: THREE.DoubleSide }),
+  );
+  let disposed = false;
+  let host: GeoMap | null = null;
 
   const rigs: Rig[] = cast.map(({ car, entry }) => {
     const shape = shapes[car.id];
     const body = new Body(shape.body, "light");
     const { length: L, width: W, wheelR, tyreW } = body.spec;
     const group = new THREE.Group();
-    const canvases = paintLivery(car, shape, entry, "livery");
+    const modelled = hasModel(car.id);
+    const canvases = paintLivery(car, shape, entry, "livery", modelled);
     const map = keep(toTexture(canvases.map));
     const emissive = keep(toTexture(canvases.emissive));
     // From the air the glass reads as dark tint painted on the shell, so the
@@ -181,7 +189,38 @@ export function createDroneCars(
         side: THREE.DoubleSide,
       }),
     );
-    group.add(new THREE.Mesh(keep(body.geometry()), paint));
+    const shell = new THREE.Mesh(keep(body.geometry()), paint);
+    group.add(shell);
+    if (modelled) {
+      // The modelled exterior arrives a moment later and replaces the
+      // procedural shell; its geometry is cached and shared, so it is not ours
+      // to dispose.
+      shell.visible = false;
+      void loadCarMesh(modelUrl(car.id, true)).then((parts) => {
+        if (disposed) return;
+        if (!parts) {
+          shell.visible = true;
+          return;
+        }
+        shell.geometry = parts.shell;
+        shell.visible = true;
+        const looks: Record<string, THREE.Material> = {
+          glass: keep(new THREE.MeshLambertMaterial({ color: 0x0a1116 })),
+          lens: keep(new THREE.MeshLambertMaterial({ color: 0x0a1116 })),
+          paint: keep(new THREE.MeshLambertMaterial({ color: entry.livery.base })),
+          chrome: keep(new THREE.MeshLambertMaterial({ color: 0x9aa0a8 })),
+          lamp_front: keep(new THREE.MeshBasicMaterial({ color: 0xeaf4ff })),
+          lamp_rear: keep(new THREE.MeshBasicMaterial({ color: 0xff2238 })),
+          amber: keep(new THREE.MeshBasicMaterial({ color: 0xff9020 })),
+        };
+        for (const [name, geometry] of Object.entries(parts)) {
+          if (name === "shell") continue;
+          const part = new THREE.Mesh(geometry, looks[name] ?? darkPart);
+          group.add(part);
+        }
+        host?.triggerRepaint();
+      });
+    }
 
     const dark = keep(new THREE.MeshLambertMaterial({ color: 0x0c0d10 }));
     const carbon = keep(new THREE.MeshLambertMaterial({ color: 0x1a1c20 }));
@@ -286,7 +325,6 @@ export function createDroneCars(
   });
 
   let renderer: THREE.WebGLRenderer | null = null;
-  let host: GeoMap | null = null;
   const projection = new THREE.Matrix4();
   const local = new THREE.Matrix4();
   const upright = new THREE.Matrix4().makeRotationX(Math.PI / 2);
@@ -390,6 +428,7 @@ export function createDroneCars(
       this.dispose();
     },
     dispose() {
+      disposed = true;
       disposables.splice(0).forEach((item) => item.dispose());
       // The WebGL context belongs to the map; only release three's state.
       renderer?.dispose();

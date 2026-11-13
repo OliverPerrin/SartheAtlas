@@ -371,7 +371,7 @@ const gtM4: GtOpts = { L: 4.9, W: 2.05, wb: 2.92, nose: 0.59, hood: 0.87, tail: 
 const gtMercedes: GtOpts = { L: 4.75, wb: 2.63, fa: 0.2, nose: 0.55, hood: 0.76, tail: 0.86, cowl: [0.37, 0.8], header: [0.52, 1.14], peak: [0.55, 1.15], back: [0.61, 1.145], deck: [0.79, 0.89], fender: 0.77, belt: 0.88, haunch: 0.92, cabin: 0.66, roofW: 0.5, hoodW: 0.62, waist: 0.89, noseR: 0.3, tailR: 0.3, lift: 0.07 };
 const gtFord: GtOpts = { L: 4.85, wb: 2.75, nose: 0.64, hood: 0.88, tail: 1.02, cowl: [0.305, 0.91], header: [0.5, 1.25], peak: [0.52, 1.26], back: [0.6, 1.25], deck: [0.77, 1.07], fender: 0.86, belt: 0.96, haunch: 1.02, cabin: 0.7, roofW: 0.56, hoodW: 0.66, waist: 0.93, noseR: 0.22, tailR: 0.22, lift: 0.04 };
 const gtLexus: GtOpts = { L: 4.75, wb: 2.73, nose: 0.65, hood: 0.89, tail: 0.98, cowl: [0.28, 0.93], header: [0.47, 1.29], peak: [0.52, 1.32], back: [0.62, 1.32], deck: [0.86, 1.01], fender: 0.88, belt: 0.97, haunch: 1.02, cabin: 0.72, roofW: 0.57, hoodW: 0.66, waist: 0.97, noseR: 0.25, tailR: 0.25 };
-const gtPorsche: GtOpts = { L: 4.62, W: 2.05, wb: 2.46, fa: 0.2, nose: 0.5, hood: 0.72, tail: 0.82, cowl: [0.225, 0.8], header: [0.415, 1.17], peak: [0.47, 1.19], back: [0.56, 1.18], deck: [0.86, 0.87], fender: 0.8, belt: 0.83, haunch: 0.93, cabin: 0.7, roofW: 0.54, hoodW: 0.52, waist: 0.9, noseR: 0.36, tailR: 0.32, lift: 0.07 };
+const gtPorsche: GtOpts = { L: 4.62, W: 2.05, wb: 2.507, fa: 0.228, nose: 0.53, hood: 0.78, tail: 0.82, cowl: [0.34, 0.9], header: [0.476, 1.215], peak: [0.54, 1.27], back: [0.667, 1.22], deck: [0.91, 0.885], fender: 0.85, belt: 0.92, haunch: 0.945, cabin: 0.74, roofW: 0.555, hoodW: 0.52, waist: 0.9, noseR: 0.36, tailR: 0.32 };
 
 export const shapes: Record<string, Shape> = {
   ferrari: {
@@ -591,7 +591,7 @@ export const shapes: Record<string, Shape> = {
     wing: { style: "swan", t: 0.93, y: 1.3, chord: 0.4, span: 1.9, plate: 0.32 },
     fin: false,
     grille: "low",
-    ...gtGlass(gtPorsche, 0.5, 0.72),
+    ...gtGlass(gtPorsche, 0.6, 0.79),
     rim: "#1a1b1e",
     splitter: 0.14,
   },
