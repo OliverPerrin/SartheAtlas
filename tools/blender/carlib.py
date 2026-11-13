@@ -339,13 +339,18 @@ class Car:
             gm.normal_update()
             for v in gm.verts:
                 v.co -= v.normal * 0.006
-        self.shell = self.add(bm, "shell", "shell")
-        self.shell_bm = bmesh.new()
-        self.shell_bm.from_mesh(self.shell.data)
-        self.shell_bm.normal_update()
-        self.shell_bm.faces.ensure_lookup_table()
+        # The shell stays editable until finish(): pockets cut into it and
+        # decals copy patches from it.
+        self.shell_bm = bm
+        bm.normal_update()
         if glass:
             self.glass = self.add(gm, "glass", "glass")
+
+    def finish(self):
+        """Writes the shell once every pocket has been cut."""
+        bm = self.shell_bm
+        self.shell_bm = None
+        self.shell = self.add(bm, "shell", "shell")
         return self.shell
 
     # --- objects --------------------------------------------------------
@@ -364,6 +369,21 @@ class Car:
         (self.preview if preview else self.objects).append(obj)
         return obj
 
+    def _frame(self, at, toward, side):
+        """Origin and axes of a view: looking along d, u to the right, v up."""
+        origin = self.bl(at[0], at[1], at[2] * side)
+        d = Vector((-toward[0], -toward[2] * side, toward[1])).normalized()
+        if abs(d.z) > 0.9:
+            return origin, d, Vector((-1, 0, 0)), Vector((0, -side, 0))
+        v = Vector((0, 0, 1))
+        v = (v - d * v.dot(d)).normalized()
+        u = v.cross(d)
+        outboard = Vector((0, -side, 0))
+        ref = outboard if abs(u.dot(outboard)) > 0.3 else Vector((-1, 0, 0))
+        if u.dot(ref) < 0:
+            u = -u
+        return origin, d, u, v
+
     def decal(self, name, material, at, toward, polys, mirror=True, offset=0.003, depth=0.3):
         """Cuts the patch of the shell seen through convex outlines.
 
@@ -377,20 +397,7 @@ class Car:
         """
         out = bmesh.new()
         for side in (1, -1) if mirror else (1,):
-            origin = self.bl(at[0], at[1], at[2] * side)
-            d = Vector((-toward[0], -toward[2] * side, toward[1])).normalized()
-            if abs(d.z) > 0.9:
-                u = Vector((-1, 0, 0))  # rearward
-                v = Vector((0, -side, 0))  # outboard
-            else:
-                v = Vector((0, 0, 1))
-                v = (v - d * v.dot(d)).normalized()
-                u = v.cross(d)
-                outboard = Vector((0, -side, 0))
-                rearward = Vector((-1, 0, 0))
-                ref = outboard if abs(u.dot(outboard)) > 0.3 else rearward
-                if u.dot(ref) < 0:
-                    u = -u
+            origin, d, u, v = self._frame(at, toward, side)
             for poly in polys:
                 pts = [origin + u * p[0] + v * p[1] for p in poly]
                 self._decal_piece(out, pts, d, origin, depth)
@@ -402,6 +409,102 @@ class Car:
         for vert in out.verts:
             vert.co += vert.normal * offset
         return self.add(out, name, material)
+
+    def pocket(self, name, material, at, toward, polys, sink=0.05, mirror=True, depth=0.3, wall="dark", slats=None):
+        """Cuts convex openings into the shell and recesses a floor behind them.
+
+        Same view convention as decal(). The shell loses the faces inside each
+        outline; they come back `sink` metres along the view direction as the
+        floor, joined to the opening by walls. `slats` = (count, material,
+        width, "u" or "v") hangs louvres across the opening, part-way down.
+        """
+        floor = bmesh.new()
+        walls = bmesh.new()
+        louvres = bmesh.new()
+        bm = self.shell_bm
+        for side in (1, -1) if mirror else (1,):
+            origin, d, u, v = self._frame(at, toward, side)
+            for poly in polys:
+                pts = [origin + u * p[0] + v * p[1] for p in poly]
+                centre = sum(pts, Vector()) / len(pts)
+                radius = max((p - centre).length for p in pts) + 0.02
+                n = len(pts)
+                area = sum((pts[i] - centre).cross(pts[(i + 1) % n] - centre).dot(d) for i in range(n))
+                planes = []
+                for i in range(n):
+                    a, b = pts[i], pts[(i + 1) % n]
+                    normal = (b - a).cross(d)
+                    if area < 0:
+                        normal = -normal
+                    if normal.length > 1e-9:
+                        planes.append((a, normal.normalized()))
+
+                def near():
+                    out = []
+                    for face in bm.faces:
+                        if face.normal.dot(d) > -0.05:
+                            continue
+                        rel = face.calc_center_median() - centre
+                        along = rel.dot(d)
+                        if abs(along + (centre - origin).dot(d)) > depth:
+                            continue
+                        if (rel - d * along).length <= radius:
+                            out.append(face)
+                    return out
+
+                for co, no in planes:
+                    faces = near()
+                    if not faces:
+                        break
+                    geom = set(faces)
+                    for face in faces:
+                        geom.update(face.edges)
+                        geom.update(face.verts)
+                    bmesh.ops.bisect_plane(bm, geom=list(geom), plane_co=co, plane_no=no, clear_outer=False, clear_inner=False)
+                inside = [f for f in near() if all((f.calc_center_median() - co).dot(no) < 1e-6 for co, no in planes)]
+                if not inside:
+                    continue
+                chosen = set(inside)
+                moved = {}
+                for face in inside:
+                    verts = []
+                    for vert in face.verts:
+                        if vert not in moved:
+                            moved[vert] = floor.verts.new(vert.co + d * sink)
+                        verts.append(moved[vert])
+                    floor.faces.new(verts)
+                    for edge in face.edges:
+                        if sum(1 for f in edge.link_faces if f in chosen) == 1:
+                            a, b = edge.verts
+                            walls.faces.new([walls.verts.new(a.co), walls.verts.new(b.co), walls.verts.new(b.co + d * sink), walls.verts.new(a.co + d * sink)])
+                if slats:
+                    count, _mat, width, axis = slats
+                    across = u if axis == "u" else v
+                    lo = min((p - origin).dot(across) for p in pts)
+                    hi = max((p - origin).dot(across) for p in pts)
+                    for k in range(count):
+                        mid = lo + (hi - lo) * (k + 0.5) / count
+                        strip = bmesh.new()
+                        copy = {}
+                        for face in inside:
+                            strip.faces.new([copy.setdefault(vert, strip.verts.new(vert.co)) for vert in face.verts])
+                        for sign in (1, -1):
+                            if strip.faces:
+                                bmesh.ops.bisect_plane(strip, geom=strip.verts[:] + strip.edges[:] + strip.faces[:], plane_co=origin + across * (mid + sign * width / 2), plane_no=across * sign, clear_outer=True)
+                        new = {vert: louvres.verts.new(vert.co + d * sink * 0.35) for vert in strip.verts}
+                        for face in strip.faces:
+                            louvres.faces.new([new[vert] for vert in face.verts])
+                        strip.free()
+                bmesh.ops.delete(bm, geom=inside, context="FACES")
+        bm.normal_update()
+        if not floor.faces:
+            print(f"WARNING {self.spec['id']}: pocket {name} is empty")
+        for mesh, suffix, mat in ((floor, "", material), (walls, "_wall", wall), (louvres, "_slats", slats[1] if slats else wall)):
+            if mesh.faces:
+                bmesh.ops.remove_doubles(mesh, verts=mesh.verts[:], dist=1e-5)
+                self.add(mesh, name + suffix, mat, smooth=suffix == "")
+            else:
+                mesh.free()
 
     def _decal_piece(self, out, pts, direction, origin, depth):
         centre = sum(pts, Vector()) / len(pts)
@@ -533,6 +636,37 @@ class Car:
                 bm.faces.new(rings[0])
                 bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
                 self.add(bm, f"well_{label}_{'r' if side > 0 else 'l'}", material, smooth=False)
+
+    def common(self, door, mirror, louvres=True, diffuser=0.42):
+        """What every GT3 car here has: arch lips and liners, door shut lines,
+        mirrors, louvres over the front wheels and a diffuser opening.
+
+        door = (centre s, half length, sill y, belt y); mirror = (s, y).
+        """
+        self.arch_lips()
+        self.wheel_wells()
+        ds, dh, y0, y1 = door
+        mid = (y0 + y1) / 2
+        self.decal("door", "dark", (ds, mid, self.W / 2), (0, 0, -1), stroke([(-dh + 0.04, y1 - mid), (-dh, 0.0), (-dh + 0.08, y0 - mid), (dh - 0.06, y0 - mid), (dh, 0.0), (dh - 0.02, y1 - mid)], 0.008), offset=0.002)
+        ms, my = mirror
+        half = self.f["half"](ms)
+        for side in (1, -1):
+            self.blob("mirror", "paint", (ms, my, (half + 0.07) * side), (0.17, 0.1, 0.2))
+            self.tube("mirror_stalk", "trim", [self.bl(ms + 0.03, my - 0.08, (half - 0.13) * side), self.bl(ms + 0.01, my - 0.03, (half + 0.02) * side)], radius=0.014)
+        if louvres:
+            top = self.f["crest_y"](self.front_s) + 0.1
+            self.pocket("wing_louvres", "dark", (self.front_s, top, self.f["half"](self.front_s) - 0.15), (0, -1, 0), [rrect(-0.19 + i * 0.1, -0.07, -0.13 + i * 0.1, 0.07, 0.012) for i in range(4)], sink=0.03)
+        if diffuser:
+            self.pocket("diffuser", "trim", (self.L, diffuser, 0), (-1, 0, 0), [[(-0.72, -0.08), (0.72, -0.08), (0.63, 0.08), (-0.63, 0.08)]], sink=0.07, mirror=False, depth=0.5)
+
+    def exhausts(self, y, zs, radius=0.05):
+        for z in zs:
+            self.tube("exhaust", "chrome", [self.bl(self.L - 0.1, y, z), self.bl(self.L + 0.02, y, z)], radius=radius, segments=16)
+
+    def preview_all(self, wing_s, wing_y):
+        self.preview_wheels()
+        self.preview_floor()
+        self.preview_wing(wing_s, wing_y)
 
     def preview_wheels(self):
         for axle in (self.front_s, self.rear_s):

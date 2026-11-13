@@ -4,7 +4,17 @@
  * study body. The procedural `Body` stays the dimensional skeleton for both:
  * wheels, internals and callouts are placed from it.
  */
-export const modelledCars: readonly string[] = ["porsche"];
+export const modelledCars: readonly string[] = [
+  "porsche",
+  "vantage",
+  "m4",
+  "corvette",
+  "296",
+  "mclaren",
+  "mercedes",
+  "ford",
+  "lexus",
+];
 
 export const hasModel = (id: string) => modelledCars.includes(id);
 

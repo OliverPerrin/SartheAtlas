@@ -39,6 +39,7 @@ for car_id in ids:
         car = carlib.Car(module.SPEC)
         car.build_shell(levels=levels)
         module.details(car)
+        car.finish()
         carlib.set_paint(module.SPEC.get("preview_paint", (0.7, 0.7, 0.7)))
         if render_dir and not suffix:
             module.preview(car)

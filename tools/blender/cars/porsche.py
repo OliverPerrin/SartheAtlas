@@ -47,19 +47,18 @@ def details(car):
     car.decal("lamp_lens", "lens", lamp, look, [oval(0, 0, 0.12, 0.125, 28)])
     car.decal("lamp_ring", "chrome", lamp, look, [oval(0, 0, 0.132, 0.137, 28)], offset=0.002)
     car.decal("lamp_led", "lamp_front", lamp, look, [oval(u, v, 0.022, 0.03, 10) for u in (-0.05, 0.05) for v in (-0.05, 0.05)], offset=0.005)
-    car.decal("intake", "mesh", (0.02, 0.36, 0), (1, 0, 0), [rrect(-0.5, -0.07, 0.5, 0.09, 0.03)], mirror=False)
-    car.decal("intake_side", "mesh", (0.2, 0.4, 0.72), (0.8, 0, -0.6), [[(-0.13, -0.09), (0.15, -0.07), (0.15, 0.08), (-0.11, 0.05)]])
+    car.pocket("intake", "mesh", (0.02, 0.36, 0), (1, 0, 0), [rrect(-0.5, -0.07, 0.5, 0.09, 0.03)], sink=0.1, mirror=False, slats=(3, "trim", 0.012, "v"))
+    car.pocket("intake_side", "mesh", (0.2, 0.4, 0.72), (0.8, 0, -0.6), [[(-0.13, -0.09), (0.15, -0.07), (0.15, 0.08), (-0.11, 0.05)]], sink=0.08)
     # Bonnet: two outlets ahead of the screen; louvres over the front wheels.
-    car.decal("bonnet_vent", "dark", (1.08, 0.9, 0.26), (0, -1, 0), [rrect(-0.1, -0.11, 0.1, 0.11, 0.03)])
-    car.decal("wing_louvres", "dark", (1.05, 0.9, 0.86), (0, -1, 0), [rrect(-0.19 + i * 0.1, -0.07, -0.13 + i * 0.1, 0.07, 0.012) for i in range(4)])
+    car.pocket("bonnet_vent", "dark", (1.08, 0.9, 0.26), (0, -1, 0), [rrect(-0.1, -0.11, 0.1, 0.11, 0.03)], sink=0.05)
+    car.pocket("wing_louvres", "dark", (1.05, 0.9, 0.86), (0, -1, 0), [rrect(-0.19 + i * 0.1, -0.07, -0.13 + i * 0.1, 0.07, 0.012) for i in range(4)], sink=0.03)
     # Doors and sills.
     car.decal("door", "dark", (2.22, 0.5, 1.0), (0, 0, -1), stroke([(-0.6, 0.38), (-0.62, 0.0), (-0.55, -0.34), (0.5, -0.34), (0.56, 0.0), (0.52, 0.4)], 0.008), offset=0.002)
     # Tail: a light bar from corner to corner, the lid grille, the diffuser.
     car.decal("light_bar", "lamp_rear", (L, 0.8, 0), (-1, 0, 0), [rrect(-0.95, -0.02, 0.95, 0.02, 0.0)], mirror=False, depth=0.5)
     car.decal("light_bar_side", "lamp_rear", (4.45, 0.8, 0.9), (-0.5, 0, -0.85), [rrect(-0.2, -0.02, 0.22, 0.02, 0.0)], depth=0.4)
-    car.decal("lid_grille", "mesh", (3.97, 1.0, 0), (0, -1, 0), [rrect(-0.24, -0.4, 0.2, 0.4, 0.05)], mirror=False)
-    car.decal("lid_slats", "trim", (3.97, 1.0, 0), (0, -1, 0), [rrect(-0.22, z - 0.012, 0.18, z + 0.012, 0.0) for z in [-0.33 + 0.066 * i for i in range(11)]], mirror=False, offset=0.006)
-    car.decal("diffuser", "trim", (L, 0.42, 0), (-1, 0, 0), [[(-0.72, -0.1), (0.72, -0.1), (0.62, 0.12), (-0.62, 0.12)]], mirror=False, depth=0.5)
+    car.pocket("lid_grille", "mesh", (3.97, 1.0, 0), (0, -1, 0), [rrect(-0.24, -0.4, 0.2, 0.4, 0.05)], sink=0.04, mirror=False, slats=(11, "trim", 0.024, "v"))
+    car.pocket("diffuser", "trim", (L, 0.42, 0), (-1, 0, 0), [[(-0.72, -0.1), (0.72, -0.1), (0.62, 0.12), (-0.62, 0.12)]], sink=0.07, mirror=False, depth=0.5)
     for z in (-0.09, 0.09):
         car.tube("exhaust", "chrome", [car.bl(L - 0.1, 0.42, z), car.bl(L + 0.03, 0.42, z)], radius=0.05, segments=16)
     # Mirrors on the doors.
