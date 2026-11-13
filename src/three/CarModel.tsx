@@ -19,6 +19,7 @@ import type { PaintMode } from "./livery.ts";
 import { shapes } from "./shapes.ts";
 import type { Shape } from "./shapes.ts";
 import { glazingPanels } from "./glazing.ts";
+import { archLipGeometry } from "./bodyParts.ts";
 import type { SkinPoint } from "./glazing.ts";
 import { slickTyreGeometry } from "./tyre.ts";
 import { CabinOverview, BrakeOverview } from "./DetailPreview.tsx";
@@ -407,7 +408,7 @@ function SkinLine({
 
 function Glazing({ body, shape }: { body: Body; shape: Shape }) {
   const gt = body.spec.kind === "gt";
-  const { from, to, roof } = shape.cockpit;
+  const { from, roof } = shape.cockpit;
   const windows = useMemo(() => glazingPanels(shape), [shape]);
   const view = useView();
   return (
@@ -427,7 +428,7 @@ function Glazing({ body, shape }: { body: Body; shape: Shape }) {
               <SkinLine
                 body={body}
                 points={
-                  i === 1
+                  gt || i === 1
                     ? [...points, points[0]]
                     : [points[3], points[0], points[1], points[2]]
                 }
@@ -438,27 +439,34 @@ function Glazing({ body, shape }: { body: Body; shape: Shape }) {
               />
             </group>
           ))}
-          <SkinLine
-            body={body}
-            points={[
-              [from + 0.025, 0.875],
-              [from + 0.04, 0.955],
-              [from + 0.105, 0.976],
-            ]}
-            side={side}
-            radius={0.0045}
-            color={CARBON}
-            lift={0.018}
-          />
-          {gt && (
+          {gt && shape.glass && (
+            // The sun strip across the top of a GT windscreen.
+            <Skin
+              body={body}
+              side={side}
+              points={[
+                [shape.glass.header - 0.05, 0.874],
+                [shape.glass.header - 0.012, 0.868],
+                [shape.glass.header - 0.012, 1],
+                [shape.glass.header - 0.05, 1],
+              ]}
+              color="#0b0d10"
+              rough={0.4}
+              lift={0.005}
+            />
+          )}
+          {!gt && (
             <SkinLine
               body={body}
               points={[
-                [to - 0.105, 0.738],
-                [to - 0.105, 0.839],
+                [from + 0.025, 0.875],
+                [from + 0.04, 0.955],
+                [from + 0.105, 0.976],
               ]}
               side={side}
-              radius={0.004}
+              radius={0.0045}
+              color={CARBON}
+              lift={0.018}
             />
           )}
         </group>
@@ -489,6 +497,11 @@ function SkinDetails({
   const tf = body.spec.frontAxle;
   const rearMid = ["296", "corvette", "mclaren"].includes(car.id);
   const view = useView();
+  // GT doors hang between the windscreen base and the B pillar.
+  const pillar = shape.glass?.pillar ?? to - 0.1;
+  const intake = gt
+    ? body.t(body.rearX + body.spec.wheelR + body.spec.archGap) - 0.12
+    : to + 0.035;
   if (view.xray) return null;
   return (
     <group>
@@ -500,12 +513,12 @@ function SkinDetails({
             points={
               gt
                 ? [
-                    [from + 0.025, 0.728],
+                    [from + 0.035, 0.735],
                     [from + 0.04, 0.47],
-                    [from + 0.07, 0.265],
-                    [to - 0.015, 0.265],
-                    [to + 0.018, 0.49],
-                    [to - 0.026, 0.73],
+                    [from + 0.06, 0.265],
+                    [pillar + 0.004, 0.265],
+                    [pillar + 0.018, 0.49],
+                    [pillar + 0.012, 0.735],
                   ]
                 : [
                     [from + 0.022, 0.72],
@@ -566,10 +579,10 @@ function SkinDetails({
               body={body}
               side={side}
               points={[
-                [to + 0.035, 0.3],
-                [to + 0.13, 0.33],
-                [to + 0.16, 0.58],
-                [to + 0.05, 0.49],
+                [intake, 0.3],
+                [intake + 0.095, 0.33],
+                [intake + 0.125, 0.58],
+                [intake + 0.015, 0.49],
               ]}
               color="#090d11"
               rough={0.8}
@@ -580,8 +593,8 @@ function SkinDetails({
               body={body}
               side={side}
               points={[
-                [to - 0.075, 0.67],
-                [to - 0.055, 0.67],
+                [pillar - 0.03, 0.66],
+                [pillar - 0.012, 0.66],
               ]}
               radius={0.008}
               color="#171c20"
@@ -601,7 +614,7 @@ function SkinDetails({
             rough={0.8}
           />
           {/* Flush filler cap and two visible quick-release body fasteners. */}
-          {[gt ? to + 0.05 : to + 0.075, 0.13].map((t, i) => {
+          {[gt ? pillar + 0.1 : to + 0.075, 0.13].map((t, i) => {
             const p = body.surfaceAt(t, i ? 0.66 : 0.64, side, 0.005);
             const n = body
               .surfaceAt(t, i ? 0.66 : 0.64, side, 1)
@@ -640,7 +653,7 @@ function HeadLights({ body, shape }: { body: Body; shape: Shape }) {
       return [
         Array.from({ length: 24 }, (_, i) => {
           const a = (i / 24) * Math.PI * 2;
-          return [0.059 + Math.cos(a) * 0.032, 0.575 + Math.sin(a) * 0.084];
+          return [0.068 + Math.cos(a) * 0.03, 0.598 + Math.sin(a) * 0.064];
         }),
       ];
     }
@@ -676,7 +689,7 @@ function HeadLights({ body, shape }: { body: Body; shape: Shape }) {
       return [
         Array.from({ length: 25 }, (_, i) => {
           const a = (i / 24) * Math.PI * 2;
-          return [0.059 + Math.cos(a) * 0.023, 0.575 + Math.sin(a) * 0.062];
+          return [0.068 + Math.cos(a) * 0.022, 0.598 + Math.sin(a) * 0.047];
         }),
       ];
     if (style === "claw" || style === "vertical")
@@ -1019,15 +1032,15 @@ function Mirrors({
   color: string;
 }) {
   const gtCar = body.spec.kind === "gt";
-  const t = shape.cockpit.from + (gtCar ? 0.05 : 0.02);
+  const t = shape.cockpit.from + (gtCar ? 0.055 : 0.02);
   return (
     <>
       {[-1, 1].map((s) => {
-        const p = body.pointAt(t, gtCar ? V.window[0] - 0.01 : V.crest[1], s);
+        const p = body.pointAt(t, gtCar ? V.window[0] - 0.025 : V.crest[1], s);
         const head: V3 = [
-          p.x,
-          p.y + (gtCar ? 0.06 : 0.07),
-          p.z + s * (gtCar ? 0.14 : 0.03),
+          p.x + (gtCar ? 0.02 : 0),
+          p.y + (gtCar ? 0.075 : 0.07),
+          p.z + s * (gtCar ? 0.15 : 0.03),
         ];
         return (
           <group key={s}>
@@ -1056,6 +1069,19 @@ function Mirrors({
         );
       })}
     </>
+  );
+}
+
+/** A dark lip round each wheel opening, as on a GT car's arch extensions. */
+function ArchLips({ body }: { body: Body }) {
+  const geometry = useMemo(() => archLipGeometry(body), [body]);
+  useEffect(() => () => geometry.dispose(), [geometry]);
+  const view = useView();
+  if (view.xray) return null;
+  return (
+    <mesh geometry={geometry}>
+      <Mat color="#0d0f12" rough={0.7} metal={0} />
+    </mesh>
   );
 }
 
@@ -1131,12 +1157,16 @@ function Grille({ body, shape }: { body: Body; shape: Shape }) {
   }, [g]);
   if (!shapesList.length) return null;
   const x = body.spec.length / 2 + 0.004;
-  const capTop = Math.max(...body.controls(0).map((p) => p[1]));
+  const face = body.controls(0);
+  const capTop = Math.max(...face.map((p) => p[1]));
   const k = Math.min(1, (capTop - 0.16) / 0.38);
+  // The nose turns its corners, so the opening keeps to the flat between them.
+  const reach = { kidney: 0.3, aston: 0.45, slats: 0.4, spindle: 0.4, mustang: 0.5, wide: 0.6, low: 0.55, none: 1 }[g];
+  const kz = Math.min(1, (Math.max(...face.map((p) => p[0])) - 0.03) / reach);
   return (
     <group
       position={[x, 0.12 * (1 - k), 0]}
-      scale={[1, k, 1]}
+      scale={[kz, k, 1]}
       rotation={[0, Math.PI / 2, 0]}
     >
       {shapesList.map((s, i) => (
@@ -1174,13 +1204,15 @@ function Floor({ body }: { body: Body }) {
   const diffX0 = body.rearX + 0.1,
     diffX1 = -L / 2 + 0.02;
   const plateFront = L / 2 - 0.1;
+  // Strakes stay inside the tail's plan, which turns in on a GT car.
+  const tailHalf = gtCar ? body.halfWidthAt(1) + 0.12 : Wd / 2;
   // The splitter follows the nose in plan: a bowed leading edge with
   // rounded corners, rather than a square tray.
   const splitter = useMemo(() => {
     const back = L / 2 - 0.2,
       front = L / 2 + (gtCar ? 0.075 : 0.055),
-      half = body.f.outerZ(0.02) * 0.985,
-      r = 0.16;
+      half = body.f.outerZ(0.06) * 0.985,
+      r = gtCar ? Math.max(0.16, (body.spec.noseRound ?? 0) * 0.75) : 0.16;
     const outline = new THREE.Shape();
     outline.moveTo(back, -half);
     outline.lineTo(front - r, -half);
@@ -1228,7 +1260,7 @@ function Floor({ body }: { body: Body }) {
       {[-0.52, -0.26, 0, 0.26, 0.52].map((z) => (
         <Block
           key={z}
-          p={[(diffX0 + diffX1) / 2, y + 0.085, z * (Wd / 2)]}
+          p={[(diffX0 + diffX1) / 2, y + 0.085, z * tailHalf]}
           s={[diffX0 - diffX1, 0.15, 0.012]}
           r={[0, 0, -0.17]}
           color={CARBON2}
@@ -1236,7 +1268,7 @@ function Floor({ body }: { body: Body }) {
       ))}
       <Block
         p={[(diffX0 + diffX1) / 2, y + 0.16, 0]}
-        s={[diffX0 - diffX1 + 0.02, 0.012, Wd * 0.76]}
+        s={[diffX0 - diffX1 + 0.02, 0.012, tailHalf * 1.52]}
         r={[0, 0, -0.2]}
         color={CARBON}
       />
@@ -1485,7 +1517,8 @@ function TailLights({ body, shape }: { body: Body; shape: Shape }) {
   const L = body.spec.length;
   const x = -L / 2 - 0.006;
   // The GT bumper domes in at its edges, so its lights stay inboard.
-  const w = body.spec.width * (gtCar ? 0.8 : 1);
+  const half = body.halfWidthAt(1);
+  const w = gtCar ? half * 2.3 : body.spec.width;
   const floor = body.f.floorY(1) + body.tail(1).kick;
   const top = body.topAt(1) - body.tail(1).drop;
   const y = top - (gtCar ? 0.11 : 0.045);
@@ -1523,7 +1556,6 @@ function TailLights({ body, shape }: { body: Body; shape: Shape }) {
       break;
   }
   const mid = (floor + top) / 2;
-  const half = body.f.outerZ(1) * body.tail(1).taper;
   return (
     <group>
       {bars.map((b, i) => (
@@ -1710,6 +1742,26 @@ function NightLights({ body }: { body: Body }) {
           </group>
         );
       })}
+      {[1, -1].map((side) => (
+        <sprite
+          key={side}
+          position={[
+            -L / 2 - 0.03,
+            body.topAt(1) - 0.1,
+            side * Math.min(body.spec.width * 0.34, body.halfWidthAt(1) * 0.8),
+          ]}
+          scale={[0.5, 0.5, 1]}
+          raycast={noRaycast}
+        >
+          <spriteMaterial
+            map={textures.wash}
+            blending={THREE.AdditiveBlending}
+            depthWrite={false}
+            toneMapped={false}
+            transparent
+          />
+        </sprite>
+      ))}
       <mesh
         position={[-L / 2 - 0.9, 0.006, 0]}
         rotation={[-Math.PI / 2, 0, 0]}
@@ -1815,6 +1867,7 @@ export function CarModel({
           <Glazing body={body} shape={shape} />
           <SkinDetails body={body} shape={shape} car={car} />
           <Mirrors body={body} shape={shape} color={exterior} />
+          {!proto && <ArchLips body={body} />}
           <Grille body={body} shape={shape} />
           <Callouts system="body" body={body} shape={shape} />
         </Part>

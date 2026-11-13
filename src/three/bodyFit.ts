@@ -50,10 +50,18 @@ export function fitBody(spec: BodySpec, outline: BodyOutline): BodySpec {
   // Carry the last fitted offset on and fade it out instead of reading those.
   const last = Math.min(n, Math.floor(heightUntil * n + 1e-9));
   const held = gap(ts[last], last);
+  // Ahead of the bumper some references show only a splitter or nothing at
+  // all. Start where the outline first reads as bodywork and hold that offset
+  // forward to the nose.
+  let first = 0;
+  while (first < last && outline.top[first] < 0.38) first++;
+  const lead = gap(ts[first], first);
   const raw = ts.map((t, i) =>
-    i <= last
-      ? gap(t, i)
-      : held * clamp(1 - (t - heightUntil) / 0.14, 0, 1),
+    i < first
+      ? lead
+      : i <= last
+        ? gap(t, i)
+        : held * clamp(1 - (t - heightUntil) / 0.14, 0, 1),
   );
   const delta = raw.map(
     (v, i) => (v * 2 + (raw[i - 1] ?? v) + (raw[i + 1] ?? v)) / 4,
@@ -82,6 +90,11 @@ export function fitBody(spec: BodySpec, outline: BodyOutline): BodySpec {
     shoulderY: keys((t, i) =>
       Math.max(f.floorY(t) + 0.05, f.shoulderY(t) + crest(i) * 0.5),
     ),
+    // A GT bonnet and deck move as one surface with the centreline; on a
+    // prototype the valley is the floor between the pods and stays put.
+    ...(spec.kind === "gt"
+      ? { valleyY: keys((t, i) => f.valleyY(t) + cabin(i) + crest(i)) }
+      : {}),
     outerZ: keys((_, i) => width[i]),
     crestZ: keys((t, i) => f.crestZ(t) * ratio(t, i)),
     valleyZ: keys((t, i) => f.valleyZ(t) * ratio(t, i)),

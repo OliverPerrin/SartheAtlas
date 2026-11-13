@@ -55,7 +55,7 @@ function BuildTimeline({ car, clock }: { car: Car; clock: BuildClock }) {
         <strong>
           {done
             ? "Ready to roll out"
-            : `Step ${index + 1} of ${BUILD_STEPS.length} · ${step.label}`}
+            : `Step ${index + 1} of ${BUILD_STEPS.length}: ${step.label}`}
         </strong>
         {done
           ? "Every assembly is installed. Switch to Wind tunnel to see how air moves around the finished car."
@@ -100,7 +100,7 @@ export function TeardownBar({
           <span>Faster</span>
         </div>
         <p className="teardown-caption">
-          <strong>Illustrative airflow · not CFD</strong>
+          <strong>Illustrative airflow, not CFD</strong>
           Paths follow this study's own body. Air speeds up over the roof and
           under the floor; the diffuser and rear wing turn it upward, which
           pushes the car down. Vortices roll off the wing tips.

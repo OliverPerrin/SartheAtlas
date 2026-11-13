@@ -1,13 +1,13 @@
-import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { carById } from "./data/cars.ts";
 import { useRoute } from "./router.ts";
 import type { Page } from "./router.ts";
 import Home from "./pages/Home.tsx";
-import { Cursor, Footer, Header } from "./components/Chrome.tsx";
+import { Footer, Header } from "./components/Chrome.tsx";
 import Intro from "./components/Intro.tsx";
 import { phasePhotos, photoSrc } from "./data/photos.ts";
 import { phaseInLeMans } from "./data/racePhase.ts";
-import { reducedMotion, startPointerEffects, startReveals } from "./motion.ts";
+import { reducedMotion } from "./motion.ts";
 import "./App.css";
 import "./Chrome.css";
 
@@ -51,7 +51,6 @@ export default function App() {
   const [palette, setPalette] = useState(false);
   const [intro, setIntro] = useState(() => page === "home" && firstVisit);
   const [loader, setLoader] = useState(intro);
-  const shell = useRef<HTMLDivElement>(null);
   useEffect(() => {
     document.title = `${titleFor(page, params)} · Sarthe Atlas`;
   }, [page, params]);
@@ -60,15 +59,6 @@ export default function App() {
     document.documentElement.classList.toggle("intro-lock", intro);
     return () => document.documentElement.classList.remove("intro-lock");
   }, [intro]);
-  useEffect(() => {
-    if (!shell.current) return;
-    const stopReveals = startReveals(shell.current);
-    const stopPointer = startPointerEffects();
-    return () => {
-      stopReveals();
-      stopPointer();
-    };
-  }, []);
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       const typing =
@@ -90,7 +80,6 @@ export default function App() {
   const immersive = page === "car" || page === "circuit";
   return (
     <div
-      ref={shell}
       className={`app page-${page}${immersive ? " immersive" : ""}${intro ? " intro" : ""}`}
     >
       <a className="skip" href="#main">
@@ -112,7 +101,7 @@ export default function App() {
           fallback={
             <div className="page-loading">
               <span className="loading-bar" aria-hidden="true" />
-              Loading the explorer…
+              Loading…
             </div>
           }
         >
@@ -129,8 +118,6 @@ export default function App() {
         </Suspense>
       </div>
       {!immersive && <Footer />}
-      {!immersive && <Cursor />}
-      {!immersive && <div className="grain" aria-hidden="true" />}
       {palette && (
         <Suspense fallback={null}>
           <CommandPalette onClose={() => setPalette(false)} />

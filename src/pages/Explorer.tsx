@@ -9,7 +9,6 @@ import {
 } from "react";
 import { currentPhase, isDark } from "../data/racePhase.ts";
 import {
-  ArrowUpRight,
   Box,
   Disc3,
   Eye,
@@ -478,9 +477,9 @@ export default function Explorer({ params }: { params: URLSearchParams }) {
               <span className="viewer-eyebrow">
                 {exterior
                   ? showingFilm
-                    ? "Artist studio film · 2026 race model"
-                    : "Detailed exterior · original model livery"
-                  : "Interactive engineering study"}
+                    ? "Artist studio film of the 2026 race car"
+                    : "Detailed exterior in the model's own livery"
+                  : "Engineering study"}
               </span>
               <h1>
                 {car.make} <strong>{car.name}</strong>
@@ -490,7 +489,7 @@ export default function Explorer({ params }: { params: URLSearchParams }) {
                   ? showingFilm
                     ? "Original render by OpticalDreamSoft"
                     : ref.assetLabel
-                  : `${entry.team} · ${platformLabel(car)}`}
+                  : `${entry.team}, ${platformLabel(car)}`}
               </span>
             </div>
           </div>
@@ -519,12 +518,11 @@ export default function Explorer({ params }: { params: URLSearchParams }) {
             )}
             {exterior && ref.film && (
               <button
-                className="geometry-choice"
+                className="btn secondary small geometry-choice"
                 aria-pressed={showArtistFilm}
                 onClick={() => setShowArtistFilm(!showArtistFilm)}
               >
-                {showArtistFilm ? "Interactive exterior" : "Artist studio film"}{" "}
-                <ArrowUpRight size={12} />
+                {showArtistFilm ? "Back to the 3D exterior" : "Watch the artist's film"}
               </button>
             )}
             {!exterior && (
@@ -602,8 +600,8 @@ export default function Explorer({ params }: { params: URLSearchParams }) {
                   rel="noreferrer"
                 >
                   {showingFilm ? ref.film?.author : ref.author}
-                </a>{" "}
-                · {showingFilm ? ref.film?.note : ref.note}
+                </a>
+                . {showingFilm ? ref.film?.note : ref.note}
               </div>
             </div>
           ) : (
@@ -663,8 +661,8 @@ export default function Explorer({ params }: { params: URLSearchParams }) {
               <MousePointer2 size={13} />
               <span>
                 {touch
-                  ? "Drag to orbit · pinch to zoom · tap to inspect"
-                  : "Drag to orbit · scroll to zoom · click to inspect"}
+                  ? "Drag to orbit, pinch to zoom, tap a part to inspect it"
+                  : "Drag to orbit, scroll to zoom, click a part to inspect it"}
               </span>
             </div>
           )}
@@ -872,6 +870,7 @@ export default function Explorer({ params }: { params: URLSearchParams }) {
               <div className="selected-system-heading">
                 <h2>{sys.name}</h2>
                 <button
+                  className="btn ghost icon small"
                   onClick={() => {
                     setSelected(null);
                     setFocus(false);
@@ -915,21 +914,21 @@ export default function Explorer({ params }: { params: URLSearchParams }) {
           ) : (
             <div className="detail intro">
               <span className="kicker">{car.category}</span>
-              <h2>Look closer.</h2>
+              <h2>Pick a part to inspect</h2>
               <p>
-                Orbit the car to see its shape. Select a component to uncover
-                the engineering underneath, or lift the assembly layer by layer
-                with the layer control.
+                Click any part of the car, or choose a system from the list on
+                the left, to read what it does. The layer slider under the car
+                lifts the assemblies apart.
               </p>
               <button
-                className="inspection-start"
+                className="btn secondary small inspection-start"
                 onClick={() => select("body")}
               >
                 <MousePointer2 size={16} /> Inspect the bodywork
               </button>
               <div className="engineering-starts">
                 <button onClick={() => chooseView("cockpit")}>
-                  Cockpit & controls
+                  Cockpit and controls
                 </button>
                 <button onClick={() => chooseView("powertrain")}>
                   Powertrain assemblies
@@ -948,13 +947,13 @@ export default function Explorer({ params }: { params: URLSearchParams }) {
                   <kbd>1</kbd>–<kbd>9</kbd> / <kbd>0</kbd> camera views
                 </li>
                 <li>
-                  <kbd>E</kbd> lift stages · <kbd>X</kbd> X-ray
+                  <kbd>E</kbd> lift layers, <kbd>X</kbd> X-ray
                 </li>
                 <li>
-                  <kbd>R</kbd> rule colours · <kbd>D</kbd> dimensions
+                  <kbd>R</kbd> rule colours, <kbd>D</kbd> dimensions
                 </li>
                 <li>
-                  <kbd>T</kbd> turntable · <kbd>Esc</kbd> deselect
+                  <kbd>T</kbd> turntable, <kbd>Esc</kbd> deselect
                 </li>
               </ul>
             </div>
@@ -962,7 +961,7 @@ export default function Explorer({ params }: { params: URLSearchParams }) {
         {tab === "car" && (
           <div className="detail">
             <span className="kicker">
-              {car.category} · since {car.debut}
+              {car.category}, racing since {car.debut}
             </span>
             <h2>
               {car.make} {car.name}
@@ -1018,14 +1017,14 @@ export default function Explorer({ params }: { params: URLSearchParams }) {
               target="_blank"
               rel="noreferrer"
             >
-              Source <ArrowUpRight size={13} />
+              Source
             </a>
           </div>
         )}
         {tab === "entry" && (
           <div className="detail">
             <span className="kicker">
-              {entry.nation} · {car.category}
+              {entry.nation}, {car.category}
               {entry.proAm ? " Pro-Am" : ""}
             </span>
             <h2>{entry.team}</h2>
@@ -1071,7 +1070,7 @@ export default function Explorer({ params }: { params: URLSearchParams }) {
             className="text-link"
             {...linkProps("field", { class: car.category })}
           >
-            Whole {car.category} field <ArrowUpRight size={13} />
+            See the whole {car.category} field
           </a>
         </div>
         <div className="strip">
@@ -1091,7 +1090,7 @@ export default function Explorer({ params }: { params: URLSearchParams }) {
               </span>
               <span className="strip-team">{e.team}</span>
               <span className="strip-crew">
-                {e.drivers.map(surname).join(" · ")}
+                {e.drivers.map(surname).join(", ")}
               </span>
             </button>
           ))}

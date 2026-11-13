@@ -1,78 +1,40 @@
-import { ArrowUpRight } from "lucide-react";
 import { carById, entrySource } from "../data/cars.ts";
 import { exteriorReferences } from "../data/references.ts";
 import { ruleInfo } from "../data/systems.ts";
 import type { Rule } from "../data/systems.ts";
 import { linkProps } from "../router.ts";
-import { allPhotos, photos, photoSrc, photoSrcSet } from "../data/photos.ts";
+import { allPhotos } from "../data/photos.ts";
 import "./Pages.css";
 
 export default function About() {
   return (
     <main className="content about">
-      <div className="masthead">
-        <div className="masthead-rule">
-          <span>Sarthe Atlas</span>
-          <span>The sources edition</span>
-          <span>Entry list snapshot · 5 May 2026</span>
-        </div>
-        <h1 className="lines" data-reveal>
-          <span className="line">
-            <span>What you are</span>
-          </span>
-          <span className="line" style={{ "--l": 1 } as React.CSSProperties}>
-            <span>
-              <em>looking at.</em>
-            </span>
-          </span>
-        </h1>
-        <p className="lead deck" data-reveal style={{ "--d": 3 } as React.CSSProperties}>
-          Sarthe Atlas is an independent guide. Here is where each piece of
-          information comes from, and where the 3D models are approximations.
+      <div className="page-head">
+        <h1>Sources and accuracy</h1>
+        <p className="lead">
+          Sarthe Atlas is an independent guide. This page says where each piece
+          of information comes from, and which parts of the 3D models are
+          approximations.
         </p>
       </div>
-      <figure className="front-photo" data-reveal="clip">
-        <img
-          src={photoSrc(photos.finish, 1100)}
-          srcSet={photoSrcSet(photos.finish)}
-          sizes="(max-width: 1440px) 100vw, 1440px"
-          alt={photos.finish.alt}
-          style={{ objectPosition: photos.finish.focus }}
-        />
-        <figcaption>
-          <strong>Hour 24.</strong> {photos.finish.caption}, {photos.finish.place}.
-          Photo{" "}
-          <a href={photos.finish.source} target="_blank" rel="noreferrer">
-            {photos.finish.author}
-          </a>
-          ,{" "}
-          <a href={photos.finish.licenseUrl} target="_blank" rel="noreferrer">
-            {photos.finish.license}
-          </a>
-          .
-        </figcaption>
-      </figure>
-      <div className="accuracy-summary" data-reveal>
+      <dl className="accuracy-summary">
         <div>
-          <span className="kicker">The reference</span>
-          <strong>Public technical sources</strong>
-          <p>
-            Entry details, powertrain layouts and circuit geometry are
-            source-linked.
-          </p>
+          <dt>Taken from public sources</dt>
+          <dd>
+            Entry details, powertrain layouts and circuit geometry. Each one
+            links to its source below.
+          </dd>
         </div>
         <div>
-          <span className="kicker">The interpretation</span>
-          <strong>Models built to explain</strong>
-          <p>
-            Surface detail, colour studies and driving speeds are educational
-            approximations.
-          </p>
+          <dt>Modelled by Sarthe Atlas</dt>
+          <dd>
+            Surface detail, colour studies, component positions and lap speeds.
+            They are there to explain, not to measure.
+          </dd>
         </div>
-      </div>
+      </dl>
       <div className="about-grid">
         <article>
-          <span className="kicker">01 · The entry list</span>
           <h2>62 entries, dated 5 May 2026</h2>
           <p>
             Car numbers, teams, crews and nationalities follow the FIA WEC
@@ -80,11 +42,10 @@ export default function About() {
             reserve entries after that date are not reflected.
           </p>
           <a href={entrySource} target="_blank" rel="noreferrer">
-            FIA WEC entry list (PDF) <ArrowUpRight size={14} />
+            Read the FIA WEC entry list (PDF)
           </a>
         </article>
         <article>
-          <span className="kicker">02 · The 3D cars</span>
           <h2>Detailed exteriors, separate cutaways</h2>
           <p>
             The default view uses detailed creator-hosted exterior models, with
@@ -102,7 +63,6 @@ export default function About() {
           </p>
         </article>
         <article>
-          <span className="kicker">03 · Parts & powertrains</span>
           <h2>Architecture and assembly detail</h2>
           <p>
             Engine configuration (cylinder count, V angle, turbocharging,
@@ -123,7 +83,6 @@ export default function About() {
           </div>
         </article>
         <article>
-          <span className="kicker">04 · Liveries</span>
           <h2>Colour studies for every entry</h2>
           <p>
             Each entry gets a colour scheme based on its team colours, with its
@@ -132,7 +91,6 @@ export default function About() {
           </p>
         </article>
         <article>
-          <span className="kicker">05 · The circuit</span>
           <h2>Aerial imagery and measured ground</h2>
           <p>
             The circuit outline and corner positions come from OpenStreetMap via
@@ -155,31 +113,30 @@ export default function About() {
             target="_blank"
             rel="noreferrer"
           >
-            track-atlas <ArrowUpRight size={14} />
+            track-atlas
           </a>
           <a
             href="https://www.openstreetmap.org/copyright"
             target="_blank"
             rel="noreferrer"
           >
-            © OpenStreetMap contributors, ODbL <ArrowUpRight size={14} />
+            © OpenStreetMap contributors, ODbL
           </a>
           <a href={`${import.meta.env.BASE_URL}data/sarthe.geojson`} download>
-            Download the circuit geometry <ArrowUpRight size={14} />
+            Download the circuit geometry
           </a>
           <a href="https://geoservices.ign.fr" target="_blank" rel="noreferrer">
-            © IGN · RGE ALTI, BD TOPO, BD ORTHO <ArrowUpRight size={14} />
+            © IGN: RGE ALTI, BD TOPO, BD ORTHO
           </a>
           <a
             href="https://github.com/etalab/licence-ouverte/blob/master/LO.md"
             target="_blank"
             rel="noreferrer"
           >
-            IGN data · Open Licence 2.0 <ArrowUpRight size={14} />
+            IGN data, Open Licence 2.0
           </a>
         </article>
         <article>
-          <span className="kicker">06 · Community exterior models</span>
           <h2>18 hosted exterior references</h2>
           <p>
             Every car family has a detailed external reference. These remain on
@@ -204,30 +161,29 @@ export default function About() {
                 target="_blank"
                 rel="noreferrer"
               >
-                {c?.make} {c?.name} · {r.author} <ArrowUpRight size={14} />
+                {c?.make} {c?.name}, by {r.author}
               </a>
             );
           })}
         </article>
         <article>
-          <span className="kicker">07 · Race photography</span>
           <h2>Real photographs, credited</h2>
           <p>
             The photographs on the home page, the field and this page come from
             Wikimedia Commons under Creative Commons licences. They are resized
             and recompressed copies; nothing else is altered. Several were taken
             at Petit Le Mans or Daytona rather than Le Mans, and every caption
-            says where. They show earlier seasons, not 2026 entries.
+            says where. Most show earlier seasons rather than 2026 entries.
           </p>
           {allPhotos.map((photo) => (
             <a key={photo.id} href={photo.source} target="_blank" rel="noreferrer">
-              {photo.caption} · {photo.place} · {photo.author} · {photo.license}{" "}
-              <ArrowUpRight size={14} />
+              {photo.caption}, {photo.place.replace(" · ", ", ")}. {photo.author},{" "}
+              {photo.license}{" "}
+             
             </a>
           ))}
         </article>
         <article>
-          <span className="kicker">08 · Open source</span>
           <h2>Help improve the atlas</h2>
           <p>
             Explore the code, report a problem or contribute a source-backed
@@ -240,26 +196,23 @@ export default function About() {
             rights to third-party assets or trademarks.
           </p>
           <a href="https://github.com/OliverPerrin/SartheAtlas">
-            View the source <ArrowUpRight size={14} />
+            View the source
           </a>
           <a href="https://github.com/OliverPerrin/SartheAtlas/blob/main/CONTRIBUTING.md">
-            Contribution guide <ArrowUpRight size={14} />
+            Contribution guide
           </a>
           <a href="https://github.com/OliverPerrin/SartheAtlas/issues/new/choose">
-            Report a bug or source correction <ArrowUpRight size={14} />
+            Report a bug or source correction
           </a>
           <a href="https://github.com/OliverPerrin/SartheAtlas/blob/main/THIRD_PARTY_NOTICES.md">
-            Licenses & third-party notices <ArrowUpRight size={14} />
+            Licences and third-party notices
           </a>
         </article>
       </div>
-      <div className="about-next" data-reveal>
-        <div>
-          <span className="kicker">Start with a machine</span>
-          <h2>See the engineering for yourself.</h2>
-        </div>
+      <div className="about-next">
+        <h2>See the engineering for yourself</h2>
         <a className="btn primary" {...linkProps("field", { view: "cars" })}>
-          Explore the cars <ArrowUpRight size={16} />
+          Explore the cars
         </a>
       </div>
       <p className="source-note">

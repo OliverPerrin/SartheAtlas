@@ -114,19 +114,27 @@ try {
   });
   mkdirSync(out, { recursive: true });
   const scratch = mkdtempSync(join(tmpdir(), "study-png-"));
+  const failed = [];
   for (const [index, job] of jobs.entries()) {
-    await send("Page.navigate", {
-      url: `${base}/?lab&${job.query}&cam=${CAMERA}`,
-    });
-    // Wait for the fonts (liveries are painted with them) and the canvas.
-    for (let i = 0; i < 80; i++) {
-      await sleep(150);
-      if (
-        await evaluate(
+    // Wait for the fonts (liveries are painted with them) and the canvas. A
+    // dev server mid-edit can serve a broken module, so try again before
+    // giving up rather than saving a blank frame.
+    let ready = false;
+    for (let attempt = 0; attempt < 4 && !ready; attempt++) {
+      await send("Page.navigate", {
+        url: `${base}/?lab&${job.query}&cam=${CAMERA}`,
+      });
+      for (let i = 0; i < 80 && !ready; i++) {
+        await sleep(150);
+        ready = await evaluate(
           `!!document.querySelector('[data-fonts="true"] .car-scene[data-rendering="true"] canvas')`,
-        )
-      )
-        break;
+        );
+      }
+      if (!ready) await sleep(4000);
+    }
+    if (!ready) {
+      failed.push(job.file);
+      continue;
     }
     await sleep(3200);
     const shot = await send("Page.captureScreenshot", { format: "png" });
@@ -141,6 +149,10 @@ try {
     process.stdout.write(`\r${index + 1}/${jobs.length} ${job.file}        `);
   }
   process.stdout.write("\n");
+  if (failed.length) {
+    console.error(`Not rendered (scene never became ready): ${failed.join(", ")}`);
+    process.exitCode = 1;
+  }
   rmSync(scratch, { recursive: true, force: true });
   socket.close();
 } finally {

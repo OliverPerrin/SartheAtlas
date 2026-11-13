@@ -54,7 +54,8 @@ The catalogue is a dated provisional snapshot, not a live entry list. Keep sourc
 - Open housings reveals sectioned engine and transmission studies that expose pistons, rods, crank/cam hardware, shaft bearings, gear pairs and selectors. Internal dimensions, ratios, valve layout and timing remain illustrative.
 - Team-inspired colour studies and Ferrari number / palette options.
 - 18 attributed creator-hosted detailed exterior references, with explicit year and variant caveats.
-- Georeferenced Circuit de la Sarthe atlas with IGN aerial photography, real ground relief, mapped buildings, selectable corners and an interactive elevation profile. The sourced pit route includes entry and exit, with overhead inspection and close-up controls. The separate driving study retains illustrative class lap animation.
+- Georeferenced Circuit de la Sarthe atlas with IGN aerial photography, real ground relief, mapped buildings, selectable corners and an interactive elevation profile. The sourced pit route includes entry and exit, with overhead inspection and close-up controls. "Follow the car" flies the same drone as the homepage over the map, and a separate 3D track view keeps the class lap animation.
+- Lap model per class built from grip, downforce, power, drag and braking along an illustrative driving line, so top speeds and corner speeds are close to real figures (`npm run lap:table` prints them). It is a model, not telemetry.
 - Responsive layout, accessible HTML alternatives for component and corner selection, WebGL fallback, source notes and asset provenance.
 - Data-integrity tests and GitHub Actions build / lint / test checks.
 
@@ -73,7 +74,8 @@ The circuit now uses IGN orthorectified aerial imagery, RGE ALTI ground elevatio
 ## Experience and rendering
 
 - Photo-led homepage whose light follows the race: day, dusk, night and dawn each have their own photograph, colour grade and live effects (sun and dust, headlight trails, stars, mist), and the same switch relights the aerial lap, the studio and the car stills.
-- Aerial lap: a chase camera over IGN imagery follows 3D car studies drawn inside the map, with headlight beams and a lit circuit after dark.
+- Aerial lap: a chase camera over IGN imagery follows 3D car studies drawn inside the map at real speed from the start line, with brake lights, headlight beams and a lit circuit after dark.
+- One interface system across every page: Saira and Geist, class-coloured number plates, one set of buttons and toggles, and red as the only action colour.
 - Consistent car stills: every car family and race entry is rendered from the built-in studies in the same studio (`scripts/study-renders`), with lamps-on night versions.
 - An explicit Start 3D viewer control for the creator-hosted exteriors; only the selected model loads.
 - Stable exterior camera framing, fullscreen, fit/reset/zoom controls and optional turntable. Local engineering views also offer day/night modes.

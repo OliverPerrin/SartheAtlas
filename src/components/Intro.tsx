@@ -101,7 +101,7 @@ export default function Intro({
       </div>
       <div className="intro-top" aria-hidden="true">
         <span>Sarthe Atlas</span>
-        <span>Circuit de la Sarthe · 13.626 km</span>
+        <span>Circuit de la Sarthe, 13.626 km</span>
       </div>
       <div className="intro-clock" aria-hidden="true">
         <span>Race clock</span>

@@ -231,27 +231,26 @@ export default function ElevationProfile({
     >
       <div className="elevation-heading">
         <div>
-          <span className="kicker">Elevation along the lap</span>
-          <h2 id={`${uid}-title`}>The rise and fall of the circuit.</h2>
+          <h2 id={`${uid}-title`}>Elevation along the lap</h2>
         </div>
         {available && (
           <dl className="elevation-stats">
             <div>
-              <dt>Lowest ground</dt>
+              <dt>Lowest point</dt>
               <dd>
-                ≈ {Math.round(profile.min!)} <span>m</span>
+                {Math.round(profile.min!)} <span>m</span>
               </dd>
             </div>
             <div>
-              <dt>Highest ground</dt>
+              <dt>Highest point</dt>
               <dd>
-                ≈ {Math.round(profile.max!)} <span>m</span>
+                {Math.round(profile.max!)} <span>m</span>
               </dd>
             </div>
             <div>
-              <dt>Elevation range</dt>
+              <dt>Difference</dt>
               <dd>
-                ≈ {Math.round(profile.max! - profile.min!)} <span>m</span>
+                {Math.round(profile.max! - profile.min!)} <span>m</span>
               </dd>
             </div>
           </dl>
@@ -272,7 +271,7 @@ export default function ElevationProfile({
               </strong>
               <span
                 className="elevation-section"
-                style={{ color: section.color }}
+                style={{ "--sec": section.color } as React.CSSProperties}
               >
                 {section.name}
               </span>
@@ -405,14 +404,14 @@ export default function ElevationProfile({
                 );
               })}
               <text className="elevation-axis-title" x={padding.left} y="13">
-                Altitude · m
+                Altitude, m
               </text>
             </svg>
             <label
               className="elevation-slider-label"
               htmlFor={`${uid}-position`}
             >
-              Inspect a position <span>Drag the graph or use the slider</span>
+              Position on the lap <span>Drag the graph or the slider</span>
             </label>
             <input
               id={`${uid}-position`}
@@ -466,7 +465,7 @@ export default function ElevationProfile({
           (effectiveSource?.label ?? "Sourced ground elevations")
         )}
         {effectiveSource?.resolutionMeters
-          ? ` · ${effectiveSource.resolutionMeters} m source grid`
+          ? `, ${effectiveSource.resolutionMeters} m source grid`
           : ""}
         {effectiveSource?.datum ? ` · ${effectiveSource.datum}` : ""}
         {effectiveSource?.sampleSpacingMetres

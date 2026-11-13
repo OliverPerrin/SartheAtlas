@@ -26,7 +26,7 @@ export default function ExteriorFilm({ film }: { film: Film }) {
             <Play size={22} fill="currentColor" />
             <span>
               Play artist’s studio film
-              <small>Rendered turntable · {film.author}</small>
+              <small>Rendered turntable by {film.author}</small>
             </span>
           </button>
         </>

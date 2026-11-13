@@ -51,10 +51,8 @@
   right: var(--gutter);
   display: flex;
   justify-content: space-between;
-  font: 400 11px/1 var(--mono);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.5);
+  font: 500 13px/1 var(--wide);
+  color: rgba(255, 255, 255, 0.6);
   animation: intro-fade 0.8s var(--ease) both;
 }
 .intro-clock {
@@ -70,14 +68,12 @@
     transform 0.6s var(--ease);
 }
 .intro-clock > span {
-  font: 400 11px/1 var(--mono);
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.55);
+  font: 500 14px/1 var(--wide);
+  color: rgba(255, 255, 255, 0.65);
 }
 .intro-clock strong {
-  font: 300 clamp(56px, 10vw, 150px) / 1 var(--mono);
-  letter-spacing: -0.04em;
+  font: 300 clamp(56px, 10vw, 150px) / 1 var(--wide);
+  letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums;
 }
 .intro-clock strong i {
@@ -175,13 +171,13 @@
   position: absolute;
   right: var(--gutter);
   bottom: 24px;
-  height: 34px;
-  padding: 0 14px;
-  border-radius: 999px;
+  height: var(--ctl-sm);
+  padding: 0 12px;
+  border-radius: var(--r-ctl);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  font: 500 12px/1 var(--sans);
-  color: rgba(255, 255, 255, 0.7);
-  background: rgba(255, 255, 255, 0.04);
+  font: 600 13.5px/1 var(--wide);
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.06);
   animation: intro-fade 0.6s 0.6s var(--ease) both;
 }
 .intro-skip:hover {

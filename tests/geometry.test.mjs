@@ -127,3 +127,50 @@ test("slick sidewall branding follows the rounded tyre rather than a flat disc",
   }
   rubber.dispose();
 });
+
+test("GT bodies carry a full-width greenhouse, a waist between flared arches and rounded bumpers", () => {
+  for (const car of cars.filter((c) => c.category === "LMGT3")) {
+    const shape = shapes[car.id];
+    const body = new Body(shape.body);
+    const { from } = shape.cockpit;
+    const { header, back, deck, pillar } = shape.glass;
+    assert.ok(
+      from < header && header < pillar && pillar < back + (deck - back) && back < deck,
+      `${car.id}: glazing stations in order`,
+    );
+    // The glass base stands close to the door skin, not on a wide shelf.
+    const door = body.pointAt(pillar, 0.32).z;
+    const glassBase = body.pointAt(pillar, 0.72).z;
+    assert.ok(door - glassBase < 0.3, `${car.id}: shelf ${(door - glassBase).toFixed(2)} m`);
+    assert.ok(glassBase > 0.58, `${car.id}: cabin width`);
+    // The roof stands well clear of the belt line.
+    assert.ok(
+      body.pointAt(shape.cockpit.roof, 1).y - body.pointAt(pillar, 0.72).y > 0.22,
+      `${car.id}: greenhouse height`,
+    );
+    // Fenders are the widest points; the doors sit inside them.
+    const front = body.halfWidthAt(body.t(body.frontX));
+    const rear = body.halfWidthAt(body.t(body.rearX));
+    assert.ok(body.halfWidthAt(pillar) <= Math.max(front, rear) + 1e-9, `${car.id}: waist`);
+    // Both bumpers turn their corners in plan.
+    assert.ok(body.halfWidthAt(0) < body.halfWidthAt(0.08) - 0.1, `${car.id}: nose corner`);
+    assert.ok(body.halfWidthAt(1) < body.halfWidthAt(0.93) - 0.1, `${car.id}: tail corner`);
+  }
+});
+
+test("the light body used from the air keeps the same shape with a fraction of the triangles", () => {
+  for (const id of ["ferrari", "oreca", "porsche"]) {
+    const full = new Body(shapes[id].body).geometry();
+    const light = new Body(shapes[id].body, "light").geometry();
+    assert.ok(light.index.count < full.index.count * 0.4, `${id}: ${light.index.count / 3} triangles`);
+    full.computeBoundingBox();
+    light.computeBoundingBox();
+    for (const axis of ["x", "y", "z"])
+      assert.ok(
+        Math.abs(full.boundingBox.max[axis] - light.boundingBox.max[axis]) < 0.03,
+        `${id}: ${axis} extent`,
+      );
+    full.dispose();
+    light.dispose();
+  }
+});

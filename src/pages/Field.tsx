@@ -1,4 +1,4 @@
-import { ArrowUpRight, Search, X } from "lucide-react";
+import { Search, X } from "lucide-react";
 import {
   carById,
   cars,
@@ -11,7 +11,6 @@ import { classPanel, entries, surname } from "../data/entries.ts";
 import { platformLabel } from "../data/systems.ts";
 import { linkProps, navigate } from "../router.ts";
 import StudyImage from "../components/StudyImage.tsx";
-import { photos, photoSrc, photoSrcSet } from "../data/photos.ts";
 import "./Pages.css";
 
 type Filter = "All" | ClassName;
@@ -124,72 +123,20 @@ export default function Field({ params }: { params: URLSearchParams }) {
     return result;
   })();
   const resultCount = mode === "entries" ? list.length : carList.length;
+  const countIn = (c: Filter) =>
+    c === "All"
+      ? entries.length
+      : entries.filter((e) => carById(e.carId)?.category === c).length;
   return (
     <main className="content field-page">
-      <div className="field-hero">
-        <img
-          className="field-hero-photo"
-          src={photoSrc(photos.prototypes, 1100)}
-          srcSet={photoSrcSet(photos.prototypes)}
-          sizes="100vw"
-          alt={photos.prototypes.alt}
-          style={{ objectPosition: photos.prototypes.focus }}
-          fetchPriority="high"
-        />
-        <p className="field-hero-credit">
-          {photos.prototypes.caption} · {photos.prototypes.place} · Photo{" "}
-          <a href={photos.prototypes.source} target="_blank" rel="noreferrer">
-            {photos.prototypes.author}
-          </a>{" "}
-          ·{" "}
-          <a href={photos.prototypes.licenseUrl} target="_blank" rel="noreferrer">
-            {photos.prototypes.license}
-          </a>
-        </p>
       <div className="page-head field-head">
-        <span className="eyebrow">The 2026 field · Provisional entry list</span>
-        <h1 className="lines" data-reveal>
-          <span className="line">
-            <span>{entries.length} entries.</span>
-          </span>
-          <span className="line" style={{ "--l": 1 } as React.CSSProperties}>
-            <span>
-              <em>{cars.length} designs.</em>
-            </span>
-          </span>
-        </h1>
-        <p className="lead" data-reveal style={{ "--d": 3 } as React.CSSProperties}>
-          Meet the machines that share the same 13.6 kilometres. Compare all
-          three classes, find a favourite crew, then explore what sits beneath
-          the bodywork.
+        <h1>The 2026 field</h1>
+        <p className="lead">
+          {entries.length} entries in {cars.length} car designs, from the
+          provisional list of 5 May 2026. Filter by class or search for a team
+          or driver, then open any car. The pictures are colour studies, not
+          official artwork.
         </p>
-      </div>
-      </div>
-      <div className="field-overview" aria-label="Field by class">
-        {classOrder.map((c) => (
-          <button
-            key={c}
-            className={filter === c ? "on" : ""}
-            style={{ "--cls": classInfo[c].color } as React.CSSProperties}
-            onClick={() => update({ filter: filter === c ? "All" : c })}
-            aria-pressed={filter === c}
-          >
-            <span>
-              <i className="dot" />
-              {c}
-            </span>
-            <strong>
-              {entries.filter((e) => carById(e.carId)?.category === c).length}
-            </strong>
-            <small>
-              <span className="overview-entry-label">entries · </span>
-              {cars.filter((car) => car.category === c).length}{" "}
-              {cars.filter((car) => car.category === c).length === 1
-                ? "design"
-                : "designs"}
-            </small>
-          </button>
-        ))}
       </div>
       <div className="toolbar">
         <div className="seg" role="group" aria-label="Filter by class">
@@ -197,7 +144,6 @@ export default function Field({ params }: { params: URLSearchParams }) {
             <button
               key={f}
               aria-pressed={filter === f}
-              className={filter === f ? "on" : ""}
               style={
                 f !== "All"
                   ? ({ "--cls": classInfo[f].color } as React.CSSProperties)
@@ -207,18 +153,18 @@ export default function Field({ params }: { params: URLSearchParams }) {
             >
               {f !== "All" && <i className="dot" />}
               {f}
+              <span className="seg-count">{countIn(f)}</span>
             </button>
           ))}
         </div>
-        <div className="seg small" role="group" aria-label="Show">
+        <div className="seg" role="group" aria-label="Show">
           {(["entries", "cars"] as Mode[]).map((m) => (
             <button
               key={m}
               aria-pressed={mode === m}
-              className={mode === m ? "on" : ""}
               onClick={() => update({ mode: m })}
             >
-              {m === "entries" ? "Entries" : "Car models"}
+              {m === "entries" ? "Entries" : "Car designs"}
             </button>
           ))}
         </div>
@@ -227,7 +173,7 @@ export default function Field({ params }: { params: URLSearchParams }) {
           <input
             type="search"
             aria-label="Search the field"
-            placeholder="Search team, driver, number or car"
+            placeholder="Team, driver, number or car"
             value={q}
             onChange={(e) => update({ q: e.target.value })}
           />
@@ -237,28 +183,14 @@ export default function Field({ params }: { params: URLSearchParams }) {
             </button>
           )}
         </label>
-      </div>
-      <div className="field-results">
-        <p role="status" aria-live="polite">
-          <strong>{resultCount}</strong>{" "}
-          {mode === "entries"
-            ? resultCount === 1
-              ? "entry"
-              : "entries"
-            : resultCount === 1
-              ? "car design"
-              : "car designs"}
-          {filter !== "All" ? ` in ${filter}` : " across all classes"}
-          {q ? ` matching “${q}”` : ""}
-        </p>
-        <label>
-          Sort by{" "}
+        <label className="select">
+          <span>Sort by</span>
           <select
             aria-label="Sort the field"
             value={sort}
             onChange={(e) => update({ sort: e.target.value as Sort })}
           >
-            <option value="grid">Class / grid order</option>
+            <option value="grid">Class</option>
             <option value="number">Car number</option>
             <option value="name">
               {mode === "entries" ? "Team name" : "Manufacturer"}
@@ -266,137 +198,96 @@ export default function Field({ params }: { params: URLSearchParams }) {
           </select>
         </label>
       </div>
+      <p className="field-results" role="status" aria-live="polite">
+        {resultCount}{" "}
+        {mode === "entries"
+          ? resultCount === 1
+            ? "entry"
+            : "entries"
+          : resultCount === 1
+            ? "car design"
+            : "car designs"}
+        {filter !== "All" ? ` in ${filter}` : ""}
+        {q ? ` matching “${q}”` : ""}
+      </p>
       {filter !== "All" && (
         <div
           className="class-banner"
           style={{ "--cls": classInfo[filter].color } as React.CSSProperties}
         >
-          <strong>{filter}</strong>
+          <strong>{classInfo[filter].tagline}</strong>
           <p>{classInfo[filter].text}</p>
         </div>
       )}
       {mode === "entries" ? (
         <div className="entry-grid">
-          {list.map((e, index) => {
+          {list.map((e) => {
             const car = carById(e.carId)!;
             return (
               <a
                 key={e.number}
                 className="entry-card"
-                data-reveal
-                data-spotlight
-                data-cursor="View"
                 style={
-                  {
-                    "--cls": classInfo[car.category].color,
-                    "--d": index % 4,
-                  } as React.CSSProperties
+                  { "--cls": classPanel[car.category] } as React.CSSProperties
                 }
                 {...linkProps("car", { car: car.id, entry: e.number })}
               >
-                <div
-                  className="entry-visual"
-                  style={
-                    {
-                      "--base": e.livery.base,
-                      "--second": e.livery.second,
-                    } as React.CSSProperties
-                  }
-                >
-                  <StudyImage
-                    entry={e.number}
-                    alt={`#${e.number} ${e.team} ${car.make} ${car.name} colour study`}
-                  />
-                  <span className="car-preview-label">
-                    Colour study · not official artwork
-                  </span>
-                </div>
+                <StudyImage
+                  entry={e.number}
+                  alt={`Number ${e.number}, ${e.team} ${car.make} ${car.name} colour study`}
+                />
                 <div className="entry-body">
-                  <span
-                    className="plate"
-                    style={{ background: classPanel[car.category] }}
-                  >
-                    {e.number}
-                  </span>
+                  <span className="plate">{e.number}</span>
                   <div>
-                    <span className="entry-team">{e.team}</span>
                     <strong>
                       {car.make} {car.name}
                     </strong>
+                    <span className="entry-team">{e.team}</span>
                   </div>
                 </div>
-                <div className="entry-crew">
-                  {e.drivers.map((d) => (
-                    <span key={d} title={d}>
-                      {surname(d)}
-                    </span>
-                  ))}
-                </div>
-                <div className="entry-meta">
-                  <span className="entry-class">
-                    <i className="dot" />
-                    {car.category}
-                  </span>
+                <p className="entry-crew">
+                  {e.drivers.map((d) => surname(d)).join(", ")}
+                </p>
+                <p className="entry-meta">
+                  <span className="cls-tag">{car.category}</span>
                   {e.proAm && <span>Pro-Am</span>}
                   <span>{e.nation}</span>
-                  <span className="swatches" aria-hidden="true">
-                    <i style={{ background: e.livery.base }} />
-                    <i style={{ background: e.livery.second }} />
-                    <i style={{ background: e.livery.accent }} />
-                  </span>
-                </div>
+                </p>
               </a>
             );
           })}
         </div>
       ) : (
         <div className="model-grid">
-          {carList.map((c, index) => {
+          {carList.map((c) => {
             const list = entries.filter((e) => e.carId === c.id);
             return (
               <a
                 key={c.id}
                 className="model-card"
-                data-reveal
-                data-spotlight
-                data-cursor="Open"
                 style={
-                  {
-                    "--cls": classInfo[c.category].color,
-                    "--d": index % 3,
-                  } as React.CSSProperties
+                  { "--cls": classPanel[c.category] } as React.CSSProperties
                 }
                 {...linkProps("car", { car: c.id })}
               >
-                <div className="model-visual">
-                  <StudyImage
-                    car={c.id}
-                    alt={`${c.make} ${c.name} engineering study`}
-                  />
-                  <span className="car-preview-label">
-                    Sarthe Atlas study
-                  </span>
-                </div>
-                <div>
-                  <span className="cls-tag">{c.category}</span>
-                  <h2>
-                    {c.make} <strong>{c.name}</strong>
-                  </h2>
-                  <p>{c.engine.label}</p>
-                  <p className="muted">
-                    {platformLabel(c)} · {c.hybrid ? "Hybrid" : "Non-hybrid"}
-                  </p>
-                  <div className="model-numbers">
-                    {list.map((e) => (
-                      <span
-                        key={e.number}
-                        className="plate small"
-                        style={{ background: classPanel[c.category] }}
-                      >
-                        {e.number}
-                      </span>
-                    ))}
-                  </div>
+                <StudyImage
+                  car={c.id}
+                  alt={`${c.make} ${c.name} colour study`}
+                />
+                <span className="cls-tag">{c.category}</span>
+                <h2>
+                  {c.make} {c.name}
+                </h2>
+                <p>
+                  {c.engine.label}. {platformLabel(c)},{" "}
+                  {c.hybrid ? "hybrid" : "non-hybrid"}.
+                </p>
+                <div className="model-numbers">
+                  {list.map((e) => (
+                    <span key={e.number} className="plate small">
+                      {e.number}
+                    </span>
+                  ))}
                 </div>
               </a>
             );
@@ -406,25 +297,21 @@ export default function Field({ params }: { params: URLSearchParams }) {
       {((mode === "entries" && !list.length) ||
         (mode === "cars" && !carList.length)) && (
         <div className="empty">
-          <h2>No {mode === "entries" ? "entries" : "car designs"} found</h2>
-          <p>
-            Try a car number, manufacturer or driver surname, or reset your
-            filters.
-          </p>
+          <h2>No {mode === "entries" ? "entries" : "car designs"} match</h2>
+          <p>Try a car number, a manufacturer or a driver's surname.</p>
           <button
-            className="btn ghost"
+            className="btn secondary"
             onClick={() => update({ q: "", filter: "All", sort: "grid" })}
           >
-            Reset filters
+            Clear filters
           </button>
         </div>
       )}
       <p className="source-note">
-        Numbers, teams and crews: FIA WEC 2026 Le Mans provisional entry list
-        V2, 5 May 2026. It is a dated snapshot, and the final grid may differ.
-        Liveries are colour studies based on each entry, not official artwork.{" "}
+        Numbers, teams and crews come from the FIA WEC 2026 Le Mans provisional
+        entry list, version 2, dated 5 May 2026. The final grid may differ.{" "}
         <a href={entrySource} target="_blank" rel="noreferrer">
-          Entry list PDF <ArrowUpRight size={12} />
+          Read the entry list (PDF)
         </a>
       </p>
     </main>
